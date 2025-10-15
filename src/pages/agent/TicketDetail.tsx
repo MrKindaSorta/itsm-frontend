@@ -1,38 +1,114 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { Select } from '@/components/ui/select';
+import { SelectRoot as Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { StatusBadge } from '@/components/tickets/StatusBadge';
 import { PriorityBadge } from '@/components/tickets/PriorityBadge';
 import { SLAIndicator } from '@/components/tickets/SLAIndicator';
 import { ActivityFeed } from '@/components/tickets/ActivityFeed';
-import { mockTickets } from '@/data/mockTickets';
-import { mockActivities } from '@/data/mockActivities';
 import { formatDate, getInitials } from '@/lib/utils';
+import type { Ticket, Activity, User } from '@/types';
 import {
   ArrowLeft,
   Save,
   Send,
   Paperclip,
   HelpCircle,
+  Loader2,
 } from 'lucide-react';
+
+const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
 export default function TicketDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const [ticket, setTicket] = useState<Ticket | null>(null);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const [replyType, setReplyType] = useState<'public' | 'internal'>('public');
   const [replyContent, setReplyContent] = useState('');
+  const [isSending, setIsSending] = useState(false);
 
-  // Find the ticket by ID
-  const ticket = mockTickets.find((t) => t.id === id);
-  // Reverse activities to show newest first
-  const activities = id ? [...(mockActivities[id] || [])].reverse() : [];
+  const [isSaving, setIsSaving] = useState(false);
 
-  if (!ticket) {
+  // Fetch ticket, activities, and users
+  useEffect(() => {
+    if (id) {
+      fetchTicketData();
+      fetchUsers();
+    }
+  }, [id]);
+
+  const fetchTicketData = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      // Fetch ticket
+      const ticketResponse = await fetch(`${API_BASE}/api/tickets/${id}`);
+      const ticketData = await ticketResponse.json();
+
+      if (ticketData.success) {
+        // Transform date strings to Date objects
+        const transformedTicket = {
+          ...ticketData.ticket,
+          createdAt: new Date(ticketData.ticket.createdAt),
+          updatedAt: new Date(ticketData.ticket.updatedAt),
+          dueDate: ticketData.ticket.dueDate ? new Date(ticketData.ticket.dueDate) : undefined,
+          resolvedAt: ticketData.ticket.resolvedAt ? new Date(ticketData.ticket.resolvedAt) : undefined,
+          closedAt: ticketData.ticket.closedAt ? new Date(ticketData.ticket.closedAt) : undefined,
+          sla: {
+            ...ticketData.ticket.sla,
+            firstResponseDue: ticketData.ticket.sla.firstResponseDue ? new Date(ticketData.ticket.sla.firstResponseDue) : new Date(),
+            resolutionDue: ticketData.ticket.sla.resolutionDue ? new Date(ticketData.ticket.sla.resolutionDue) : new Date(),
+          },
+        };
+        setTicket(transformedTicket);
+
+        // Fetch activities
+        const activitiesResponse = await fetch(`${API_BASE}/api/tickets/${id}/activities`);
+        const activitiesData = await activitiesResponse.json();
+
+        if (activitiesData.success) {
+          const transformedActivities = activitiesData.activities.map((act: any) => ({
+            ...act,
+            createdAt: new Date(act.createdAt),
+          }));
+          setActivities(transformedActivities.reverse()); // Newest first
+        }
+      } else {
+        setError(ticketData.error || 'Failed to fetch ticket');
+      }
+    } catch (err) {
+      console.error('Error fetching ticket:', err);
+      setError('Failed to connect to server');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/users`);
+      const data = await response.json();
+      if (data.success) {
+        setUsers(data.users || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
+    }
+  };
+
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <Button variant="ghost" onClick={() => navigate('/agent/tickets')}>
@@ -41,12 +117,121 @@ export default function TicketDetail() {
         </Button>
         <Card>
           <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">Ticket not found</p>
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
+            <p className="text-muted-foreground mt-3">Loading ticket...</p>
           </CardContent>
         </Card>
       </div>
     );
   }
+
+  if (error || !ticket) {
+    return (
+      <div className="space-y-6">
+        <Button variant="ghost" onClick={() => navigate('/agent/tickets')}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Tickets
+        </Button>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-destructive mb-4">{error || 'Ticket not found'}</p>
+            <Button onClick={fetchTicketData} variant="outline">
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Handler for Quick Actions changes
+  const handleQuickActionChange = async (field: 'status' | 'priority' | 'assignee', value: string) => {
+    if (!ticket) return;
+
+    setIsSaving(true);
+    try {
+      const payload: any = {};
+
+      if (field === 'status') {
+        payload.status = value;
+      } else if (field === 'priority') {
+        payload.priority = value;
+      } else if (field === 'assignee') {
+        payload.assignee_id = value === 'unassigned' ? null : Number(value);
+      }
+
+      const response = await fetch(`${API_BASE}/api/tickets/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update ticket state
+        setTicket({
+          ...ticket,
+          status: data.ticket.status,
+          priority: data.ticket.priority,
+          assignee: data.ticket.assignee,
+          updatedAt: new Date(data.ticket.updatedAt),
+        });
+
+        // Refresh activities to show the update
+        fetchTicketData();
+      } else {
+        alert('Failed to update ticket: ' + (data.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error updating ticket:', error);
+      alert('Failed to connect to server');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Handler for sending reply or note
+  const handleSendReply = async () => {
+    if (!replyContent.trim() || !user) return;
+
+    setIsSending(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/tickets/${id}/activities`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: replyContent,
+          author_id: user.id,
+          type: replyType === 'internal' ? 'internal_note' : 'comment',
+          isInternal: replyType === 'internal',
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Add new activity to the list
+        const newActivity = {
+          ...data.activity,
+          createdAt: new Date(data.activity.createdAt),
+        };
+        setActivities([newActivity, ...activities]);
+        setReplyContent('');
+      } else {
+        alert('Failed to send reply: ' + (data.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error sending reply:', error);
+      alert('Failed to connect to server');
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -131,9 +316,23 @@ export default function TicketDetail() {
                       </div>
                     </div>
                   </div>
-                  <Button size="sm" className="h-7 text-xs">
-                    <Send className="h-3.5 w-3.5 mr-1.5" />
-                    Send {replyType === 'internal' ? 'Note' : 'Reply'}
+                  <Button
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={handleSendReply}
+                    disabled={isSending || !replyContent.trim()}
+                  >
+                    {isSending ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-3.5 w-3.5 mr-1.5" />
+                        Send {replyType === 'internal' ? 'Note' : 'Reply'}
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>
@@ -185,32 +384,60 @@ export default function TicketDetail() {
                 <div className="grid grid-cols-3 gap-2">
                   <div>
                     <Label htmlFor="status" className="text-xs text-muted-foreground">Status</Label>
-                    <Select id="status" defaultValue={ticket.status} className="mt-1 h-8 text-xs py-1 px-2">
-                      <option value="new">New</option>
-                      <option value="open">Open</option>
-                      <option value="in_progress">In Progress</option>
-                      <option value="waiting">Waiting</option>
-                      <option value="resolved">Resolved</option>
-                      <option value="closed">Closed</option>
+                    <Select
+                      value={ticket.status}
+                      onValueChange={(value) => handleQuickActionChange('status', value)}
+                      disabled={isSaving}
+                    >
+                      <SelectTrigger className="mt-1 h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="new">New</SelectItem>
+                        <SelectItem value="open">Open</SelectItem>
+                        <SelectItem value="in_progress">In Progress</SelectItem>
+                        <SelectItem value="waiting">Waiting</SelectItem>
+                        <SelectItem value="resolved">Resolved</SelectItem>
+                        <SelectItem value="closed">Closed</SelectItem>
+                      </SelectContent>
                     </Select>
                   </div>
                   <div>
                     <Label htmlFor="priority" className="text-xs text-muted-foreground">Priority</Label>
-                    <Select id="priority" defaultValue={ticket.priority} className="mt-1 h-8 text-xs py-1 px-2">
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
-                      <option value="urgent">Urgent</option>
+                    <Select
+                      value={ticket.priority}
+                      onValueChange={(value) => handleQuickActionChange('priority', value)}
+                      disabled={isSaving}
+                    >
+                      <SelectTrigger className="mt-1 h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                        <SelectItem value="urgent">Urgent</SelectItem>
+                      </SelectContent>
                     </Select>
                   </div>
                   <div>
                     <Label htmlFor="assignee" className="text-xs text-muted-foreground">Assignee</Label>
-                    <Select id="assignee" defaultValue={ticket.assignee?.id || 'unassigned'} className="mt-1 h-8 text-xs py-1 px-2">
-                      <option value="unassigned">Unassigned</option>
-                      <option value="agent-1">John Smith</option>
-                      <option value="agent-2">Lisa Wong</option>
-                      <option value="agent-3">Robert Taylor</option>
-                      <option value="agent-4">Thomas Anderson</option>
+                    <Select
+                      value={ticket.assignee?.id?.toString() || 'unassigned'}
+                      onValueChange={(value) => handleQuickActionChange('assignee', value)}
+                      disabled={isSaving}
+                    >
+                      <SelectTrigger className="mt-1 h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unassigned">Unassigned</SelectItem>
+                        {users.filter(u => u.role !== 'user').map((u) => (
+                          <SelectItem key={u.id} value={u.id.toString()}>
+                            {u.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
                     </Select>
                   </div>
                 </div>
