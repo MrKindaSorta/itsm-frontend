@@ -55,16 +55,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-      setUser(mockUser);
-      localStorage.setItem('user', JSON.stringify(mockUser));
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const signup = async (name: string, email: string, password: string) => {
     setIsLoading(true);
     try {
@@ -79,16 +69,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       setUser(data.user);
       localStorage.setItem('user', JSON.stringify(data.user));
-    } catch (error) {
-      console.error('Signup error:', error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-      setUser(mockUser);
-      localStorage.setItem('user', JSON.stringify(mockUser));
     } catch (error) {
       console.error('Signup error:', error);
       throw error;
