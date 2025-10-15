@@ -6,23 +6,24 @@ import { Button } from '@/components/ui/button';
 
 interface ActivityFeedProps {
   activities: Activity[];
+  onReply?: (activity: Activity) => void;
 }
 
 interface MessageActionsProps {
-  activityId: string;
-  onReply: (activityId: string) => void;
+  activity: Activity;
+  onReply: (activity: Activity) => void;
   onFlag: (activityId: string) => void;
   isFlagged: boolean;
 }
 
-function MessageActions({ activityId, onReply, onFlag, isFlagged }: MessageActionsProps) {
+function MessageActions({ activity, onReply, onFlag, isFlagged }: MessageActionsProps) {
   return (
     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
       <Button
         variant="ghost"
         size="sm"
         className="h-7 px-2 text-xs"
-        onClick={() => onReply(activityId)}
+        onClick={() => onReply(activity)}
         title="Reply to this message"
       >
         <Reply className="h-3.5 w-3.5 mr-1" />
@@ -32,7 +33,7 @@ function MessageActions({ activityId, onReply, onFlag, isFlagged }: MessageActio
         variant="ghost"
         size="sm"
         className={`h-7 px-2 text-xs ${isFlagged ? 'text-red-500 hover:text-red-600' : ''}`}
-        onClick={() => onFlag(activityId)}
+        onClick={() => onFlag(activity.id)}
         title={isFlagged ? 'Unflag message' : 'Flag as important'}
       >
         <Flag className={`h-3.5 w-3.5 ${isFlagged ? 'fill-current' : ''}`} />
@@ -41,14 +42,13 @@ function MessageActions({ activityId, onReply, onFlag, isFlagged }: MessageActio
   );
 }
 
-export function ActivityFeed({ activities }: ActivityFeedProps) {
+export function ActivityFeed({ activities, onReply }: ActivityFeedProps) {
   const [flaggedMessages, setFlaggedMessages] = useState<Set<string>>(new Set());
-  const [_replyingTo, setReplyingTo] = useState<string | null>(null);
 
-  const handleReply = (activityId: string) => {
-    setReplyingTo(activityId);
-    // TODO: Focus reply textarea and add context
-    console.log('Replying to:', activityId);
+  const handleReply = (activity: Activity) => {
+    if (onReply) {
+      onReply(activity);
+    }
   };
 
   const handleFlag = (activityId: string) => {
@@ -108,7 +108,7 @@ export function ActivityFeed({ activities }: ActivityFeedProps) {
             className={`group rounded-lg border p-4 ${
               isFlagged ? 'border-red-300 dark:border-red-900 bg-red-50/50 dark:bg-red-950/20' :
               isInternalNote ? 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-900' : 'bg-card'
-            }`}
+            } ${activity.parentActivity ? 'ml-6 border-l-4 border-l-primary/30' : ''}`}
           >
             <div className="flex items-start gap-3">
               <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-medium flex-shrink-0">
@@ -134,12 +134,20 @@ export function ActivityFeed({ activities }: ActivityFeedProps) {
                     </span>
                   </div>
                   <MessageActions
-                    activityId={activity.id}
+                    activity={activity}
                     onReply={handleReply}
                     onFlag={handleFlag}
                     isFlagged={isFlagged}
                   />
                 </div>
+                {/* Show parent activity reference if this is a reply */}
+                {activity.parentActivity && (
+                  <div className="mt-2 mb-2 p-2 bg-muted/50 rounded text-xs border-l-2 border-primary/50">
+                    <span className="text-muted-foreground">Replying to </span>
+                    <span className="font-medium">{activity.parentActivity.author.name}</span>
+                    <p className="text-muted-foreground mt-1 italic">"{activity.parentActivity.contentPreview}"</p>
+                  </div>
+                )}
                 <p className="text-sm mt-2 whitespace-pre-wrap">{activity.content}</p>
                 {activity.attachments && activity.attachments.length > 0 && (
                   <div className="mt-3 space-y-1">

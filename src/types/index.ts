@@ -137,6 +137,14 @@ export interface Activity {
   isInternal: boolean;
   attachments?: Attachment[];
   metadata?: Record<string, any>;
+  parentActivityId?: string | null;
+  parentActivity?: {
+    id: string;
+    author: {
+      name: string;
+    };
+    contentPreview: string;
+  } | null;
 }
 
 // Knowledge Base

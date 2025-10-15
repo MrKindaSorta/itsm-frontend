@@ -38,6 +38,7 @@ export default function TicketDetail() {
   const [replyType, setReplyType] = useState<'public' | 'internal'>('public');
   const [replyContent, setReplyContent] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [replyingToActivity, setReplyingToActivity] = useState<Activity | null>(null);
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -199,17 +200,24 @@ export default function TicketDetail() {
 
     setIsSending(true);
     try {
+      const payload: any = {
+        content: replyContent,
+        author_id: user.id,
+        type: replyType === 'internal' ? 'internal_note' : 'comment',
+        isInternal: replyType === 'internal',
+      };
+
+      // If replying to an activity, include parent_activity_id
+      if (replyingToActivity) {
+        payload.parent_activity_id = replyingToActivity.id;
+      }
+
       const response = await fetch(`${API_BASE}/api/tickets/${id}/activities`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          content: replyContent,
-          author_id: user.id,
-          type: replyType === 'internal' ? 'internal_note' : 'comment',
-          isInternal: replyType === 'internal',
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
@@ -222,6 +230,7 @@ export default function TicketDetail() {
         };
         setActivities([newActivity, ...activities]);
         setReplyContent('');
+        setReplyingToActivity(null); // Clear reply context
       } else {
         alert('Failed to send reply: ' + (data.error || 'Unknown error'));
       }
@@ -285,6 +294,26 @@ export default function TicketDetail() {
             {/* Reply Box */}
             <CardContent className="border-b p-3">
               <div className="space-y-2">
+                {/* Reply Context Banner */}
+                {replyingToActivity && (
+                  <div className="flex items-center gap-2 p-2 bg-muted rounded-md text-xs">
+                    <div className="flex-1">
+                      <span className="font-medium">Replying to {replyingToActivity.author.name}</span>
+                      <p className="text-muted-foreground truncate mt-0.5">
+                        {replyingToActivity.content.substring(0, 60)}...
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0"
+                      onClick={() => setReplyingToActivity(null)}
+                      title="Cancel reply"
+                    >
+                      ✕
+                    </Button>
+                  </div>
+                )}
                 <Textarea
                   placeholder={
                     replyType === 'public'
@@ -340,7 +369,10 @@ export default function TicketDetail() {
 
             {/* Activity Feed - Scrollable */}
             <CardContent className="flex-1 overflow-y-auto p-3 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-muted [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:hover:bg-muted-foreground/40">
-              <ActivityFeed activities={activities} />
+              <ActivityFeed
+                activities={activities}
+                onReply={(activity) => setReplyingToActivity(activity)}
+              />
             </CardContent>
           </Card>
         </div>
