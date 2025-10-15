@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { User } from '@/types';
 import { UserRole } from '@/types';
 
+const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
+
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
@@ -31,30 +33,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const login = async (email: string, _password: string) => {
+  const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // Mock login - replace with actual API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Mock user data
-      const mockUser: User = {
-        id: '1',
-        email,
-        name: email.split('@')[0],
-        role: email.includes('admin') ? UserRole.ADMIN :
-              email.includes('agent') ? UserRole.AGENT : UserRole.USER,
-        active: true,
-        notificationPreferences: {
-          emailNotifications: true,
-          newTicketAssigned: true,
-          ticketUpdated: true,
-          slaWarning: true,
-          ticketResolved: true,
-          mentions: true,
-        },
-        createdAt: new Date(),
-      };
+      const response = await fetch(`${API_BASE}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Login failed');
+      }
+      setUser(data.user);
+      localStorage.setItem('user', JSON.stringify(data.user));
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
       setUser(mockUser);
       localStorage.setItem('user', JSON.stringify(mockUser));
@@ -66,28 +65,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signup = async (name: string, email: string, _password: string) => {
+  const signup = async (name: string, email: string, password: string) => {
     setIsLoading(true);
     try {
-      // Mock signup - replace with actual API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      const mockUser: User = {
-        id: Math.random().toString(36).substr(2, 9),
-        email,
-        name,
-        role: UserRole.USER,
-        active: true,
-        notificationPreferences: {
-          emailNotifications: true,
-          newTicketAssigned: true,
-          ticketUpdated: true,
-          slaWarning: true,
-          ticketResolved: true,
-          mentions: true,
-        },
-        createdAt: new Date(),
-      };
+      const response = await fetch(`${API_BASE}/api/auth/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Signup failed');
+      }
+      setUser(data.user);
+      localStorage.setItem('user', JSON.stringify(data.user));
+    } catch (error) {
+      console.error('Signup error:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
       setUser(mockUser);
       localStorage.setItem('user', JSON.stringify(mockUser));
