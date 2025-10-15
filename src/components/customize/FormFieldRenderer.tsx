@@ -1,0 +1,141 @@
+import type { FormField } from '@/types/formBuilder';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Type,
+  AlignLeft,
+  Hash,
+  Calendar,
+  ChevronDown,
+  List,
+  CheckSquare,
+  Upload,
+  GripVertical,
+  Trash2,
+  Settings,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+// Icon mapping for field types
+const fieldIcons = {
+  text: Type,
+  textarea: AlignLeft,
+  number: Hash,
+  date: Calendar,
+  dropdown: ChevronDown,
+  multiselect: List,
+  checkbox: CheckSquare,
+  file: Upload,
+};
+
+interface FormFieldRendererProps {
+  field: FormField;
+  index: number;
+  isSelected: boolean;
+  isDragging?: boolean;
+  onSelect: () => void;
+  onDelete: () => void;
+  onDragStart: (e: React.DragEvent) => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent) => void;
+}
+
+export default function FormFieldRenderer({
+  field,
+  index: _index,
+  isSelected,
+  isDragging,
+  onSelect,
+  onDelete,
+  onDragStart,
+  onDragOver,
+  onDrop,
+}: FormFieldRendererProps) {
+  const Icon = fieldIcons[field.type];
+
+  return (
+    <div
+      draggable
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+      onClick={onSelect}
+      className={cn(
+        'group relative p-4 rounded-lg border bg-card transition-all cursor-pointer',
+        isSelected && 'border-primary ring-2 ring-primary/20',
+        !isSelected && 'border-border hover:border-primary/50',
+        isDragging && 'opacity-50'
+      )}
+    >
+      {/* Drag Handle */}
+      <div className="absolute left-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity cursor-move">
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
+      </div>
+
+      <div className="flex items-start gap-3 pl-4">
+        {/* Icon */}
+        <div className="mt-0.5 p-2 rounded-md bg-primary/10 text-primary">
+          <Icon className="h-4 w-4" />
+        </div>
+
+        {/* Field Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-medium text-sm">{field.label}</span>
+            {field.required && (
+              <Badge variant="destructive" className="text-xs px-1.5 py-0">
+                Required
+              </Badge>
+            )}
+            <Badge variant="secondary" className="text-xs px-1.5 py-0">
+              {field.type}
+            </Badge>
+          </div>
+          {field.placeholder && (
+            <div className="text-xs text-muted-foreground mt-1">
+              Placeholder: {field.placeholder}
+            </div>
+          )}
+          {field.helpText && (
+            <div className="text-xs text-muted-foreground mt-1">
+              Help: {field.helpText}
+            </div>
+          )}
+          {field.options && field.options.length > 0 && (
+            <div className="text-xs text-muted-foreground mt-1">
+              Options: {field.options.join(', ')}
+            </div>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect();
+            }}
+            title="Configure field"
+          >
+            <Settings className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-destructive hover:text-destructive"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            title="Delete field"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
