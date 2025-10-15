@@ -241,15 +241,15 @@ export function TicketCreateModal({ open, onOpenChange, onSuccess }: TicketCreat
             <div className="space-y-2">
               <Label htmlFor="assignee">Assignee (Optional)</Label>
               <Select
-                value={formData.assignee_id.toString()}
-                onValueChange={(value) => setFormData({ ...formData, assignee_id: value })}
+                value={formData.assignee_id || undefined}
+                onValueChange={(value) => setFormData({ ...formData, assignee_id: value === 'unassigned' ? '' : value })}
                 disabled={isLoading}
               >
                 <SelectTrigger id="assignee">
                   <SelectValue placeholder="Unassigned" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Unassigned</SelectItem>
+                  <SelectItem value="unassigned">Unassigned</SelectItem>
                   {users.filter(u => u.role !== 'user').map((u) => (
                     <SelectItem key={u.id} value={u.id.toString()}>
                       {u.name} ({u.role})
