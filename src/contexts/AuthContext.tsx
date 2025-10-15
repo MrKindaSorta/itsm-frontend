@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { User } from '@/types';
-import { UserRole } from '@/types';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
