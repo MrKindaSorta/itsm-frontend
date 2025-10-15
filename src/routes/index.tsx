@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 // Layouts
 const PortalLayout = lazy(() => import('@/components/layout/PortalLayout'));
@@ -45,7 +46,7 @@ const Lazy = ({ children }: { children: React.ReactNode }) => (
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: <Navigate to="/portal" replace />,
+    element: <Navigate to="/auth/login" replace />,
   },
   {
     path: '/auth',
@@ -79,9 +80,11 @@ export const router = createBrowserRouter([
   {
     path: '/portal',
     element: (
-      <Lazy>
-        <PortalLayout />
-      </Lazy>
+      <ProtectedRoute>
+        <Lazy>
+          <PortalLayout />
+        </Lazy>
+      </ProtectedRoute>
     ),
     children: [
       {
@@ -133,9 +136,11 @@ export const router = createBrowserRouter([
   {
     path: '/agent',
     element: (
-      <Lazy>
-        <AgentLayout />
-      </Lazy>
+      <ProtectedRoute allowedRoles={['agent', 'manager', 'admin']}>
+        <Lazy>
+          <AgentLayout />
+        </Lazy>
+      </ProtectedRoute>
     ),
     children: [
       {
