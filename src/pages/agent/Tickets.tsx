@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, Filter, Plus, Loader2 } from 'lucide-react';
 import { TicketTable } from '@/components/tickets/TicketTable';
+import { TicketCreateModal } from '@/components/tickets/TicketCreateModal';
 import type { Ticket } from '@/types';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
@@ -13,6 +14,7 @@ export default function Tickets() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // Fetch tickets from API
   useEffect(() => {
@@ -88,11 +90,17 @@ export default function Tickets() {
           <h1 className="text-3xl font-bold">Tickets</h1>
           <p className="text-muted-foreground mt-2">Manage and track all support tickets</p>
         </div>
-        <Button>
+        <Button onClick={() => setIsCreateModalOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Create Ticket
         </Button>
       </div>
+
+      <TicketCreateModal
+        open={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
+        onSuccess={fetchTickets}
+      />
 
       <Card>
         <CardHeader>
