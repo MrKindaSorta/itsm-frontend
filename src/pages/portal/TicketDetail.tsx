@@ -11,7 +11,7 @@ import { ActivityFeed } from '@/components/tickets/ActivityFeed';
 import { mockTickets } from '@/data/mockTickets';
 import { mockActivities } from '@/data/mockActivities';
 import { formatDate, getInitials } from '@/lib/utils';
-import { ArrowLeft, Send, Tag, Users } from 'lucide-react';
+import { ArrowLeft, Send, Tag } from 'lucide-react';
 
 export default function TicketDetail() {
   const { id } = useParams();

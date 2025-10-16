@@ -282,7 +282,7 @@ export function TicketCreateModal({ open, onOpenChange, onSuccess }: TicketCreat
                 id: u.id.toString(),
                 name: u.name,
                 email: u.email,
-                role: u.role,
+                role: u.role as import('@/types').UserRole,
                 active: true,
                 notificationPreferences: {},
               }))}
