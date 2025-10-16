@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { UserMultiSelect } from '@/components/ui/user-multi-select';
+import { MultiSelect } from '@/components/ui/multi-select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Send, Paperclip, X, FileText, AlertCircle, Lightbulb } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -57,7 +59,31 @@ export default function CreateTicket() {
     if (saved) {
       try {
         const config: FormConfiguration = JSON.parse(saved);
-        setCustomFields(config.fields || []);
+        const fields = config.fields || [];
+        setCustomFields(fields);
+
+        // Initialize custom field values with default values
+        const initialValues: Record<string, any> = {};
+        fields.forEach(field => {
+          if (field.defaultValue !== undefined && field.defaultValue !== null && field.defaultValue !== '') {
+            // For multiselect, ensure default value is an array
+            if (field.type === 'multiselect') {
+              initialValues[field.id] = Array.isArray(field.defaultValue) ? field.defaultValue : [];
+            } else {
+              initialValues[field.id] = field.defaultValue;
+            }
+          } else {
+            // Initialize with appropriate empty values
+            if (field.type === 'multiselect') {
+              initialValues[field.id] = [];
+            } else if (field.type === 'checkbox') {
+              initialValues[field.id] = false;
+            } else {
+              initialValues[field.id] = '';
+            }
+          }
+        });
+        setCustomFieldValues(initialValues);
       } catch (error) {
         console.error('Failed to load form configuration:', error);
       }
@@ -223,6 +249,7 @@ export default function CreateTicket() {
               onChange={(e) => setCustomFieldValues({ ...customFieldValues, [field.id]: e.target.value })}
               required={field.required}
               disabled={showSuccess}
+              maxLength={field.validation?.maxLength}
             />
             {field.helpText && (
               <p className="text-xs text-muted-foreground">{field.helpText}</p>
@@ -251,6 +278,49 @@ export default function CreateTicket() {
           </div>
         );
 
+      case 'number':
+        return (
+          <div key={field.id} className="space-y-2">
+            <Label htmlFor={field.id}>
+              {field.label} {field.required && '*'}
+            </Label>
+            <Input
+              id={field.id}
+              type="number"
+              placeholder={field.placeholder}
+              value={value || ''}
+              onChange={(e) => setCustomFieldValues({ ...customFieldValues, [field.id]: e.target.value })}
+              required={field.required}
+              disabled={showSuccess}
+              min={field.validation?.min}
+              max={field.validation?.max}
+            />
+            {field.helpText && (
+              <p className="text-xs text-muted-foreground">{field.helpText}</p>
+            )}
+          </div>
+        );
+
+      case 'date':
+        return (
+          <div key={field.id} className="space-y-2">
+            <Label htmlFor={field.id}>
+              {field.label} {field.required && '*'}
+            </Label>
+            <Input
+              id={field.id}
+              type="date"
+              value={value || ''}
+              onChange={(e) => setCustomFieldValues({ ...customFieldValues, [field.id]: e.target.value })}
+              required={field.required}
+              disabled={showSuccess}
+            />
+            {field.helpText && (
+              <p className="text-xs text-muted-foreground">{field.helpText}</p>
+            )}
+          </div>
+        );
+
       case 'dropdown':
         return (
           <div key={field.id} className="space-y-2">
@@ -271,6 +341,68 @@ export default function CreateTicket() {
                 </option>
               ))}
             </Select>
+            {field.helpText && (
+              <p className="text-xs text-muted-foreground">{field.helpText}</p>
+            )}
+          </div>
+        );
+
+      case 'multiselect':
+        return (
+          <div key={field.id} className="space-y-2">
+            <Label htmlFor={field.id}>
+              {field.label} {field.required && '*'}
+            </Label>
+            <MultiSelect
+              options={field.options || []}
+              selectedValues={value || []}
+              onChange={(values) => setCustomFieldValues({ ...customFieldValues, [field.id]: values })}
+              placeholder={field.placeholder || 'Select options...'}
+              disabled={showSuccess}
+            />
+            {field.helpText && (
+              <p className="text-xs text-muted-foreground">{field.helpText}</p>
+            )}
+          </div>
+        );
+
+      case 'checkbox':
+        return (
+          <div key={field.id} className="space-y-2">
+            <Checkbox
+              id={field.id}
+              checked={value || false}
+              onChange={(e) => setCustomFieldValues({ ...customFieldValues, [field.id]: e.target.checked })}
+              required={field.required}
+              disabled={showSuccess}
+              label={field.label + (field.required ? ' *' : '')}
+              helperText={field.helpText}
+            />
+          </div>
+        );
+
+      case 'file':
+        return (
+          <div key={field.id} className="space-y-2">
+            <Label htmlFor={field.id}>
+              {field.label} {field.required && '*'}
+            </Label>
+            <Input
+              id={field.id}
+              type="file"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                setCustomFieldValues({ ...customFieldValues, [field.id]: file });
+              }}
+              required={field.required}
+              disabled={showSuccess}
+              className="cursor-pointer"
+            />
+            {value && (
+              <div className="text-sm text-muted-foreground">
+                Selected: {value.name}
+              </div>
+            )}
             {field.helpText && (
               <p className="text-xs text-muted-foreground">{field.helpText}</p>
             )}
