@@ -67,7 +67,9 @@ export function UserCreateModal({ open, onOpenChange, onSuccess }: UserCreateMod
     return true;
   };
 
-  const handleNext = () => {
+  const handleNext = (e?: React.MouseEvent<HTMLButtonElement>) => {
+    e?.preventDefault();
+    e?.stopPropagation();
     if (validateBasicInfo()) {
       setCurrentStep(2);
     }
@@ -184,12 +186,6 @@ export function UserCreateModal({ open, onOpenChange, onSuccess }: UserCreateMod
 
         <form
           onSubmit={handleSubmit}
-          onKeyDown={(e) => {
-            // Prevent Enter key from submitting the form on step 1
-            if (e.key === 'Enter' && currentStep === 1) {
-              e.preventDefault();
-            }
-          }}
           className="space-y-4"
         >
           {/* STEP 1: Basic Information */}
@@ -203,7 +199,6 @@ export function UserCreateModal({ open, onOpenChange, onSuccess }: UserCreateMod
                     placeholder="John Doe"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
                     disabled={isLoading}
                   />
                 </div>
@@ -216,7 +211,6 @@ export function UserCreateModal({ open, onOpenChange, onSuccess }: UserCreateMod
                     placeholder="john.doe@company.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    required
                     disabled={isLoading}
                   />
                 </div>
@@ -231,7 +225,6 @@ export function UserCreateModal({ open, onOpenChange, onSuccess }: UserCreateMod
                     placeholder="Minimum 6 characters"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    required
                     disabled={isLoading}
                     className="pr-10"
                   />
