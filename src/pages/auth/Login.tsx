@@ -21,6 +21,15 @@ export default function Login() {
 
     try {
       await login(email, password);
+      // Check if password change is required
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        const userData = JSON.parse(storedUser);
+        if (userData.requirePasswordChange) {
+          navigate('/auth/change-password');
+          return;
+        }
+      }
       // Redirect based on email (demo logic)
       if (email.includes('agent') || email.includes('admin')) {
         navigate('/agent/dashboard');

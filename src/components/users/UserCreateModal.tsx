@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { SelectRoot as Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Eye, EyeOff, ChevronRight, ChevronLeft } from 'lucide-react';
 import { isValidEmail } from '@/lib/utils';
@@ -27,6 +28,7 @@ export function UserCreateModal({ open, onOpenChange, onSuccess }: UserCreateMod
     email: '',
     password: '',
     role: 'user',
+    require_password_change: false,
     // Additional Info (Step 2 - Optional)
     department: '',
     team: '',
@@ -98,6 +100,7 @@ export function UserCreateModal({ open, onOpenChange, onSuccess }: UserCreateMod
         email: formData.email,
         password: formData.password,
         role: formData.role,
+        require_password_change: formData.require_password_change,
         // Additional info (optional)
         department: formData.department || null,
         team: formData.team || null,
@@ -125,6 +128,7 @@ export function UserCreateModal({ open, onOpenChange, onSuccess }: UserCreateMod
           email: '',
           password: '',
           role: 'user',
+          require_password_change: false,
           department: '',
           team: '',
           phone: '',
@@ -269,6 +273,28 @@ export function UserCreateModal({ open, onOpenChange, onSuccess }: UserCreateMod
                 <p className="text-xs text-muted-foreground">
                   User: Submit tickets only • Agent: Work on tickets • Manager: Assign & close tickets • Admin: Full access
                 </p>
+              </div>
+
+              <div className="flex items-start space-x-3 space-y-0 rounded-md border p-4">
+                <Checkbox
+                  id="require_password_change"
+                  checked={formData.require_password_change}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, require_password_change: checked as boolean })
+                  }
+                  disabled={isLoading}
+                />
+                <div className="space-y-1 leading-none">
+                  <Label
+                    htmlFor="require_password_change"
+                    className="text-sm font-medium cursor-pointer"
+                  >
+                    Require password change on first login
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    User will be prompted to change their password after their first successful login
+                  </p>
+                </div>
               </div>
             </>
           )}

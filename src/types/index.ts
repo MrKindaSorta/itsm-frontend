@@ -34,6 +34,7 @@ export interface User {
   deleted_at?: string | null;
   permanently_deleted?: number;
   isDeleted?: boolean;
+  requirePasswordChange?: boolean;
 }
 
 // Notification settings

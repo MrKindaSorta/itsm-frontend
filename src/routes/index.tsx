@@ -10,6 +10,7 @@ const AgentLayout = lazy(() => import('@/components/layout/AgentLayout'));
 const Login = lazy(() => import('@/pages/auth/Login'));
 const SignUp = lazy(() => import('@/pages/auth/SignUp'));
 const ForgotPassword = lazy(() => import('@/pages/auth/ForgotPassword'));
+const ChangePasswordFirstLogin = lazy(() => import('@/pages/auth/ChangePasswordFirstLogin'));
 
 // Portal pages
 const PortalCreateTicket = lazy(() => import('@/pages/portal/CreateTicket'));
@@ -72,6 +73,14 @@ export const router = createBrowserRouter([
         element: (
           <Lazy>
             <ForgotPassword />
+          </Lazy>
+        ),
+      },
+      {
+        path: 'change-password',
+        element: (
+          <Lazy>
+            <ChangePasswordFirstLogin />
           </Lazy>
         ),
       },
