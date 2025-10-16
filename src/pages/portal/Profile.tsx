@@ -9,18 +9,22 @@ import { Bell, Mail, User as UserIcon, Lock, Check, Building2, Shield, Phone, Ma
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { getInitials } from '@/lib/utils';
 
+const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
+
 export default function Profile() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [showSuccess, setShowSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Personal info state
   const [name, setName] = useState(user?.name || '');
   const [department, setDepartment] = useState(user?.department || '');
-  const [phone, setPhone] = useState('(555) 234-5678');
-  const [mobilePhone, setMobilePhone] = useState('(555) 987-6543');
-  const [location, setLocation] = useState('New York, NY - Building 5, Floor 3');
-  const [jobTitle, setJobTitle] = useState('Senior Software Engineer');
-  const [manager, setManager] = useState('Sarah Johnson');
+  const [phone, setPhone] = useState(user?.phone || '');
+  const [mobilePhone, setMobilePhone] = useState(user?.mobile_phone || '');
+  const [location, setLocation] = useState(user?.location || '');
+  const [jobTitle, setJobTitle] = useState(user?.job_title || '');
+  const [manager, setManager] = useState(user?.manager || '');
 
   // Mock data - in production these would come from API
   const departmentOptions = [
@@ -49,47 +53,147 @@ export default function Profile() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  const handleSavePersonalInfo = (e: React.FormEvent) => {
+  const handleSavePersonalInfo = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Saving personal info:', {
-      name,
-      department,
-      phone,
-      mobilePhone,
-      location,
-      jobTitle,
-      manager
-    });
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
+    if (!user) return;
+
+    setIsLoading(true);
+    setErrorMessage(null);
+
+    try {
+      const response = await fetch(`${API_BASE}/api/users/${user.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          department: department || null,
+          phone: phone || null,
+          mobile_phone: mobilePhone || null,
+          location: location || null,
+          job_title: jobTitle || null,
+          manager: manager || null,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        setErrorMessage(data.error || 'Failed to update profile');
+        return;
+      }
+
+      // Update the user in AuthContext
+      const updatedUser = {
+        ...user,
+        name,
+        department: department || undefined,
+        phone: phone || undefined,
+        mobile_phone: mobilePhone || undefined,
+        location: location || undefined,
+        job_title: jobTitle || undefined,
+        manager: manager || undefined,
+      };
+      updateUser(updatedUser);
+
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    } catch (error) {
+      console.error('Save personal info error:', error);
+      setErrorMessage('Failed to connect to server');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleSaveNotifications = (e: React.FormEvent) => {
+  const handleSaveNotifications = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Saving notification preferences:', {
-      emailEnabled,
-      emailFrequency,
-      notifyTicketUpdate,
-      notifyTicketAssigned,
-      notifyCommentAdded,
-      notifyTicketResolved,
-    });
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
+    if (!user) return;
+
+    setIsLoading(true);
+    setErrorMessage(null);
+
+    try {
+      const notificationPreferences = {
+        emailEnabled,
+        emailFrequency,
+        newTicketAssigned: notifyTicketAssigned,
+        ticketUpdated: notifyTicketUpdate,
+        ticketResolved: notifyTicketResolved,
+        mentions: notifyCommentAdded,
+      };
+
+      const response = await fetch(`${API_BASE}/api/users/${user.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notificationPreferences }),
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        setErrorMessage(data.error || 'Failed to update notifications');
+        return;
+      }
+
+      // Update the user in AuthContext
+      const updatedUser = {
+        ...user,
+        notificationPreferences,
+      };
+      updateUser(updatedUser);
+
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    } catch (error) {
+      console.error('Save notifications error:', error);
+      setErrorMessage('Failed to connect to server');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleChangePassword = (e: React.FormEvent) => {
+  const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
+
     if (newPassword !== confirmPassword) {
-      alert('Passwords do not match');
+      setErrorMessage('Passwords do not match');
       return;
     }
-    console.log('Changing password');
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
+
+    if (newPassword.length < 6) {
+      setErrorMessage('Password must be at least 6 characters');
+      return;
+    }
+
+    setIsLoading(true);
+    setErrorMessage(null);
+
+    try {
+      const response = await fetch(`${API_BASE}/api/users/${user.id}/password`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: newPassword }),
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        setErrorMessage(data.error || 'Failed to update password');
+        return;
+      }
+
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    } catch (error) {
+      console.error('Change password error:', error);
+      setErrorMessage('Failed to connect to server');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -178,6 +282,14 @@ export default function Profile() {
           <Check className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800 dark:text-green-200">
             Changes saved successfully!
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {errorMessage && (
+        <Alert className="border-red-500 bg-red-50 dark:bg-red-950">
+          <AlertDescription className="text-red-800 dark:text-red-200">
+            {errorMessage}
           </AlertDescription>
         </Alert>
       )}
@@ -305,7 +417,9 @@ export default function Profile() {
                 </div>
 
                 <div className="flex justify-end pt-2">
-                  <Button type="submit" size="sm">Save Changes</Button>
+                  <Button type="submit" size="sm" disabled={isLoading}>
+                    {isLoading ? 'Saving...' : 'Save Changes'}
+                  </Button>
                 </div>
               </form>
             </CardContent>
@@ -342,7 +456,7 @@ export default function Profile() {
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       required
-                      minLength={8}
+                      minLength={6}
                       className="h-9"
                     />
                   </div>
@@ -361,11 +475,13 @@ export default function Profile() {
                 </div>
 
                 <p className="text-xs text-muted-foreground">
-                  Password must be at least 8 characters long
+                  Password must be at least 6 characters long
                 </p>
 
                 <div className="flex justify-end pt-2">
-                  <Button type="submit" size="sm">Update Password</Button>
+                  <Button type="submit" size="sm" disabled={isLoading}>
+                    {isLoading ? 'Updating...' : 'Update Password'}
+                  </Button>
                 </div>
               </form>
             </CardContent>
@@ -479,7 +595,9 @@ export default function Profile() {
                 )}
 
                 <div className="flex justify-end pt-2">
-                  <Button type="submit" size="sm">Save Preferences</Button>
+                  <Button type="submit" size="sm" disabled={isLoading}>
+                    {isLoading ? 'Saving...' : 'Save Preferences'}
+                  </Button>
                 </div>
               </form>
             </CardContent>
