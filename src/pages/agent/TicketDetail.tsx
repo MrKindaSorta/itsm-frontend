@@ -11,6 +11,7 @@ import { StatusBadge } from '@/components/tickets/StatusBadge';
 import { PriorityBadge } from '@/components/tickets/PriorityBadge';
 import { SLAIndicator } from '@/components/tickets/SLAIndicator';
 import { ActivityFeed } from '@/components/tickets/ActivityFeed';
+import { UserMultiSelect } from '@/components/ui/user-multi-select';
 import { formatDate, getInitials } from '@/lib/utils';
 import type { Ticket, Activity, User } from '@/types';
 import {
@@ -20,6 +21,7 @@ import {
   Paperclip,
   HelpCircle,
   Loader2,
+  Users as UsersIcon,
 } from 'lucide-react';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
@@ -41,6 +43,8 @@ export default function TicketDetail() {
   const [replyingToActivity, setReplyingToActivity] = useState<Activity | null>(null);
 
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditingCC, setIsEditingCC] = useState(false);
+  const [tempCCUserIds, setTempCCUserIds] = useState<string[]>([]);
 
   // Fetch ticket, activities, and users
   useEffect(() => {
@@ -281,6 +285,53 @@ export default function TicketDetail() {
     }
   };
 
+  // Handler for updating CC users
+  const handleUpdateCCUsers = async () => {
+    if (!ticket) return;
+
+    setIsSaving(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/tickets/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          cc_user_ids: tempCCUserIds.map(id => Number(id)),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update ticket state with new CC users
+        setTicket({
+          ...ticket,
+          ccUsers: data.ticket.ccUsers || [],
+          updatedAt: new Date(data.ticket.updatedAt),
+        });
+        setIsEditingCC(false);
+      } else {
+        alert('Failed to update CC users: ' + (data.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error updating CC users:', error);
+      alert('Failed to connect to server');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleStartEditCC = () => {
+    setIsEditingCC(true);
+    setTempCCUserIds(ticket?.ccUsers.map(u => u.id) || []);
+  };
+
+  const handleCancelEditCC = () => {
+    setIsEditingCC(false);
+    setTempCCUserIds([]);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -448,6 +499,83 @@ export default function TicketDetail() {
                     <p className="text-xs text-muted-foreground truncate mt-0.5">{ticket.requester.email}</p>
                   </div>
                 </div>
+              </div>
+
+              {/* CC Users */}
+              <div className="pb-3 border-b">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">CC Users</h3>
+                  {!isEditingCC && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 text-xs px-2"
+                      onClick={handleStartEditCC}
+                      disabled={isSaving}
+                    >
+                      Edit
+                    </Button>
+                  )}
+                </div>
+
+                {isEditingCC ? (
+                  <div className="space-y-2">
+                    <UserMultiSelect
+                      users={users}
+                      selectedUserIds={tempCCUserIds}
+                      onChange={setTempCCUserIds}
+                      placeholder="Select users to CC"
+                      disabled={isSaving}
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        className="h-7 text-xs flex-1"
+                        onClick={handleUpdateCCUsers}
+                        disabled={isSaving}
+                      >
+                        {isSaving ? (
+                          <>
+                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          'Save'
+                        )}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs flex-1"
+                        onClick={handleCancelEditCC}
+                        disabled={isSaving}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {ticket.ccUsers && ticket.ccUsers.length > 0 ? (
+                      ticket.ccUsers.map((ccUser) => (
+                        <div key={ccUser.id} className="flex items-center gap-2.5">
+                          <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center text-muted-foreground text-xs font-medium flex-shrink-0">
+                            {getInitials(ccUser.name)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium truncate">{ccUser.name}</p>
+                            <p className="text-xs text-muted-foreground truncate">{ccUser.email}</p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground py-1">
+                        <UsersIcon className="h-4 w-4" />
+                        <span>No CC users</span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Quick Actions */}

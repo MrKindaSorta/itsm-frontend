@@ -11,7 +11,7 @@ import { ActivityFeed } from '@/components/tickets/ActivityFeed';
 import { mockTickets } from '@/data/mockTickets';
 import { mockActivities } from '@/data/mockActivities';
 import { formatDate, getInitials } from '@/lib/utils';
-import { ArrowLeft, Send, Tag } from 'lucide-react';
+import { ArrowLeft, Send, Tag, Users } from 'lucide-react';
 
 export default function TicketDetail() {
   const { id } = useParams();
@@ -175,6 +175,26 @@ export default function TicketDetail() {
                         <p className="text-xs text-muted-foreground">{ticket.assignee.team}</p>
                       )}
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* CC Users */}
+              {ticket.ccUsers && ticket.ccUsers.length > 0 && (
+                <div>
+                  <p className="text-muted-foreground mb-2">CC'd Users</p>
+                  <div className="space-y-2">
+                    {ticket.ccUsers.map((ccUser) => (
+                      <div key={ccUser.id} className="flex items-center gap-2">
+                        <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center text-muted-foreground text-xs font-medium">
+                          {getInitials(ccUser.name)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{ccUser.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{ccUser.email}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}

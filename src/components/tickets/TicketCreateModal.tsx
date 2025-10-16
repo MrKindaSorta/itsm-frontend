@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { SelectRoot as Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { UserMultiSelect } from '@/components/ui/user-multi-select';
 import { Loader2 } from 'lucide-react';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
@@ -37,6 +38,7 @@ export function TicketCreateModal({ open, onOpenChange, onSuccess }: TicketCreat
     requester_id: user?.id || '',
     assignee_id: '',
     department: user?.department || '',
+    cc_user_ids: [] as string[],
   });
 
   const priorities = ['low', 'medium', 'high', 'urgent'];
@@ -95,6 +97,7 @@ export function TicketCreateModal({ open, onOpenChange, onSuccess }: TicketCreat
         requester_id: Number(formData.requester_id || user?.id),
         assignee_id: formData.assignee_id ? Number(formData.assignee_id) : null,
         department: formData.department || null,
+        cc_user_ids: formData.cc_user_ids.map(id => Number(id)),
         tags: [],
         customFields: {},
       };
@@ -119,6 +122,7 @@ export function TicketCreateModal({ open, onOpenChange, onSuccess }: TicketCreat
           requester_id: user?.id || '',
           assignee_id: '',
           department: user?.department || '',
+          cc_user_ids: [],
         });
         onOpenChange(false);
         onSuccess();
@@ -269,6 +273,27 @@ export function TicketCreateModal({ open, onOpenChange, onSuccess }: TicketCreat
               onChange={(e) => setFormData({ ...formData, department: e.target.value })}
               disabled={isLoading}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="cc_users">CC Users (Optional)</Label>
+            <UserMultiSelect
+              users={users.map(u => ({
+                id: u.id.toString(),
+                name: u.name,
+                email: u.email,
+                role: u.role,
+                active: true,
+                notificationPreferences: {},
+              }))}
+              selectedUserIds={formData.cc_user_ids}
+              onChange={(userIds) => setFormData({ ...formData, cc_user_ids: userIds })}
+              placeholder="Select users to CC on this ticket"
+              disabled={isLoading}
+            />
+            <p className="text-xs text-muted-foreground">
+              CC'd users can view and receive notifications about this ticket
+            </p>
           </div>
 
           {error && (

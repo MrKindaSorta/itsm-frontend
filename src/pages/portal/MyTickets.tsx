@@ -17,12 +17,19 @@ export default function MyTickets() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  // Filter tickets for current user
+  // Filter tickets for current user (tickets they created)
   const userTickets = useMemo(() => {
     return mockTickets.filter(ticket => ticket.requester.email === user?.email);
   }, [user]);
 
-  // Apply search and filters
+  // Filter CC'd tickets (tickets where user is CC'd)
+  const ccTickets = useMemo(() => {
+    return mockTickets.filter(ticket =>
+      ticket.ccUsers.some(ccUser => ccUser.email === user?.email)
+    );
+  }, [user]);
+
+  // Apply search and filters to user tickets
   const filteredTickets = useMemo(() => {
     return userTickets.filter(ticket => {
       const matchesSearch =
@@ -35,6 +42,20 @@ export default function MyTickets() {
       return matchesSearch && matchesStatus;
     });
   }, [userTickets, searchQuery, statusFilter]);
+
+  // Apply search and filters to CC tickets
+  const filteredCCTickets = useMemo(() => {
+    return ccTickets.filter(ticket => {
+      const matchesSearch =
+        ticket.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        ticket.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        ticket.description.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesStatus = statusFilter === 'all' || ticket.status === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [ccTickets, searchQuery, statusFilter]);
 
   const getStatusCount = (status: string) => {
     if (status === 'all') return userTickets.length;
@@ -189,6 +210,69 @@ export default function MyTickets() {
           )}
         </CardContent>
       </Card>
+
+      {/* CC'd Tickets Section */}
+      {filteredCCTickets.length > 0 && (
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <CardTitle className="flex items-center gap-2">
+                <Badge variant="secondary" className="h-5">CC</Badge>
+                CC'd Tickets ({filteredCCTickets.length})
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Tickets where you've been CC'd
+              </p>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {filteredCCTickets.map((ticket) => (
+                <Link
+                  key={ticket.id}
+                  to={`/portal/tickets/${ticket.id}`}
+                  className="block"
+                >
+                  <div className="p-4 border rounded-lg hover:bg-accent transition-colors">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-mono text-sm font-medium">{ticket.id}</span>
+                          <StatusBadge status={ticket.status} />
+                          <PriorityBadge priority={ticket.priority} />
+                          <Badge variant="outline" className="text-xs bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+                            CC'd
+                          </Badge>
+                        </div>
+                        <h4 className="font-medium mb-1 truncate">{ticket.title}</h4>
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {ticket.description}
+                        </p>
+                        <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            Created {formatDate(ticket.createdAt)}
+                          </div>
+                          <div>Requested by {ticket.requester.name}</div>
+                          {ticket.assignee && (
+                            <div>Assigned to {ticket.assignee.name}</div>
+                          )}
+                          <Badge variant="outline" className="text-xs">
+                            {ticket.category}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="flex-shrink-0">
+                        <SLAIndicator sla={ticket.sla} />
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
