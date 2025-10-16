@@ -31,6 +31,11 @@ export function UserEditModal({ open, onOpenChange, onSuccess, user }: UserEditM
     department: '',
     team: '',
     active: true,
+    phone: '',
+    mobile_phone: '',
+    location: '',
+    job_title: '',
+    manager: '',
   });
 
   const roles = [
@@ -50,6 +55,11 @@ export function UserEditModal({ open, onOpenChange, onSuccess, user }: UserEditM
         department: user.department || '',
         team: user.team || '',
         active: user.active,
+        phone: user.phone || '',
+        mobile_phone: user.mobile_phone || '',
+        location: user.location || '',
+        job_title: user.job_title || '',
+        manager: user.manager || '',
       });
       setShowPasswordSection(false);
       setNewPassword('');
@@ -86,6 +96,11 @@ export function UserEditModal({ open, onOpenChange, onSuccess, user }: UserEditM
         department: formData.department || null,
         team: formData.team || null,
         active: formData.active,
+        phone: formData.phone || null,
+        mobile_phone: formData.mobile_phone || null,
+        location: formData.location || null,
+        job_title: formData.job_title || null,
+        manager: formData.manager || null,
       };
 
       const response = await fetch(`${API_BASE}/api/users/${user.id}`, {
@@ -212,6 +227,67 @@ export function UserEditModal({ open, onOpenChange, onSuccess, user }: UserEditM
                 placeholder="e.g., Support Team, Dev Team"
                 value={formData.team}
                 onChange={(e) => setFormData({ ...formData, team: e.target.value })}
+                disabled={isLoading}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="phone">Work Phone (Optional)</Label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="(555) 123-4567"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="mobile_phone">Mobile Phone (Optional)</Label>
+              <Input
+                id="mobile_phone"
+                type="tel"
+                placeholder="(555) 987-6543"
+                value={formData.mobile_phone}
+                onChange={(e) => setFormData({ ...formData, mobile_phone: e.target.value })}
+                disabled={isLoading}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="location">Office Location (Optional)</Label>
+            <Input
+              id="location"
+              placeholder="e.g., New York, NY - Building 5, Floor 3"
+              value={formData.location}
+              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+              disabled={isLoading}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="job_title">Job Title (Optional)</Label>
+              <Input
+                id="job_title"
+                placeholder="e.g., Senior Developer"
+                value={formData.job_title}
+                onChange={(e) => setFormData({ ...formData, job_title: e.target.value })}
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="manager">Manager (Optional)</Label>
+              <Input
+                id="manager"
+                placeholder="e.g., Jane Smith"
+                value={formData.manager}
+                onChange={(e) => setFormData({ ...formData, manager: e.target.value })}
                 disabled={isLoading}
               />
             </div>

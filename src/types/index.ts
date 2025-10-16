@@ -26,6 +26,11 @@ export interface User {
   notificationPreferences: NotificationSettings;
   createdAt?: Date;
   lastLogin?: Date;
+  phone?: string;
+  mobile_phone?: string;
+  location?: string;
+  job_title?: string;
+  manager?: string;
 }
 
 // Notification settings

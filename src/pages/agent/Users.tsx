@@ -44,6 +44,11 @@ export default function Users() {
           notificationPreferences: {},
           createdAt: user.created_at ? new Date(user.created_at) : undefined,
           lastLogin: user.last_login ? new Date(user.last_login) : undefined,
+          phone: user.phone,
+          mobile_phone: user.mobile_phone,
+          location: user.location,
+          job_title: user.job_title,
+          manager: user.manager,
         }));
         setUsers(transformedUsers);
       } else {
