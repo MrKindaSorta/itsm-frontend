@@ -40,6 +40,8 @@ interface FormFieldRendererProps {
   onDelete: () => void;
   onDragStart: (e: React.DragEvent) => void;
   onDragOver: (e: React.DragEvent) => void;
+  onDragLeave: () => void;
+  onDragEnd: () => void;
   onDrop: (e: React.DragEvent) => void;
 }
 
@@ -52,6 +54,8 @@ export default function FormFieldRenderer({
   onDelete,
   onDragStart,
   onDragOver,
+  onDragLeave,
+  onDragEnd,
   onDrop,
 }: FormFieldRendererProps) {
   const Icon = fieldIcons[field.type];
@@ -61,6 +65,8 @@ export default function FormFieldRenderer({
       draggable
       onDragStart={onDragStart}
       onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDragEnd={onDragEnd}
       onDrop={onDrop}
       onClick={onSelect}
       className={cn(

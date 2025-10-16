@@ -55,6 +55,7 @@ export function shouldInitializeDefaults(fields: FormField[]): boolean {
 /**
  * Merge existing custom fields with default system fields
  * Preserves custom fields while ensuring system fields are present
+ * IMPORTANT: Preserves the order property from existing fields
  */
 export function mergeWithDefaults(existingFields: FormField[]): FormField[] {
   const defaults = getDefaultFormFields();
@@ -68,16 +69,51 @@ export function mergeWithDefaults(existingFields: FormField[]): FormField[] {
     'system-attachments',   // deprecated
   ]);
 
+  // Build a map of existing field IDs to their order values
+  const existingFieldMap = new Map(
+    existingFields.map(f => [f.id, f])
+  );
+
   // Get existing fields that aren't any system fields (including deprecated ones)
   // This removes old system fields if they exist
   const customFields = existingFields.filter(f => !allSystemFieldIds.has(f.id));
 
-  // Combine current system fields + custom fields, re-order
-  const allFields = [...defaults, ...customFields];
+  // Process default system fields - preserve order if they exist, otherwise assign new order
+  const mergedSystemFields = defaults.map(defaultField => {
+    const existing = existingFieldMap.get(defaultField.id);
+    if (existing) {
+      // Preserve existing field's order and merge with default config
+      return {
+        ...defaultField,
+        ...existing,
+        isSystemField: true,
+        deletable: false,
+      };
+    }
+    // New system field - will be assigned order later
+    return defaultField;
+  });
 
-  // Re-number the order
-  return allFields.map((field, index) => ({
+  // Combine system fields + custom fields
+  const allFields = [...mergedSystemFields, ...customFields];
+
+  // Sort by existing order values, putting fields without order at the end
+  const fieldsWithOrder = allFields.filter(f => typeof f.order === 'number');
+  const fieldsWithoutOrder = allFields.filter(f => typeof f.order !== 'number');
+
+  // Sort fields that have order
+  fieldsWithOrder.sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  // Assign order to fields without order
+  const maxOrder = fieldsWithOrder.length > 0
+    ? Math.max(...fieldsWithOrder.map(f => f.order || 0))
+    : -1;
+
+  const assignedFields = fieldsWithoutOrder.map((field, index) => ({
     ...field,
-    order: index,
+    order: maxOrder + index + 1,
   }));
+
+  // Return sorted by order
+  return [...fieldsWithOrder, ...assignedFields].sort((a, b) => (a.order || 0) - (b.order || 0));
 }

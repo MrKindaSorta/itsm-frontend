@@ -41,6 +41,11 @@ export default function FormCanvas({
     setDragOverIndex(null);
   };
 
+  const handleDragEnd = () => {
+    setDraggingFieldId(null);
+    setDragOverIndex(null);
+  };
+
   const handleDrop = (e: React.DragEvent, dropIndex: number) => {
     e.preventDefault();
     setDragOverIndex(null);
@@ -142,6 +147,8 @@ export default function FormCanvas({
                   onDelete={() => handleDeleteField(field.id)}
                   onDragStart={(e) => handleDragStart(e, field, index)}
                   onDragOver={(e) => handleDragOver(e, index)}
+                  onDragLeave={handleDragLeave}
+                  onDragEnd={handleDragEnd}
                   onDrop={(e) => handleDrop(e, index)}
                 />
                 {dragOverIndex === index + 1 && (
