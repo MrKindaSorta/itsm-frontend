@@ -60,17 +60,27 @@ export default function FormFieldRenderer({
 }: FormFieldRendererProps) {
   const Icon = fieldIcons[field.type];
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.stopPropagation();
+    onDragOver(e);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.stopPropagation();
+    onDrop(e);
+  };
+
   return (
     <div
       draggable
       onDragStart={onDragStart}
-      onDragOver={onDragOver}
+      onDragOver={handleDragOver}
       onDragLeave={onDragLeave}
       onDragEnd={onDragEnd}
-      onDrop={onDrop}
+      onDrop={handleDrop}
       onClick={onSelect}
       className={cn(
-        'group relative p-4 rounded-lg border bg-card transition-all cursor-pointer',
+        'group relative p-4 rounded-lg border bg-card transition-all cursor-move',
         isSelected && 'border-primary ring-2 ring-primary/20',
         !isSelected && 'border-border hover:border-primary/50',
         isDragging && 'opacity-50'
@@ -81,7 +91,7 @@ export default function FormFieldRenderer({
         <GripVertical className="h-4 w-4 text-muted-foreground" />
       </div>
 
-      <div className="flex items-start gap-3 pl-4">
+      <div className="flex items-start gap-3 pl-4 pointer-events-none">
         {/* Icon */}
         <div className="mt-0.5 p-2 rounded-md bg-primary/10 text-primary">
           <Icon className="h-4 w-4" />
@@ -124,7 +134,7 @@ export default function FormFieldRenderer({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto">
           <Button
             variant="ghost"
             size="icon"
