@@ -38,19 +38,11 @@ const knowledgeBaseArticles = [
 export default function CreateTicket() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // Form configuration and custom fields
-  const [customFields, setCustomFields] = useState<FormField[]>([]);
-  const [customFieldValues, setCustomFieldValues] = useState<Record<string, any>>({});
-
-  // System fields extracted from configuration (only Title and Description)
-  const [systemFields, setSystemFields] = useState<{
-    title?: FormField;
-    description?: FormField;
-  }>({});
+  // All form fields (system + custom) in order
+  const [allFields, setAllFields] = useState<FormField[]>([]);
+  const [fieldValues, setFieldValues] = useState<Record<string, any>>({});
 
   // Users for CC field
   const [users, setUsers] = useState<User[]>([]);
@@ -88,27 +80,13 @@ export default function CreateTicket() {
         }
       }
 
-      // Separate system fields from custom fields (only Title and Description are system fields)
-      const systemFieldsMap: typeof systemFields = {};
-      const customFieldsList: FormField[] = [];
+      // Sort all fields by order property
+      const sortedFields = fields.sort((a, b) => (a.order || 0) - (b.order || 0));
+      setAllFields(sortedFields);
 
-      fields.forEach(field => {
-        if (field.id === 'system-title') {
-          systemFieldsMap.title = field;
-        } else if (field.id === 'system-description') {
-          systemFieldsMap.description = field;
-        } else {
-          // Everything else is a custom field (including category, priority, attachments if added)
-          customFieldsList.push(field);
-        }
-      });
-
-      setSystemFields(systemFieldsMap);
-      setCustomFields(customFieldsList);
-
-      // Initialize custom field values with default values
+      // Initialize field values with default values
       const initialValues: Record<string, any> = {};
-      customFieldsList.forEach(field => {
+      sortedFields.forEach(field => {
         if (field.defaultValue !== undefined && field.defaultValue !== null && field.defaultValue !== '') {
           // For multiselect, ensure default value is an array
           if (field.type === 'multiselect') {
@@ -127,7 +105,7 @@ export default function CreateTicket() {
           }
         }
       });
-      setCustomFieldValues(initialValues);
+      setFieldValues(initialValues);
     };
 
     loadFormConfig();
@@ -135,11 +113,11 @@ export default function CreateTicket() {
 
   // Fetch users if CC field exists in configuration
   useEffect(() => {
-    const hasCCField = customFields.some(field => field.type === 'cc_users');
+    const hasCCField = allFields.some(field => field.type === 'cc_users');
     if (hasCCField) {
       fetchUsers();
     }
-  }, [customFields]);
+  }, [allFields]);
 
   const fetchUsers = async () => {
     try {
@@ -167,12 +145,14 @@ export default function CreateTicket() {
     if (!user) return;
 
     try {
-      // Extract category and priority from custom fields if they exist
+      // Extract title, description, category, and priority from field values
+      const title = fieldValues['system-title'] || '';
+      const description = fieldValues['system-description'] || '';
       let extractedCategory = '';
       let extractedPriority = 'medium'; // default
 
-      customFields.forEach(field => {
-        const value = customFieldValues[field.id];
+      allFields.forEach(field => {
+        const value = fieldValues[field.id];
 
         // Look for category field (by label or type)
         if (field.label?.toLowerCase() === 'category' || field.id.includes('category')) {
@@ -195,7 +175,7 @@ export default function CreateTicket() {
         department: user.department || null,
         cc_user_ids: ccUserIds.map(id => Number(id)),
         tags: [],
-        customFields: customFieldValues,
+        customFields: fieldValues,
       };
 
       const response = await fetch(`${API_BASE}/api/tickets`, {
@@ -227,22 +207,23 @@ export default function CreateTicket() {
 
   // Smart KB article suggestions based on title input
   const kbSuggestions = useMemo(() => {
+    const title = fieldValues['system-title'] || '';
     if (title.length < 3) return [];
 
-    const searchTerms = title.toLowerCase().split(' ').filter(term => term.length > 2);
+    const searchTerms = title.toLowerCase().split(' ').filter((term: string) => term.length > 2);
 
     // Score each article based on keyword matches
     const scoredArticles = knowledgeBaseArticles.map(article => {
       let score = 0;
 
       // Check if title contains search terms
-      searchTerms.forEach(term => {
+      searchTerms.forEach((term: string) => {
         if (article.title.toLowerCase().includes(term)) {
           score += 3; // High weight for title match
         }
 
         // Check if keywords contain search terms
-        article.keywords.forEach(keyword => {
+        article.keywords.forEach((keyword: string) => {
           if (keyword.includes(term)) {
             score += 1; // Lower weight for keyword match
           }
@@ -257,11 +238,11 @@ export default function CreateTicket() {
       .filter(article => article.score > 0)
       .sort((a, b) => b.score - a.score)
       .slice(0, 5); // Show top 5 matches
-  }, [title]);
+  }, [fieldValues]);
 
-  // Render custom field based on type
-  const renderCustomField = (field: FormField) => {
-    const value = customFieldValues[field.id];
+  // Render field based on type
+  const renderField = (field: FormField) => {
+    const value = fieldValues[field.id];
 
     // Special handling for CC users field
     if (field.type === 'cc_users') {
@@ -296,7 +277,7 @@ export default function CreateTicket() {
               id={field.id}
               placeholder={field.placeholder}
               value={value || ''}
-              onChange={(e) => setCustomFieldValues({ ...customFieldValues, [field.id]: e.target.value })}
+              onChange={(e) => setFieldValues({ ...fieldValues, [field.id]: e.target.value })}
               required={field.required}
               disabled={showSuccess}
               maxLength={field.validation?.maxLength}
@@ -317,7 +298,7 @@ export default function CreateTicket() {
               id={field.id}
               placeholder={field.placeholder}
               value={value || ''}
-              onChange={(e) => setCustomFieldValues({ ...customFieldValues, [field.id]: e.target.value })}
+              onChange={(e) => setFieldValues({ ...fieldValues, [field.id]: e.target.value })}
               required={field.required}
               disabled={showSuccess}
               rows={4}
@@ -339,7 +320,7 @@ export default function CreateTicket() {
               type="number"
               placeholder={field.placeholder}
               value={value || ''}
-              onChange={(e) => setCustomFieldValues({ ...customFieldValues, [field.id]: e.target.value })}
+              onChange={(e) => setFieldValues({ ...fieldValues, [field.id]: e.target.value })}
               required={field.required}
               disabled={showSuccess}
               min={field.validation?.min}
@@ -361,7 +342,7 @@ export default function CreateTicket() {
               id={field.id}
               type="date"
               value={value || ''}
-              onChange={(e) => setCustomFieldValues({ ...customFieldValues, [field.id]: e.target.value })}
+              onChange={(e) => setFieldValues({ ...fieldValues, [field.id]: e.target.value })}
               required={field.required}
               disabled={showSuccess}
             />
@@ -380,7 +361,7 @@ export default function CreateTicket() {
             <Select
               id={field.id}
               value={value || ''}
-              onChange={(e) => setCustomFieldValues({ ...customFieldValues, [field.id]: e.target.value })}
+              onChange={(e) => setFieldValues({ ...fieldValues, [field.id]: e.target.value })}
               required={field.required}
               disabled={showSuccess}
             >
@@ -406,7 +387,7 @@ export default function CreateTicket() {
             <MultiSelect
               options={field.options || []}
               selectedValues={value || []}
-              onChange={(values) => setCustomFieldValues({ ...customFieldValues, [field.id]: values })}
+              onChange={(values) => setFieldValues({ ...fieldValues, [field.id]: values })}
               placeholder={field.placeholder || 'Select options...'}
               disabled={showSuccess}
             />
@@ -422,7 +403,7 @@ export default function CreateTicket() {
             <Checkbox
               id={field.id}
               checked={value || false}
-              onChange={(e) => setCustomFieldValues({ ...customFieldValues, [field.id]: e.target.checked })}
+              onChange={(e) => setFieldValues({ ...fieldValues, [field.id]: e.target.checked })}
               required={field.required}
               disabled={showSuccess}
               label={field.label + (field.required ? ' *' : '')}
@@ -442,7 +423,7 @@ export default function CreateTicket() {
               type="file"
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                setCustomFieldValues({ ...customFieldValues, [field.id]: file });
+                setFieldValues({ ...fieldValues, [field.id]: file });
               }}
               required={field.required}
               disabled={showSuccess}
@@ -490,43 +471,8 @@ export default function CreateTicket() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title">
-                    {systemFields.title?.label || 'Title'} {systemFields.title?.required !== false && '*'}
-                  </Label>
-                  <Input
-                    id="title"
-                    placeholder={systemFields.title?.placeholder || 'Brief description of your issue'}
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    required={systemFields.title?.required !== false}
-                  />
-                  {systemFields.title?.helpText && (
-                    <p className="text-xs text-muted-foreground">{systemFields.title.helpText}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">
-                    {systemFields.description?.label || 'Description'} {systemFields.description?.required !== false && '*'}
-                  </Label>
-                  <Textarea
-                    id="description"
-                    placeholder={systemFields.description?.placeholder || 'Provide detailed information about your issue...'}
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    rows={6}
-                    required={systemFields.description?.required !== false}
-                  />
-                  {systemFields.description?.helpText && (
-                    <p className="text-xs text-muted-foreground">{systemFields.description.helpText}</p>
-                  )}
-                </div>
-
-                {/* Custom Fields from Form Builder */}
-                {customFields
-                  .sort((a, b) => a.order - b.order)
-                  .map((field) => renderCustomField(field))}
+                {/* Render all fields in order */}
+                {allFields.map((field) => renderField(field))}
 
                 <Button type="submit" className="w-full sm:w-auto" disabled={showSuccess}>
                   <Send className="h-4 w-4 mr-2" />
