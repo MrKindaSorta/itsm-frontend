@@ -148,7 +148,7 @@ export default function CreateTicket() {
       // Extract title, description, category, and priority from field values
       const title = fieldValues['system-title'] || '';
       const description = fieldValues['system-description'] || '';
-      let extractedCategory = '';
+      let extractedCategory = 'General'; // default category if none found
       let extractedPriority = 'medium'; // default
 
       allFields.forEach(field => {
@@ -156,7 +156,7 @@ export default function CreateTicket() {
 
         // Look for category field (by label or type)
         if (field.label?.toLowerCase() === 'category' || field.id.includes('category')) {
-          extractedCategory = value || '';
+          extractedCategory = value || 'General';
         }
 
         // Look for priority field (by label)
