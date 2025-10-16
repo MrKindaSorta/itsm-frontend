@@ -80,6 +80,12 @@ export function UserCreateModal({ open, onOpenChange, onSuccess }: UserCreateMod
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Only allow submission on step 2
+    if (currentStep !== 2) {
+      return;
+    }
+
     setError(null);
     setIsLoading(true);
 
@@ -176,7 +182,16 @@ export function UserCreateModal({ open, onOpenChange, onSuccess }: UserCreateMod
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form
+          onSubmit={handleSubmit}
+          onKeyDown={(e) => {
+            // Prevent Enter key from submitting the form on step 1
+            if (e.key === 'Enter' && currentStep === 1) {
+              e.preventDefault();
+            }
+          }}
+          className="space-y-4"
+        >
           {/* STEP 1: Basic Information */}
           {currentStep === 1 && (
             <>
