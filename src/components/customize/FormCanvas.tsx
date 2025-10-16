@@ -88,6 +88,13 @@ export default function FormCanvas({
   };
 
   const handleDeleteField = (fieldId: string) => {
+    // Check if the field is deletable
+    const field = fields.find((f) => f.id === fieldId);
+    if (field && field.deletable === false) {
+      // System fields cannot be deleted
+      return;
+    }
+
     const newFields = fields
       .filter((f) => f.id !== fieldId)
       .map((field, idx) => ({ ...field, order: idx }));

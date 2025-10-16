@@ -49,6 +49,15 @@ export default function CreateTicket() {
   const [customFields, setCustomFields] = useState<FormField[]>([]);
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, any>>({});
 
+  // System fields extracted from configuration
+  const [systemFields, setSystemFields] = useState<{
+    title?: FormField;
+    category?: FormField;
+    priority?: FormField;
+    description?: FormField;
+    attachments?: FormField;
+  }>({});
+
   // Users for CC field
   const [users, setUsers] = useState<User[]>([]);
   const [ccUserIds, setCcUserIds] = useState<string[]>([]);
@@ -85,11 +94,37 @@ export default function CreateTicket() {
         }
       }
 
-      setCustomFields(fields);
+      // Separate system fields from custom fields
+      const systemFieldsMap: typeof systemFields = {};
+      const customFieldsList: FormField[] = [];
+
+      fields.forEach(field => {
+        if (field.id === 'system-title') {
+          systemFieldsMap.title = field;
+        } else if (field.id === 'system-category') {
+          systemFieldsMap.category = field;
+        } else if (field.id === 'system-priority') {
+          systemFieldsMap.priority = field;
+          // Set default priority from field config
+          if (field.defaultValue) {
+            setPriority(field.defaultValue);
+          }
+        } else if (field.id === 'system-description') {
+          systemFieldsMap.description = field;
+        } else if (field.id === 'system-attachments') {
+          systemFieldsMap.attachments = field;
+        } else {
+          // This is a custom field
+          customFieldsList.push(field);
+        }
+      });
+
+      setSystemFields(systemFieldsMap);
+      setCustomFields(customFieldsList);
 
       // Initialize custom field values with default values
       const initialValues: Record<string, any> = {};
-      fields.forEach(field => {
+      customFieldsList.forEach(field => {
         if (field.defaultValue !== undefined && field.defaultValue !== null && field.defaultValue !== '') {
           // For multiselect, ensure default value is an array
           if (field.type === 'multiselect') {
@@ -465,66 +500,106 @@ export default function CreateTicket() {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="title">Title *</Label>
+                  <Label htmlFor="title">
+                    {systemFields.title?.label || 'Title'} {systemFields.title?.required !== false && '*'}
+                  </Label>
                   <Input
                     id="title"
-                    placeholder="Brief description of your issue"
+                    placeholder={systemFields.title?.placeholder || 'Brief description of your issue'}
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    required
+                    required={systemFields.title?.required !== false}
                   />
+                  {systemFields.title?.helpText && (
+                    <p className="text-xs text-muted-foreground">{systemFields.title.helpText}</p>
+                  )}
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="category">Category *</Label>
+                    <Label htmlFor="category">
+                      {systemFields.category?.label || 'Category'} {systemFields.category?.required !== false && '*'}
+                    </Label>
                     <Select
                       id="category"
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
-                      required
+                      required={systemFields.category?.required !== false}
                     >
-                      <option value="">Select category</option>
-                      <option value="Hardware">Hardware</option>
-                      <option value="Software">Software</option>
-                      <option value="Network">Network</option>
-                      <option value="Email">Email</option>
-                      <option value="Access">Access & Permissions</option>
-                      <option value="Infrastructure">Infrastructure</option>
-                      <option value="Onboarding">Onboarding</option>
-                      <option value="Other">Other</option>
+                      <option value="">{systemFields.category?.placeholder || 'Select category'}</option>
+                      {systemFields.category?.options?.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      )) || (
+                        <>
+                          <option value="Hardware">Hardware</option>
+                          <option value="Software">Software</option>
+                          <option value="Network">Network</option>
+                          <option value="Email">Email</option>
+                          <option value="Access">Access & Permissions</option>
+                          <option value="Infrastructure">Infrastructure</option>
+                          <option value="Onboarding">Onboarding</option>
+                          <option value="Other">Other</option>
+                        </>
+                      )}
                     </Select>
+                    {systemFields.category?.helpText && (
+                      <p className="text-xs text-muted-foreground">{systemFields.category.helpText}</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="priority">Priority</Label>
+                    <Label htmlFor="priority">
+                      {systemFields.priority?.label || 'Priority'} {systemFields.priority?.required && '*'}
+                    </Label>
                     <Select
                       id="priority"
                       value={priority}
                       onChange={(e) => setPriority(e.target.value)}
+                      required={systemFields.priority?.required}
                     >
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
-                      <option value="urgent">Urgent</option>
+                      <option value="">{systemFields.priority?.placeholder || 'Select priority'}</option>
+                      {systemFields.priority?.options?.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      )) || (
+                        <>
+                          <option value="low">Low</option>
+                          <option value="medium">Medium</option>
+                          <option value="high">High</option>
+                          <option value="urgent">Urgent</option>
+                        </>
+                      )}
                     </Select>
+                    {systemFields.priority?.helpText && (
+                      <p className="text-xs text-muted-foreground">{systemFields.priority.helpText}</p>
+                    )}
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="description">Description *</Label>
+                  <Label htmlFor="description">
+                    {systemFields.description?.label || 'Description'} {systemFields.description?.required !== false && '*'}
+                  </Label>
                   <Textarea
                     id="description"
-                    placeholder="Provide detailed information about your issue..."
+                    placeholder={systemFields.description?.placeholder || 'Provide detailed information about your issue...'}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={6}
-                    required
+                    required={systemFields.description?.required !== false}
                   />
+                  {systemFields.description?.helpText && (
+                    <p className="text-xs text-muted-foreground">{systemFields.description.helpText}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="attachments">Attachments</Label>
+                  <Label htmlFor="attachments">
+                    {systemFields.attachments?.label || 'Attachments'} {systemFields.attachments?.required && '*'}
+                  </Label>
                   <div className="flex items-center gap-2">
                     <Input
                       id="attachments"
@@ -532,6 +607,7 @@ export default function CreateTicket() {
                       multiple
                       onChange={handleFileChange}
                       className="hidden"
+                      required={systemFields.attachments?.required}
                     />
                     <Button
                       type="button"
@@ -541,9 +617,15 @@ export default function CreateTicket() {
                       <Paperclip className="h-4 w-4 mr-2" />
                       Add Files
                     </Button>
-                    <span className="text-xs text-muted-foreground">
-                      Max 10MB per file
-                    </span>
+                    {systemFields.attachments?.helpText ? (
+                      <span className="text-xs text-muted-foreground">
+                        {systemFields.attachments.helpText}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">
+                        Max 10MB per file
+                      </span>
+                    )}
                   </div>
 
                   {attachments.length > 0 && (

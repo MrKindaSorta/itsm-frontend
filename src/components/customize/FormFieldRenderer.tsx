@@ -14,6 +14,7 @@ import {
   GripVertical,
   Trash2,
   Settings,
+  Lock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -84,6 +85,12 @@ export default function FormFieldRenderer({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-medium text-sm">{field.label}</span>
+            {field.isSystemField && (
+              <Badge variant="outline" className="text-xs px-1.5 py-0 border-blue-300 text-blue-700 dark:border-blue-700 dark:text-blue-300">
+                <Lock className="h-3 w-3 mr-1" />
+                System Field
+              </Badge>
+            )}
             {field.required && (
               <Badge variant="destructive" className="text-xs px-1.5 py-0">
                 Required
@@ -124,18 +131,20 @@ export default function FormFieldRenderer({
           >
             <Settings className="h-4 w-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-destructive hover:text-destructive"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-            title="Delete field"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          {field.deletable !== false && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-destructive hover:text-destructive"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              title="Delete field"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
     </div>
