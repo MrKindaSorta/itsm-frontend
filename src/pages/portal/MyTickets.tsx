@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,27 +7,60 @@ import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/tickets/StatusBadge';
 import { PriorityBadge } from '@/components/tickets/PriorityBadge';
 import { SLAIndicator } from '@/components/tickets/SLAIndicator';
-import { mockTickets } from '@/data/mockTickets';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDate } from '@/lib/utils';
-import { Search, Plus, Clock } from 'lucide-react';
+import { Search, Plus, Clock, Loader2 } from 'lucide-react';
+import type { Ticket } from '@/types';
+
+const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
 export default function MyTickets() {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch tickets from API
+  useEffect(() => {
+    const fetchTickets = async () => {
+      if (!user) return;
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const response = await fetch(`${API_BASE}/api/tickets`);
+        const data = await response.json();
+
+        if (data.success) {
+          setTickets(data.tickets || []);
+        } else {
+          setError(data.error || 'Failed to fetch tickets');
+        }
+      } catch (err) {
+        console.error('Failed to fetch tickets:', err);
+        setError('Failed to connect to server');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTickets();
+  }, [user]);
 
   // Filter tickets for current user (tickets they created)
   const userTickets = useMemo(() => {
-    return mockTickets.filter(ticket => ticket.requester.email === user?.email);
-  }, [user]);
+    return tickets.filter(ticket => ticket.requester.id === user?.id);
+  }, [tickets, user]);
 
   // Filter CC'd tickets (tickets where user is CC'd)
   const ccTickets = useMemo(() => {
-    return mockTickets.filter(ticket =>
-      ticket.ccUsers.some(ccUser => ccUser.email === user?.email)
+    return tickets.filter(ticket =>
+      ticket.ccUsers && ticket.ccUsers.some(ccUser => ccUser.id === user?.id)
     );
-  }, [user]);
+  }, [tickets, user]);
 
   // Apply search and filters to user tickets
   const filteredTickets = useMemo(() => {
@@ -150,7 +183,19 @@ export default function MyTickets() {
           </div>
         </CardHeader>
         <CardContent>
-          {filteredTickets.length === 0 ? (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <span className="ml-3 text-muted-foreground">Loading tickets...</span>
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <p className="text-destructive mb-4">{error}</p>
+              <Button onClick={() => window.location.reload()} variant="outline">
+                Retry
+              </Button>
+            </div>
+          ) : filteredTickets.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground">
                 {searchQuery || statusFilter !== 'all'
