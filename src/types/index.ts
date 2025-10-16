@@ -145,6 +145,12 @@ export interface Activity {
     };
     contentPreview: string;
   } | null;
+  isFlagged?: boolean;
+  flaggedBy?: {
+    id: number;
+    name: string;
+  } | null;
+  flaggedAt?: string | null;
 }
 
 // Knowledge Base

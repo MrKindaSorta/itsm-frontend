@@ -7,16 +7,18 @@ import { Button } from '@/components/ui/button';
 interface ActivityFeedProps {
   activities: Activity[];
   onReply?: (activity: Activity) => void;
+  onFlag?: (activity: Activity, flagged: boolean) => void;
 }
 
 interface MessageActionsProps {
   activity: Activity;
   onReply: (activity: Activity) => void;
-  onFlag: (activityId: string) => void;
-  isFlagged: boolean;
+  onFlag: (activity: Activity) => void;
 }
 
-function MessageActions({ activity, onReply, onFlag, isFlagged }: MessageActionsProps) {
+function MessageActions({ activity, onReply, onFlag }: MessageActionsProps) {
+  const isFlagged = activity.isFlagged || false;
+
   return (
     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
       <Button
@@ -33,7 +35,7 @@ function MessageActions({ activity, onReply, onFlag, isFlagged }: MessageActions
         variant="ghost"
         size="sm"
         className={`h-7 px-2 text-xs ${isFlagged ? 'text-red-500 hover:text-red-600' : ''}`}
-        onClick={() => onFlag(activity.id)}
+        onClick={() => onFlag(activity)}
         title={isFlagged ? 'Unflag message' : 'Flag as important'}
       >
         <Flag className={`h-3.5 w-3.5 ${isFlagged ? 'fill-current' : ''}`} />
@@ -42,25 +44,18 @@ function MessageActions({ activity, onReply, onFlag, isFlagged }: MessageActions
   );
 }
 
-export function ActivityFeed({ activities, onReply }: ActivityFeedProps) {
-  const [flaggedMessages, setFlaggedMessages] = useState<Set<string>>(new Set());
-
+export function ActivityFeed({ activities, onReply, onFlag }: ActivityFeedProps) {
   const handleReply = (activity: Activity) => {
     if (onReply) {
       onReply(activity);
     }
   };
 
-  const handleFlag = (activityId: string) => {
-    setFlaggedMessages((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(activityId)) {
-        newSet.delete(activityId);
-      } else {
-        newSet.add(activityId);
-      }
-      return newSet;
-    });
+  const handleFlag = (activity: Activity) => {
+    if (onFlag) {
+      const newFlaggedState = !activity.isFlagged;
+      onFlag(activity, newFlaggedState);
+    }
   };
 
   const getActivityIcon = (type: Activity['type']) => {
@@ -82,7 +77,7 @@ export function ActivityFeed({ activities, onReply }: ActivityFeedProps) {
       {activities.map((activity) => {
         const isSystemUpdate = activity.type === 'status_change' || activity.type === 'assignment';
         const isInternalNote = activity.type === 'internal_note';
-        const isFlagged = flaggedMessages.has(activity.id);
+        const isFlagged = activity.isFlagged || false;
 
         if (isSystemUpdate) {
           return (

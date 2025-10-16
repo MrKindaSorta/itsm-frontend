@@ -194,6 +194,45 @@ export default function TicketDetail() {
     }
   };
 
+  // Handler for flagging/unflagging an activity
+  const handleFlagActivity = async (activity: Activity, flagged: boolean) => {
+    if (!user) return;
+
+    try {
+      const response = await fetch(`${API_BASE}/api/tickets/${id}/activities/${activity.id}/flag`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          flagged: flagged,
+          user_id: user.id,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update the activity in the list
+        setActivities(activities.map(act =>
+          act.id === activity.id
+            ? {
+                ...act,
+                isFlagged: data.activity.isFlagged,
+                flaggedBy: data.activity.flaggedBy,
+                flaggedAt: data.activity.flaggedAt,
+              }
+            : act
+        ));
+      } else {
+        alert('Failed to flag activity: ' + (data.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error flagging activity:', error);
+      alert('Failed to connect to server');
+    }
+  };
+
   // Handler for sending reply or note
   const handleSendReply = async () => {
     if (!replyContent.trim() || !user) return;
@@ -372,6 +411,7 @@ export default function TicketDetail() {
               <ActivityFeed
                 activities={activities}
                 onReply={(activity) => setReplyingToActivity(activity)}
+                onFlag={handleFlagActivity}
               />
             </CardContent>
           </Card>
