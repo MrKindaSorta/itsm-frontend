@@ -279,8 +279,8 @@ export function UserCreateModal({ open, onOpenChange, onSuccess }: UserCreateMod
                 <Checkbox
                   id="require_password_change"
                   checked={formData.require_password_change}
-                  onCheckedChange={(checked) =>
-                    setFormData({ ...formData, require_password_change: checked as boolean })
+                  onChange={(e) =>
+                    setFormData({ ...formData, require_password_change: e.target.checked })
                   }
                   disabled={isLoading}
                 />
