@@ -19,6 +19,7 @@ import { Save, Eye, EyeOff, RotateCcw, Plus } from 'lucide-react';
 const STORAGE_KEY = 'itsm-form-configuration';
 const SLA_STORAGE_KEY = 'itsm-sla-configuration';
 const BRANDING_STORAGE_KEY = 'itsm-branding-configuration';
+const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
 export default function Customize() {
   const [fields, setFields] = useState<FormField[]>([]);
@@ -37,17 +38,37 @@ export default function Customize() {
   const [brandingPreviewMode, setBrandingPreviewMode] = useState<'login' | 'portal'>('login');
   const [brandingSaveMessage, setBrandingSaveMessage] = useState<string>('');
 
-  // Load form configuration from localStorage on mount
+  // Load form configuration from API (fallback to localStorage) on mount
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
+    const loadFormConfig = async () => {
       try {
-        const config: FormConfiguration = JSON.parse(saved);
-        setFields(config.fields);
+        // Try loading from API first
+        const response = await fetch(`${API_BASE}/api/config/form`);
+        const data = await response.json();
+
+        if (data.success && data.config.fields) {
+          setFields(data.config.fields);
+          // Also save to localStorage as cache
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data.config));
+          return;
+        }
       } catch (error) {
-        console.error('Failed to load form configuration:', error);
+        console.error('Failed to load form configuration from API:', error);
       }
-    }
+
+      // Fallback to localStorage
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          const config: FormConfiguration = JSON.parse(saved);
+          setFields(config.fields);
+        } catch (error) {
+          console.error('Failed to load form configuration from localStorage:', error);
+        }
+      }
+    };
+
+    loadFormConfig();
   }, []);
 
   // Load SLA configuration from localStorage on mount
@@ -101,7 +122,7 @@ export default function Customize() {
     setFields(fields.map((f) => (f.id === updatedField.id ? updatedField : f)));
   };
 
-  const handleSaveConfiguration = () => {
+  const handleSaveConfiguration = async () => {
     const config: FormConfiguration = {
       id: 'default',
       name: 'Ticket Creation Form',
@@ -110,8 +131,34 @@ export default function Customize() {
       updatedAt: new Date(),
     };
 
+    // Save to localStorage as fallback
     localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
-    setSaveMessage('Form configuration saved successfully!');
+
+    try {
+      // Save to API
+      const response = await fetch(`${API_BASE}/api/config/form`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: config.name,
+          fields: config.fields,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSaveMessage('Form configuration saved successfully!');
+      } else {
+        setSaveMessage('Saved locally (API error: ' + data.error + ')');
+      }
+    } catch (error) {
+      console.error('Failed to save to API:', error);
+      setSaveMessage('Saved locally (server unavailable)');
+    }
+
     setTimeout(() => setSaveMessage(''), 3000);
   };
 

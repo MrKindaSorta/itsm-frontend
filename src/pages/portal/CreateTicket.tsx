@@ -53,41 +53,65 @@ export default function CreateTicket() {
   const [users, setUsers] = useState<User[]>([]);
   const [ccUserIds, setCcUserIds] = useState<string[]>([]);
 
-  // Load form configuration from localStorage
+  // Load form configuration from API (fallback to localStorage)
   useEffect(() => {
-    const saved = localStorage.getItem(FORM_CONFIG_STORAGE_KEY);
-    if (saved) {
-      try {
-        const config: FormConfiguration = JSON.parse(saved);
-        const fields = config.fields || [];
-        setCustomFields(fields);
+    const loadFormConfig = async () => {
+      let fields: FormField[] = [];
 
-        // Initialize custom field values with default values
-        const initialValues: Record<string, any> = {};
-        fields.forEach(field => {
-          if (field.defaultValue !== undefined && field.defaultValue !== null && field.defaultValue !== '') {
-            // For multiselect, ensure default value is an array
-            if (field.type === 'multiselect') {
-              initialValues[field.id] = Array.isArray(field.defaultValue) ? field.defaultValue : [];
-            } else {
-              initialValues[field.id] = field.defaultValue;
-            }
-          } else {
-            // Initialize with appropriate empty values
-            if (field.type === 'multiselect') {
-              initialValues[field.id] = [];
-            } else if (field.type === 'checkbox') {
-              initialValues[field.id] = false;
-            } else {
-              initialValues[field.id] = '';
-            }
-          }
-        });
-        setCustomFieldValues(initialValues);
+      try {
+        // Try loading from API first
+        const response = await fetch(`${API_BASE}/api/config/form`);
+        const data = await response.json();
+
+        if (data.success && data.config.fields) {
+          fields = data.config.fields;
+          // Cache in localStorage
+          localStorage.setItem(FORM_CONFIG_STORAGE_KEY, JSON.stringify(data.config));
+        } else {
+          throw new Error('No fields in API response');
+        }
       } catch (error) {
-        console.error('Failed to load form configuration:', error);
+        console.error('Failed to load form configuration from API, using localStorage:', error);
+
+        // Fallback to localStorage
+        const saved = localStorage.getItem(FORM_CONFIG_STORAGE_KEY);
+        if (saved) {
+          try {
+            const config: FormConfiguration = JSON.parse(saved);
+            fields = config.fields || [];
+          } catch (parseError) {
+            console.error('Failed to parse localStorage config:', parseError);
+          }
+        }
       }
-    }
+
+      setCustomFields(fields);
+
+      // Initialize custom field values with default values
+      const initialValues: Record<string, any> = {};
+      fields.forEach(field => {
+        if (field.defaultValue !== undefined && field.defaultValue !== null && field.defaultValue !== '') {
+          // For multiselect, ensure default value is an array
+          if (field.type === 'multiselect') {
+            initialValues[field.id] = Array.isArray(field.defaultValue) ? field.defaultValue : [];
+          } else {
+            initialValues[field.id] = field.defaultValue;
+          }
+        } else {
+          // Initialize with appropriate empty values
+          if (field.type === 'multiselect') {
+            initialValues[field.id] = [];
+          } else if (field.type === 'checkbox') {
+            initialValues[field.id] = false;
+          } else {
+            initialValues[field.id] = '';
+          }
+        }
+      });
+      setCustomFieldValues(initialValues);
+    };
+
+    loadFormConfig();
   }, []);
 
   // Fetch users if CC field exists in configuration
