@@ -31,6 +31,9 @@ export interface User {
   location?: string;
   job_title?: string;
   manager?: string;
+  deleted_at?: string | null;
+  permanently_deleted?: number;
+  isDeleted?: boolean;
 }
 
 // Notification settings
