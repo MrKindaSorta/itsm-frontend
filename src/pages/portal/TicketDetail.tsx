@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,35 +9,124 @@ import { StatusBadge } from '@/components/tickets/StatusBadge';
 import { PriorityBadge } from '@/components/tickets/PriorityBadge';
 import { SLAIndicator } from '@/components/tickets/SLAIndicator';
 import { ActivityFeed } from '@/components/tickets/ActivityFeed';
-import { mockTickets } from '@/data/mockTickets';
-import { mockActivities } from '@/data/mockActivities';
 import { formatDate, getInitials } from '@/lib/utils';
-import { ArrowLeft, Send, Tag } from 'lucide-react';
+import type { Ticket, Activity } from '@/types';
+import { ArrowLeft, Send, Tag, Loader2 } from 'lucide-react';
+
+const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
 export default function TicketDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const [ticket, setTicket] = useState<Ticket | null>(null);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const [comment, setComment] = useState('');
+  const [isSending, setIsSending] = useState(false);
 
-  // Find the ticket by ID
-  const ticket = mockTickets.find((t) => t.id === id);
-  // Get activities for this ticket (only public ones for user view)
-  const activities = id
-    ? [...(mockActivities[id] || [])]
-        .filter(activity => !activity.isInternal)
-        .reverse()
-    : [];
+  // Fetch ticket and activities from API
+  useEffect(() => {
+    if (id) {
+      fetchTicketData();
+    }
+  }, [id]);
 
-  const handleSubmitComment = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!comment.trim()) return;
+  const fetchTicketData = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      // Fetch ticket
+      const ticketResponse = await fetch(`${API_BASE}/api/tickets/${id}`);
+      const ticketData = await ticketResponse.json();
 
-    console.log('Submitting comment:', comment);
-    // In real app, this would submit to API
-    setComment('');
+      if (ticketData.success) {
+        // Transform date strings to Date objects
+        const transformedTicket = {
+          ...ticketData.ticket,
+          createdAt: new Date(ticketData.ticket.createdAt),
+          updatedAt: new Date(ticketData.ticket.updatedAt),
+          dueDate: ticketData.ticket.dueDate ? new Date(ticketData.ticket.dueDate) : undefined,
+          resolvedAt: ticketData.ticket.resolvedAt ? new Date(ticketData.ticket.resolvedAt) : undefined,
+          closedAt: ticketData.ticket.closedAt ? new Date(ticketData.ticket.closedAt) : undefined,
+          sla: {
+            ...ticketData.ticket.sla,
+            firstResponseDue: ticketData.ticket.sla.firstResponseDue ? new Date(ticketData.ticket.sla.firstResponseDue) : new Date(),
+            resolutionDue: ticketData.ticket.sla.resolutionDue ? new Date(ticketData.ticket.sla.resolutionDue) : new Date(),
+          },
+        };
+        setTicket(transformedTicket);
+
+        // Fetch activities (only public ones for user view)
+        const activitiesResponse = await fetch(`${API_BASE}/api/tickets/${id}/activities`);
+        const activitiesData = await activitiesResponse.json();
+
+        if (activitiesData.success) {
+          const transformedActivities = activitiesData.activities
+            .filter((act: any) => !act.isInternal) // Filter out internal notes
+            .map((act: any) => ({
+              ...act,
+              createdAt: new Date(act.createdAt),
+            }));
+          setActivities(transformedActivities.reverse()); // Newest first
+        }
+      } else {
+        setError(ticketData.error || 'Failed to fetch ticket');
+      }
+    } catch (err) {
+      console.error('Error fetching ticket:', err);
+      setError('Failed to connect to server');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  if (!ticket) {
+  const handleSubmitComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!comment.trim() || !user) return;
+
+    setIsSending(true);
+    try {
+      const payload = {
+        content: comment,
+        author_id: user.id,
+        type: 'comment',
+        isInternal: false,
+      };
+
+      const response = await fetch(`${API_BASE}/api/tickets/${id}/activities`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Add new activity to the list at the beginning (newest first)
+        const newActivity = {
+          ...data.activity,
+          createdAt: new Date(data.activity.createdAt),
+        };
+        setActivities([newActivity, ...activities]);
+        setComment('');
+      } else {
+        alert('Failed to send comment: ' + (data.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error sending comment:', error);
+      alert('Failed to connect to server');
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  if (isLoading) {
     return (
       <div className="max-w-4xl mx-auto space-y-6">
         <Button variant="ghost" onClick={() => navigate('/portal/tickets')}>
@@ -45,7 +135,27 @@ export default function TicketDetail() {
         </Button>
         <Card>
           <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">Ticket not found</p>
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
+            <p className="text-muted-foreground mt-3">Loading ticket...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error || !ticket) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-6">
+        <Button variant="ghost" onClick={() => navigate('/portal/tickets')}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Tickets
+        </Button>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-destructive mb-4">{error || 'Ticket not found'}</p>
+            <Button onClick={fetchTicketData} variant="outline">
+              Retry
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -103,42 +213,59 @@ export default function TicketDetail() {
           </Card>
 
           {/* Conversation */}
-          <Card>
-            <CardHeader>
+          <Card className="flex flex-col h-[calc(100vh-10rem)]">
+            <CardHeader className="border-b py-3 px-4">
               <CardTitle className="text-base">Conversation</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+
+            {/* Comment/Reply Box - At TOP */}
+            {canComment ? (
+              <CardContent className="border-b p-3">
+                <form onSubmit={handleSubmitComment} className="space-y-2">
+                  <Textarea
+                    placeholder="Add a comment or reply..."
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    rows={3}
+                    className="resize-none text-sm"
+                  />
+                  <div className="flex justify-end">
+                    <Button
+                      type="submit"
+                      size="sm"
+                      disabled={isSending || !comment.trim()}
+                    >
+                      {isSending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4 mr-2" />
+                          Send Reply
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            ) : (
+              <CardContent className="border-b p-3">
+                <p className="text-sm text-muted-foreground text-center">
+                  This ticket is closed. Comments are disabled.
+                </p>
+              </CardContent>
+            )}
+
+            {/* Activity Feed - Scrollable Below */}
+            <CardContent className="flex-1 overflow-y-auto p-3 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-muted [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:hover:bg-muted-foreground/40">
               {activities.length > 0 ? (
                 <ActivityFeed activities={activities} />
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-8">
                   No updates yet. An agent will respond shortly.
                 </p>
-              )}
-
-              {canComment && (
-                <form onSubmit={handleSubmitComment} className="pt-4 border-t">
-                  <Textarea
-                    placeholder="Add a comment or reply..."
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                    rows={4}
-                  />
-                  <div className="flex justify-end mt-2">
-                    <Button type="submit" disabled={!comment.trim()}>
-                      <Send className="h-4 w-4 mr-2" />
-                      Send Reply
-                    </Button>
-                  </div>
-                </form>
-              )}
-
-              {!canComment && (
-                <div className="pt-4 border-t">
-                  <p className="text-sm text-muted-foreground text-center">
-                    This ticket is closed. Comments are disabled.
-                  </p>
-                </div>
               )}
             </CardContent>
           </Card>
