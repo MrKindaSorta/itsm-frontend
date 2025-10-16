@@ -35,7 +35,21 @@ export default function MyTickets() {
         const data = await response.json();
 
         if (data.success) {
-          setTickets(data.tickets || []);
+          // Transform tickets to convert date strings to Date objects
+          const transformedTickets = (data.tickets || []).map((ticket: any) => ({
+            ...ticket,
+            createdAt: new Date(ticket.createdAt),
+            updatedAt: new Date(ticket.updatedAt),
+            dueDate: ticket.dueDate ? new Date(ticket.dueDate) : undefined,
+            resolvedAt: ticket.resolvedAt ? new Date(ticket.resolvedAt) : undefined,
+            closedAt: ticket.closedAt ? new Date(ticket.closedAt) : undefined,
+            sla: {
+              ...ticket.sla,
+              firstResponseDue: new Date(ticket.sla.firstResponseDue),
+              resolutionDue: new Date(ticket.sla.resolutionDue),
+            },
+          }));
+          setTickets(transformedTickets);
         } else {
           setError(data.error || 'Failed to fetch tickets');
         }
