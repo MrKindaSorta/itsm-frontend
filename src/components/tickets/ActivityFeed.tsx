@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import type { Activity } from '@/types';
 import { formatRelativeTime, getInitials } from '@/lib/utils';
 import { MessageSquare, AlertCircle, ArrowRight, Reply, Flag } from 'lucide-react';
@@ -132,7 +131,6 @@ export function ActivityFeed({ activities, onReply, onFlag }: ActivityFeedProps)
                     activity={activity}
                     onReply={handleReply}
                     onFlag={handleFlag}
-                    isFlagged={isFlagged}
                   />
                 </div>
                 {/* Show parent activity reference if this is a reply */}
