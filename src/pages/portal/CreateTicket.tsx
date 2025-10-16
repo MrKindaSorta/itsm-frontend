@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { UserMultiSelect } from '@/components/ui/user-multi-select';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Send, Paperclip, X, FileText, AlertCircle, Lightbulb } from 'lucide-react';
+import { Send, FileText, AlertCircle, Lightbulb } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import type { FormConfiguration, FormField } from '@/types/formBuilder';
@@ -40,9 +40,6 @@ export default function CreateTicket() {
   const { user } = useAuth();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [priority, setPriority] = useState('medium');
-  const [category, setCategory] = useState('');
-  const [attachments, setAttachments] = useState<File[]>([]);
   const [showSuccess, setShowSuccess] = useState(false);
 
   // Form configuration and custom fields
@@ -226,17 +223,6 @@ export default function CreateTicket() {
       console.error('Create ticket error:', error);
       alert('Failed to connect to server');
     }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const newFiles = Array.from(e.target.files);
-      setAttachments([...attachments, ...newFiles]);
-    }
-  };
-
-  const removeAttachment = (index: number) => {
-    setAttachments(attachments.filter((_, i) => i !== index));
   };
 
   // Smart KB article suggestions based on title input

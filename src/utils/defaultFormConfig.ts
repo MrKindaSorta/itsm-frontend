@@ -58,7 +58,6 @@ export function shouldInitializeDefaults(fields: FormField[]): boolean {
  */
 export function mergeWithDefaults(existingFields: FormField[]): FormField[] {
   const defaults = getDefaultFormFields();
-  const currentSystemFieldIds = new Set(defaults.map(f => f.id));
 
   // All possible system field IDs (including deprecated ones)
   const allSystemFieldIds = new Set([
