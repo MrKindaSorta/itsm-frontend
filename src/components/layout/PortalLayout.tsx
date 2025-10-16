@@ -18,31 +18,27 @@ export default function PortalLayout() {
   const location = useLocation();
 
   const navigation = [
-    { name: 'Create Ticket', href: '/portal/tickets/create' },
-    { name: 'My Tickets', href: '/portal/tickets' },
-    { name: 'Knowledge Base', href: '/portal/knowledge-base' },
-    { name: 'Profile', href: '/portal/profile' },
-  ];
-
-  // Page information for animated header
-  const pageInfo: Record<string, { title: string; description: string } | null> = {
-    '/portal/tickets/create': {
-      title: 'Create New Ticket',
+    {
+      name: 'Create Ticket',
+      href: '/portal/tickets/create',
       description: "Submit a support request and we'll get back to you as soon as possible"
     },
-    '/portal/tickets': {
-      title: 'My Tickets',
+    {
+      name: 'My Tickets',
+      href: '/portal/tickets',
       description: 'View and track your support requests'
     },
-    '/portal/knowledge-base': {
-      title: 'Knowledge Base',
+    {
+      name: 'Knowledge Base',
+      href: '/portal/knowledge-base',
       description: 'Browse articles and find answers to common questions'
     },
-    '/portal/profile': null, // Profile page has its own header design
-  };
-
-  // Get current page info
-  const currentPageInfo = pageInfo[location.pathname];
+    {
+      name: 'Profile',
+      href: '/portal/profile',
+      description: null // Profile page has its own header design
+    },
+  ];
 
   const toggleTheme = () => {
     setTheme(actualTheme === 'dark' ? 'light' : 'dark');
@@ -53,9 +49,9 @@ export default function PortalLayout() {
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4">
-          <div className="flex h-16 items-center">
+          <div className="flex min-h-16 items-start py-3">
             {/* Logo/Brand - Fixed width */}
-            <div className="flex items-center w-48">
+            <div className="flex items-center w-48 pt-1">
               <Link to="/portal" className="flex items-center space-x-2">
                 <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
                   <span className="text-primary-foreground font-bold text-lg">IT</span>
@@ -64,25 +60,43 @@ export default function PortalLayout() {
               </Link>
             </div>
 
-            {/* Navigation - Centered */}
-            <nav className="hidden md:flex items-center justify-center flex-1 space-x-6">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={`text-sm font-medium transition-colors hover:text-primary ${
-                    location.pathname === item.href
-                      ? 'text-foreground'
-                      : 'text-muted-foreground'
-                  }`}
-                >
-                  {item.name}
-                </Link>
-              ))}
+            {/* Navigation - Centered with expandable descriptions */}
+            <nav className="hidden md:flex items-start justify-center flex-1 gap-6">
+              {navigation.map((item) => {
+                const isActive = location.pathname === item.href;
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className="flex flex-col items-center group"
+                  >
+                    <span
+                      className={`text-sm font-medium transition-colors hover:text-primary ${
+                        isActive ? 'text-foreground' : 'text-muted-foreground'
+                      }`}
+                    >
+                      {item.name}
+                    </span>
+                    <div
+                      className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                        isActive && item.description
+                          ? 'max-h-20 opacity-100 mt-1'
+                          : 'max-h-0 opacity-0'
+                      }`}
+                    >
+                      {item.description && (
+                        <p className="text-xs text-muted-foreground text-center max-w-[200px] leading-relaxed">
+                          {item.description}
+                        </p>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
             </nav>
 
             {/* Right side actions - Fixed width to match logo */}
-            <div className="flex items-center justify-end w-48">
+            <div className="flex items-center justify-end w-48 pt-1">
               {user && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -136,44 +150,30 @@ export default function PortalLayout() {
 
         {/* Mobile Navigation */}
         <nav className="md:hidden border-t px-4 py-2">
-          <div className="flex flex-wrap gap-2">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                to={item.href}
-                className={`text-xs px-3 py-1.5 rounded-md transition-colors ${
-                  location.pathname === item.href
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-                }`}
-              >
-                {item.name}
-              </Link>
-            ))}
+          <div className="flex flex-col gap-3">
+            {navigation.map((item) => {
+              const isActive = location.pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={`flex flex-col px-3 py-2 rounded-md transition-all ${
+                    isActive
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                  }`}
+                >
+                  <span className="text-xs font-medium">{item.name}</span>
+                  {isActive && item.description && (
+                    <span className="text-[10px] mt-1 opacity-90 leading-relaxed">
+                      {item.description}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
           </div>
         </nav>
-
-        {/* Animated Page Header */}
-        <div
-          className={`border-t overflow-hidden transition-all duration-500 ease-in-out ${
-            currentPageInfo ? 'max-h-32 opacity-100' : 'max-h-0 opacity-0'
-          }`}
-        >
-          <div className="container mx-auto px-4 py-6 bg-gradient-to-r from-muted/30 to-transparent">
-            <div
-              className={`transform transition-all duration-500 delay-75 ${
-                currentPageInfo ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0'
-              }`}
-            >
-              {currentPageInfo && (
-                <>
-                  <h1 className="text-2xl md:text-3xl font-bold mb-1">{currentPageInfo.title}</h1>
-                  <p className="text-sm md:text-base text-muted-foreground">{currentPageInfo.description}</p>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
       </header>
 
       {/* Main Content */}
