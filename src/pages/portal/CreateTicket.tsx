@@ -447,13 +447,6 @@ export default function CreateTicket() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Create New Ticket</h1>
-        <p className="text-muted-foreground mt-2">
-          Submit a support request and we'll get back to you as soon as possible
-        </p>
-      </div>
-
       {showSuccess && (
         <Alert className="border-green-500 bg-green-50 dark:bg-green-950">
           <AlertCircle className="h-4 w-4 text-green-600" />

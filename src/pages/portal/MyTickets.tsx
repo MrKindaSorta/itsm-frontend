@@ -111,11 +111,7 @@ export default function MyTickets() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">My Tickets</h1>
-          <p className="text-muted-foreground mt-2">View and track your support requests</p>
-        </div>
+      <div className="flex justify-end">
         <Link to="/portal/tickets/create">
           <Button>
             <Plus className="h-4 w-4 mr-2" />

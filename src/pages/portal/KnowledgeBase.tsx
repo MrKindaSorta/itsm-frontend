@@ -247,13 +247,6 @@ export default function KnowledgeBase() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Knowledge Base</h1>
-        <p className="text-muted-foreground mt-2">
-          Browse articles and find answers to common questions
-        </p>
-      </div>
-
       {/* Search */}
       <Card>
         <CardContent className="pt-6">

@@ -24,6 +24,26 @@ export default function PortalLayout() {
     { name: 'Profile', href: '/portal/profile' },
   ];
 
+  // Page information for animated header
+  const pageInfo: Record<string, { title: string; description: string } | null> = {
+    '/portal/tickets/create': {
+      title: 'Create New Ticket',
+      description: "Submit a support request and we'll get back to you as soon as possible"
+    },
+    '/portal/tickets': {
+      title: 'My Tickets',
+      description: 'View and track your support requests'
+    },
+    '/portal/knowledge-base': {
+      title: 'Knowledge Base',
+      description: 'Browse articles and find answers to common questions'
+    },
+    '/portal/profile': null, // Profile page has its own header design
+  };
+
+  // Get current page info
+  const currentPageInfo = pageInfo[location.pathname];
+
   const toggleTheme = () => {
     setTheme(actualTheme === 'dark' ? 'light' : 'dark');
   };
@@ -132,6 +152,28 @@ export default function PortalLayout() {
             ))}
           </div>
         </nav>
+
+        {/* Animated Page Header */}
+        <div
+          className={`border-t overflow-hidden transition-all duration-500 ease-in-out ${
+            currentPageInfo ? 'max-h-32 opacity-100' : 'max-h-0 opacity-0'
+          }`}
+        >
+          <div className="container mx-auto px-4 py-6 bg-gradient-to-r from-muted/30 to-transparent">
+            <div
+              className={`transform transition-all duration-500 delay-75 ${
+                currentPageInfo ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0'
+              }`}
+            >
+              {currentPageInfo && (
+                <>
+                  <h1 className="text-2xl md:text-3xl font-bold mb-1">{currentPageInfo.title}</h1>
+                  <p className="text-sm md:text-base text-muted-foreground">{currentPageInfo.description}</p>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
       </header>
 
       {/* Main Content */}
