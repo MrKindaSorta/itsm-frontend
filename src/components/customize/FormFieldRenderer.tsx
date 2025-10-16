@@ -10,6 +10,7 @@ import {
   List,
   CheckSquare,
   Upload,
+  Users,
   GripVertical,
   Trash2,
   Settings,
@@ -26,6 +27,7 @@ const fieldIcons = {
   multiselect: List,
   checkbox: CheckSquare,
   file: Upload,
+  cc_users: Users,
 };
 
 interface FormFieldRendererProps {

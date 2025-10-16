@@ -1,14 +1,21 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { UserMultiSelect } from '@/components/ui/user-multi-select';
 import { Send, Paperclip, X, FileText, AlertCircle, Lightbulb } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import type { FormConfiguration, FormField } from '@/types/formBuilder';
+import type { User } from '@/types';
+
+const FORM_CONFIG_STORAGE_KEY = 'itsm-form-configuration';
+const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
 // Knowledge base articles
 const knowledgeBaseArticles = [
@@ -28,6 +35,7 @@ const knowledgeBaseArticles = [
 
 export default function CreateTicket() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState('medium');
@@ -35,25 +43,99 @@ export default function CreateTicket() {
   const [attachments, setAttachments] = useState<File[]>([]);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Form configuration and custom fields
+  const [customFields, setCustomFields] = useState<FormField[]>([]);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, any>>({});
+
+  // Users for CC field
+  const [users, setUsers] = useState<User[]>([]);
+  const [ccUserIds, setCcUserIds] = useState<string[]>([]);
+
+  // Load form configuration from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem(FORM_CONFIG_STORAGE_KEY);
+    if (saved) {
+      try {
+        const config: FormConfiguration = JSON.parse(saved);
+        setCustomFields(config.fields || []);
+      } catch (error) {
+        console.error('Failed to load form configuration:', error);
+      }
+    }
+  }, []);
+
+  // Fetch users if CC field exists in configuration
+  useEffect(() => {
+    const hasCCField = customFields.some(field => field.type === 'cc_users');
+    if (hasCCField) {
+      fetchUsers();
+    }
+  }, [customFields]);
+
+  const fetchUsers = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/users`);
+      const data = await response.json();
+      if (data.success) {
+        // Transform users to match User interface
+        const transformedUsers = data.users.map((u: any) => ({
+          id: u.id.toString(),
+          name: u.name,
+          email: u.email,
+          role: u.role as import('@/types').UserRole,
+          active: u.active === 1,
+          notificationPreferences: {},
+        }));
+        setUsers(transformedUsers);
+      }
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle ticket submission
-    const ticketData = {
-      title,
-      description,
-      priority,
-      category,
-      attachments: attachments.map(f => f.name),
-    };
-    console.log('Creating ticket:', ticketData);
+    if (!user) return;
 
-    // Show success message
-    setShowSuccess(true);
+    try {
+      // Build ticket payload
+      const payload = {
+        title,
+        description,
+        priority,
+        category,
+        requester_id: Number(user.id),
+        department: user.department || null,
+        cc_user_ids: ccUserIds.map(id => Number(id)),
+        tags: [],
+        customFields: customFieldValues,
+      };
 
-    // Redirect to tickets list after 2 seconds
-    setTimeout(() => {
-      navigate('/portal/tickets');
-    }, 2000);
+      const response = await fetch(`${API_BASE}/api/tickets`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Show success message
+        setShowSuccess(true);
+
+        // Redirect to tickets list after 2 seconds
+        setTimeout(() => {
+          navigate('/portal/tickets');
+        }, 2000);
+      } else {
+        alert('Failed to create ticket: ' + (data.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Create ticket error:', error);
+      alert('Failed to connect to server');
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -100,6 +182,105 @@ export default function CreateTicket() {
       .sort((a, b) => b.score - a.score)
       .slice(0, 5); // Show top 5 matches
   }, [title]);
+
+  // Render custom field based on type
+  const renderCustomField = (field: FormField) => {
+    const value = customFieldValues[field.id];
+
+    // Special handling for CC users field
+    if (field.type === 'cc_users') {
+      return (
+        <div key={field.id} className="space-y-2">
+          <Label htmlFor={field.id}>
+            {field.label} {field.required && '*'}
+          </Label>
+          <UserMultiSelect
+            users={users}
+            selectedUserIds={ccUserIds}
+            onChange={setCcUserIds}
+            placeholder={field.placeholder || 'Select users to CC...'}
+            disabled={showSuccess}
+          />
+          {field.helpText && (
+            <p className="text-xs text-muted-foreground">{field.helpText}</p>
+          )}
+        </div>
+      );
+    }
+
+    // Handle other field types
+    switch (field.type) {
+      case 'text':
+        return (
+          <div key={field.id} className="space-y-2">
+            <Label htmlFor={field.id}>
+              {field.label} {field.required && '*'}
+            </Label>
+            <Input
+              id={field.id}
+              placeholder={field.placeholder}
+              value={value || ''}
+              onChange={(e) => setCustomFieldValues({ ...customFieldValues, [field.id]: e.target.value })}
+              required={field.required}
+              disabled={showSuccess}
+            />
+            {field.helpText && (
+              <p className="text-xs text-muted-foreground">{field.helpText}</p>
+            )}
+          </div>
+        );
+
+      case 'textarea':
+        return (
+          <div key={field.id} className="space-y-2">
+            <Label htmlFor={field.id}>
+              {field.label} {field.required && '*'}
+            </Label>
+            <Textarea
+              id={field.id}
+              placeholder={field.placeholder}
+              value={value || ''}
+              onChange={(e) => setCustomFieldValues({ ...customFieldValues, [field.id]: e.target.value })}
+              required={field.required}
+              disabled={showSuccess}
+              rows={4}
+            />
+            {field.helpText && (
+              <p className="text-xs text-muted-foreground">{field.helpText}</p>
+            )}
+          </div>
+        );
+
+      case 'dropdown':
+        return (
+          <div key={field.id} className="space-y-2">
+            <Label htmlFor={field.id}>
+              {field.label} {field.required && '*'}
+            </Label>
+            <Select
+              id={field.id}
+              value={value || ''}
+              onChange={(e) => setCustomFieldValues({ ...customFieldValues, [field.id]: e.target.value })}
+              required={field.required}
+              disabled={showSuccess}
+            >
+              <option value="">{field.placeholder || 'Select an option'}</option>
+              {field.options?.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </Select>
+            {field.helpText && (
+              <p className="text-xs text-muted-foreground">{field.helpText}</p>
+            )}
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -236,6 +417,11 @@ export default function CreateTicket() {
                     </div>
                   )}
                 </div>
+
+                {/* Custom Fields from Form Builder */}
+                {customFields
+                  .sort((a, b) => a.order - b.order)
+                  .map((field) => renderCustomField(field))}
 
                 <Button type="submit" className="w-full sm:w-auto" disabled={showSuccess}>
                   <Send className="h-4 w-4 mr-2" />

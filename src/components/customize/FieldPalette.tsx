@@ -9,6 +9,7 @@ import {
   List,
   CheckSquare,
   Upload,
+  Users,
 } from 'lucide-react';
 
 // Available field types in the palette
@@ -109,6 +110,18 @@ const FIELD_TYPES: PaletteFieldType[] = [
       required: false,
     },
   },
+  {
+    type: 'cc_users',
+    icon: 'Users',
+    label: 'CC Users',
+    description: 'Allow users to CC others on this ticket',
+    defaultConfig: {
+      type: 'cc_users',
+      label: 'CC Users',
+      placeholder: 'Select users to CC...',
+      required: false,
+    },
+  },
 ];
 
 // Icon component mapping
@@ -121,6 +134,7 @@ const IconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   List,
   CheckSquare,
   Upload,
+  Users,
 };
 
 interface FieldPaletteProps {
