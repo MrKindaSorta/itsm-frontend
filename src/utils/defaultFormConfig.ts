@@ -3,6 +3,7 @@ import type { FormField } from '@/types/formBuilder';
 /**
  * Default system fields that appear in every ticket form
  * These fields are non-deletable but can be customized
+ * Only Title and Description are mandatory system fields
  */
 export function getDefaultFormFields(): FormField[] {
   return [
@@ -21,60 +22,15 @@ export function getDefaultFormFields(): FormField[] {
       },
     },
     {
-      id: 'system-category',
-      type: 'dropdown',
-      label: 'Category',
-      placeholder: 'Select category',
-      required: true,
-      order: 1,
-      isSystemField: true,
-      deletable: false,
-      helpText: 'Choose the category that best describes your issue',
-      options: [
-        'Hardware',
-        'Software',
-        'Network',
-        'Email',
-        'Access & Permissions',
-        'Infrastructure',
-        'Onboarding',
-        'Other',
-      ],
-    },
-    {
-      id: 'system-priority',
-      type: 'dropdown',
-      label: 'Priority',
-      placeholder: 'Select priority',
-      required: false,
-      order: 2,
-      isSystemField: true,
-      deletable: false,
-      helpText: 'How urgent is this issue?',
-      defaultValue: 'medium',
-      options: ['low', 'medium', 'high', 'urgent'],
-    },
-    {
       id: 'system-description',
       type: 'textarea',
       label: 'Description',
       placeholder: 'Provide detailed information about your issue...',
       required: true,
-      order: 3,
+      order: 1,
       isSystemField: true,
       deletable: false,
       helpText: 'Describe your issue in detail so we can help you better',
-    },
-    {
-      id: 'system-attachments',
-      type: 'file',
-      label: 'Attachments',
-      placeholder: '',
-      required: false,
-      order: 4,
-      isSystemField: true,
-      deletable: false,
-      helpText: 'Upload any relevant files (Max 10MB per file)',
     },
   ];
 }
@@ -88,8 +44,8 @@ export function shouldInitializeDefaults(fields: FormField[]): boolean {
     return true;
   }
 
-  // Check if any system fields are missing
-  const systemFieldIds = ['system-title', 'system-category', 'system-priority', 'system-description', 'system-attachments'];
+  // Check if any system fields are missing (only Title and Description)
+  const systemFieldIds = ['system-title', 'system-description'];
   const existingSystemFields = fields.filter(f => systemFieldIds.includes(f.id));
 
   // If we're missing system fields, we should reinitialize
@@ -102,12 +58,22 @@ export function shouldInitializeDefaults(fields: FormField[]): boolean {
  */
 export function mergeWithDefaults(existingFields: FormField[]): FormField[] {
   const defaults = getDefaultFormFields();
-  const systemFieldIds = new Set(defaults.map(f => f.id));
+  const currentSystemFieldIds = new Set(defaults.map(f => f.id));
 
-  // Get existing fields that aren't system fields
-  const customFields = existingFields.filter(f => !systemFieldIds.has(f.id));
+  // All possible system field IDs (including deprecated ones)
+  const allSystemFieldIds = new Set([
+    'system-title',
+    'system-description',
+    'system-category',      // deprecated
+    'system-priority',      // deprecated
+    'system-attachments',   // deprecated
+  ]);
 
-  // Combine system fields + custom fields, re-order
+  // Get existing fields that aren't any system fields (including deprecated ones)
+  // This removes old system fields if they exist
+  const customFields = existingFields.filter(f => !allSystemFieldIds.has(f.id));
+
+  // Combine current system fields + custom fields, re-order
   const allFields = [...defaults, ...customFields];
 
   // Re-number the order

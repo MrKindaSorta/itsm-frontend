@@ -49,13 +49,10 @@ export default function CreateTicket() {
   const [customFields, setCustomFields] = useState<FormField[]>([]);
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, any>>({});
 
-  // System fields extracted from configuration
+  // System fields extracted from configuration (only Title and Description)
   const [systemFields, setSystemFields] = useState<{
     title?: FormField;
-    category?: FormField;
-    priority?: FormField;
     description?: FormField;
-    attachments?: FormField;
   }>({});
 
   // Users for CC field
@@ -94,27 +91,17 @@ export default function CreateTicket() {
         }
       }
 
-      // Separate system fields from custom fields
+      // Separate system fields from custom fields (only Title and Description are system fields)
       const systemFieldsMap: typeof systemFields = {};
       const customFieldsList: FormField[] = [];
 
       fields.forEach(field => {
         if (field.id === 'system-title') {
           systemFieldsMap.title = field;
-        } else if (field.id === 'system-category') {
-          systemFieldsMap.category = field;
-        } else if (field.id === 'system-priority') {
-          systemFieldsMap.priority = field;
-          // Set default priority from field config
-          if (field.defaultValue) {
-            setPriority(field.defaultValue);
-          }
         } else if (field.id === 'system-description') {
           systemFieldsMap.description = field;
-        } else if (field.id === 'system-attachments') {
-          systemFieldsMap.attachments = field;
         } else {
-          // This is a custom field
+          // Everything else is a custom field (including category, priority, attachments if added)
           customFieldsList.push(field);
         }
       });
@@ -183,12 +170,30 @@ export default function CreateTicket() {
     if (!user) return;
 
     try {
+      // Extract category and priority from custom fields if they exist
+      let extractedCategory = '';
+      let extractedPriority = 'medium'; // default
+
+      customFields.forEach(field => {
+        const value = customFieldValues[field.id];
+
+        // Look for category field (by label or type)
+        if (field.label?.toLowerCase() === 'category' || field.id.includes('category')) {
+          extractedCategory = value || '';
+        }
+
+        // Look for priority field (by label)
+        if (field.label?.toLowerCase() === 'priority' || field.id.includes('priority')) {
+          extractedPriority = value || 'medium';
+        }
+      });
+
       // Build ticket payload
       const payload = {
         title,
         description,
-        priority,
-        category,
+        priority: extractedPriority,
+        category: extractedCategory,
         requester_id: Number(user.id),
         department: user.department || null,
         cc_user_ids: ccUserIds.map(id => Number(id)),
@@ -515,70 +520,6 @@ export default function CreateTicket() {
                   )}
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="category">
-                      {systemFields.category?.label || 'Category'} {systemFields.category?.required !== false && '*'}
-                    </Label>
-                    <Select
-                      id="category"
-                      value={category}
-                      onChange={(e) => setCategory(e.target.value)}
-                      required={systemFields.category?.required !== false}
-                    >
-                      <option value="">{systemFields.category?.placeholder || 'Select category'}</option>
-                      {systemFields.category?.options?.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      )) || (
-                        <>
-                          <option value="Hardware">Hardware</option>
-                          <option value="Software">Software</option>
-                          <option value="Network">Network</option>
-                          <option value="Email">Email</option>
-                          <option value="Access">Access & Permissions</option>
-                          <option value="Infrastructure">Infrastructure</option>
-                          <option value="Onboarding">Onboarding</option>
-                          <option value="Other">Other</option>
-                        </>
-                      )}
-                    </Select>
-                    {systemFields.category?.helpText && (
-                      <p className="text-xs text-muted-foreground">{systemFields.category.helpText}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="priority">
-                      {systemFields.priority?.label || 'Priority'} {systemFields.priority?.required && '*'}
-                    </Label>
-                    <Select
-                      id="priority"
-                      value={priority}
-                      onChange={(e) => setPriority(e.target.value)}
-                      required={systemFields.priority?.required}
-                    >
-                      <option value="">{systemFields.priority?.placeholder || 'Select priority'}</option>
-                      {systemFields.priority?.options?.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      )) || (
-                        <>
-                          <option value="low">Low</option>
-                          <option value="medium">Medium</option>
-                          <option value="high">High</option>
-                          <option value="urgent">Urgent</option>
-                        </>
-                      )}
-                    </Select>
-                    {systemFields.priority?.helpText && (
-                      <p className="text-xs text-muted-foreground">{systemFields.priority.helpText}</p>
-                    )}
-                  </div>
-                </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="description">
                     {systemFields.description?.label || 'Description'} {systemFields.description?.required !== false && '*'}
@@ -593,66 +534,6 @@ export default function CreateTicket() {
                   />
                   {systemFields.description?.helpText && (
                     <p className="text-xs text-muted-foreground">{systemFields.description.helpText}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="attachments">
-                    {systemFields.attachments?.label || 'Attachments'} {systemFields.attachments?.required && '*'}
-                  </Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      id="attachments"
-                      type="file"
-                      multiple
-                      onChange={handleFileChange}
-                      className="hidden"
-                      required={systemFields.attachments?.required}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => document.getElementById('attachments')?.click()}
-                    >
-                      <Paperclip className="h-4 w-4 mr-2" />
-                      Add Files
-                    </Button>
-                    {systemFields.attachments?.helpText ? (
-                      <span className="text-xs text-muted-foreground">
-                        {systemFields.attachments.helpText}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">
-                        Max 10MB per file
-                      </span>
-                    )}
-                  </div>
-
-                  {attachments.length > 0 && (
-                    <div className="mt-2 space-y-2">
-                      {attachments.map((file, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between p-2 border rounded-md bg-secondary/50"
-                        >
-                          <div className="flex items-center gap-2">
-                            <FileText className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">{file.name}</span>
-                            <span className="text-xs text-muted-foreground">
-                              ({(file.size / 1024).toFixed(1)} KB)
-                            </span>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeAttachment(index)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
                   )}
                 </div>
 
