@@ -25,6 +25,7 @@ export default function BrandingCustomizer({ branding, onUpdate }: BrandingCusto
   const [activeSection, setActiveSection] = useState<'colors' | 'logos' | 'content' | 'settings'>(
     'colors'
   );
+  const [colorTheme, setColorTheme] = useState<'light' | 'dark'>('light');
 
   const updateBranding = (updates: Partial<BrandingConfiguration>) => {
     onUpdate({
@@ -34,11 +35,14 @@ export default function BrandingCustomizer({ branding, onUpdate }: BrandingCusto
     });
   };
 
-  const updateColors = (colorKey: keyof typeof branding.colors, value: string) => {
+  const updateColors = (theme: 'light' | 'dark', colorKey: string, value: string) => {
     updateBranding({
       colors: {
         ...branding.colors,
-        [colorKey]: value,
+        [theme]: {
+          ...branding.colors[theme],
+          [colorKey]: value,
+        },
       },
     });
   };
@@ -61,7 +65,7 @@ export default function BrandingCustomizer({ branding, onUpdate }: BrandingCusto
 
   const handleLogoUpload = (type: 'logo' | 'logoSmall' | 'favicon') => {
     // Mock file upload - in production this would use a real file input
-    const mockUrl = `https://via.placeholder.com/150/` + branding.colors.primary.replace('#', '') + `/FFFFFF?text=Logo`;
+    const mockUrl = `https://via.placeholder.com/150/` + branding.colors.light.primary.replace('#', '') + `/FFFFFF?text=Logo`;
     updateBranding({
       [type]: {
         url: mockUrl,
@@ -146,7 +150,7 @@ export default function BrandingCustomizer({ branding, onUpdate }: BrandingCusto
                     className="p-3 border rounded-lg hover:border-primary transition-colors text-left group"
                   >
                     <div className="flex gap-2 mb-2">
-                      {[preset.colors.primary, preset.colors.secondary, preset.colors.accent].map(
+                      {[preset.colors.light.primary, preset.colors.light.secondary, preset.colors.light.accent].map(
                         (color, i) => (
                           <div
                             key={i}
@@ -165,43 +169,63 @@ export default function BrandingCustomizer({ branding, onUpdate }: BrandingCusto
 
             {/* Custom Colors */}
             <div>
-              <Label className="text-sm font-medium mb-3 block">Custom Colors</Label>
+              <div className="flex items-center justify-between mb-3">
+                <Label className="text-sm font-medium">Custom Colors</Label>
+                <div className="flex gap-1 p-1 bg-muted rounded-lg">
+                  <button
+                    onClick={() => setColorTheme('light')}
+                    className={`px-3 py-1 text-xs rounded transition-colors ${
+                      colorTheme === 'light' ? 'bg-background shadow-sm' : 'hover:bg-background/50'
+                    }`}
+                  >
+                    Light Mode
+                  </button>
+                  <button
+                    onClick={() => setColorTheme('dark')}
+                    className={`px-3 py-1 text-xs rounded transition-colors ${
+                      colorTheme === 'dark' ? 'bg-background shadow-sm' : 'hover:bg-background/50'
+                    }`}
+                  >
+                    Dark Mode
+                  </button>
+                </div>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <ColorPicker
                   label="Primary"
                   description="Main brand color, buttons"
-                  value={branding.colors.primary}
-                  onChange={(val) => updateColors('primary', val)}
+                  value={branding.colors[colorTheme].primary}
+                  onChange={(val) => updateColors(colorTheme, 'primary', val)}
                 />
                 <ColorPicker
                   label="Secondary"
                   description="Text, labels, icons"
-                  value={branding.colors.secondary}
-                  onChange={(val) => updateColors('secondary', val)}
+                  value={branding.colors[colorTheme].secondary}
+                  onChange={(val) => updateColors(colorTheme, 'secondary', val)}
                 />
                 <ColorPicker
                   label="Accent"
                   description="Highlights, links"
-                  value={branding.colors.accent}
-                  onChange={(val) => updateColors('accent', val)}
+                  value={branding.colors[colorTheme].accent}
+                  onChange={(val) => updateColors(colorTheme, 'accent', val)}
                 />
                 <ColorPicker
                   label="Background"
                   description="Page background"
-                  value={branding.colors.background}
-                  onChange={(val) => updateColors('background', val)}
+                  value={branding.colors[colorTheme].background}
+                  onChange={(val) => updateColors(colorTheme, 'background', val)}
                 />
                 <ColorPicker
                   label="Foreground"
                   description="Primary text color"
-                  value={branding.colors.foreground}
-                  onChange={(val) => updateColors('foreground', val)}
+                  value={branding.colors[colorTheme].foreground}
+                  onChange={(val) => updateColors(colorTheme, 'foreground', val)}
                 />
                 <ColorPicker
                   label="Border"
                   description="Card borders, dividers"
-                  value={branding.colors.border}
-                  onChange={(val) => updateColors('border', val)}
+                  value={branding.colors[colorTheme].border}
+                  onChange={(val) => updateColors(colorTheme, 'border', val)}
                 />
               </div>
             </div>

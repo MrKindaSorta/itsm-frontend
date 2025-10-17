@@ -6,6 +6,7 @@ import type { FormField, FormFieldType, FormConfiguration } from '@/types/formBu
 import type { SLARule } from '@/types/sla';
 import type { BrandingConfiguration } from '@/types/branding';
 import { DEFAULT_BRANDING } from '@/types/branding';
+import { useBranding } from '@/contexts/BrandingContext';
 import FieldPalette, { FIELD_TYPES } from '@/components/customize/FieldPalette';
 import FormCanvas from '@/components/customize/FormCanvas';
 import FieldConfigurator from '@/components/customize/FieldConfigurator';
@@ -34,8 +35,9 @@ export default function Customize() {
   const [editingSlaRule, setEditingSlaRule] = useState<SLARule | null>(null);
   const [slaSaveMessage, setSlaSaveMessage] = useState<string>('');
 
-  // Branding state
-  const [branding, setBranding] = useState<BrandingConfiguration>(DEFAULT_BRANDING);
+  // Branding state from context
+  const { branding: contextBranding, updateBranding: updateContextBranding } = useBranding();
+  const [localBranding, setLocalBranding] = useState<BrandingConfiguration>(contextBranding);
   const [brandingPreviewMode, setBrandingPreviewMode] = useState<'login' | 'portal'>('login');
   const [brandingSaveMessage, setBrandingSaveMessage] = useState<string>('');
 
@@ -116,18 +118,10 @@ export default function Customize() {
     }
   }, []);
 
-  // Load branding configuration from localStorage on mount
+  // Sync local branding state with context when context updates
   useEffect(() => {
-    const saved = localStorage.getItem(BRANDING_STORAGE_KEY);
-    if (saved) {
-      try {
-        const config: BrandingConfiguration = JSON.parse(saved);
-        setBranding(config);
-      } catch (error) {
-        console.error('Failed to load branding configuration:', error);
-      }
-    }
-  }, []);
+    setLocalBranding(contextBranding);
+  }, [contextBranding]);
 
   const selectedField = fields.find((f) => f.id === selectedFieldId) || null;
 
@@ -272,18 +266,57 @@ export default function Customize() {
 
   // Branding handlers
   const handleUpdateBranding = (updatedBranding: BrandingConfiguration) => {
-    setBranding(updatedBranding);
+    setLocalBranding(updatedBranding);
   };
 
-  const handleSaveBranding = () => {
-    localStorage.setItem(BRANDING_STORAGE_KEY, JSON.stringify(branding));
-    setBrandingSaveMessage('Branding saved successfully!');
+  const handleSaveBranding = async () => {
+    try {
+      // Save to API first
+      const response = await fetch(`${API_BASE}/api/config/branding`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: localBranding.name,
+          logo: localBranding.logo,
+          logoSmall: localBranding.logoSmall,
+          favicon: localBranding.favicon,
+          colors: localBranding.colors,
+          typography: localBranding.typography,
+          content: localBranding.content,
+          portalSettings: localBranding.portalSettings,
+          authSettings: localBranding.authSettings,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update context (which will also update localStorage)
+        updateContextBranding(localBranding);
+        setBrandingSaveMessage('Branding saved successfully!');
+      } else {
+        // If API fails, still save to localStorage as fallback
+        localStorage.setItem(BRANDING_STORAGE_KEY, JSON.stringify(localBranding));
+        updateContextBranding(localBranding);
+        setBrandingSaveMessage('Saved locally (API error: ' + data.error + ')');
+      }
+    } catch (error) {
+      console.error('Failed to save branding to API:', error);
+      // Fallback to localStorage
+      localStorage.setItem(BRANDING_STORAGE_KEY, JSON.stringify(localBranding));
+      updateContextBranding(localBranding);
+      setBrandingSaveMessage('Saved locally (server unavailable)');
+    }
+
     setTimeout(() => setBrandingSaveMessage(''), 3000);
   };
 
   const handleResetBranding = () => {
     if (confirm('Are you sure you want to reset branding to defaults?')) {
-      setBranding(DEFAULT_BRANDING);
+      setLocalBranding(DEFAULT_BRANDING);
+      updateContextBranding(DEFAULT_BRANDING);
       localStorage.removeItem(BRANDING_STORAGE_KEY);
       setBrandingSaveMessage('Branding reset to defaults!');
       setTimeout(() => setBrandingSaveMessage(''), 3000);
@@ -470,7 +503,7 @@ export default function Customize() {
                   {/* Left: Customizer */}
                   <div>
                     <BrandingCustomizer
-                      branding={branding}
+                      branding={localBranding}
                       onUpdate={handleUpdateBranding}
                     />
                   </div>
@@ -478,7 +511,7 @@ export default function Customize() {
                   {/* Right: Preview */}
                   <div className="lg:sticky lg:top-6 lg:self-start">
                     <BrandingPreview
-                      branding={branding}
+                      branding={localBranding}
                       previewMode={brandingPreviewMode}
                     />
                   </div>

@@ -1,6 +1,7 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useBranding } from '@/contexts/BrandingContext';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -15,6 +16,7 @@ import { Moon, Sun, User, LogOut, ChevronDown } from 'lucide-react';
 export default function PortalLayout() {
   const { user, logout } = useAuth();
   const { setTheme, actualTheme } = useTheme();
+  const { branding } = useBranding();
   const location = useLocation();
 
   const navigation = [
@@ -53,10 +55,20 @@ export default function PortalLayout() {
             {/* Logo/Brand - Fixed width */}
             <div className="flex items-center w-48 pt-1">
               <Link to="/portal" className="flex items-center space-x-2">
-                <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-                  <span className="text-primary-foreground font-bold text-lg">IT</span>
-                </div>
-                <span className="font-bold text-xl">ITSM Portal</span>
+                {branding.logoSmall?.url || branding.logo?.url ? (
+                  <img
+                    src={branding.logoSmall?.url || branding.logo?.url}
+                    alt={branding.content.companyName}
+                    className="h-8 w-auto"
+                  />
+                ) : (
+                  <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+                    <span className="text-primary-foreground font-bold text-lg">
+                      {branding.content.companyName.substring(0, 2).toUpperCase()}
+                    </span>
+                  </div>
+                )}
+                <span className="font-bold text-xl">{branding.content.companyName}</span>
               </Link>
             </div>
 
@@ -184,7 +196,10 @@ export default function PortalLayout() {
       {/* Footer */}
       <footer className="border-t py-6 mt-auto">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>&copy; 2024 ITSM Portal. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} {branding.content.companyName}. All rights reserved.</p>
+          {branding.portalSettings?.showTagline && branding.content.tagline && (
+            <p className="mt-1 text-xs">{branding.content.tagline}</p>
+          )}
         </div>
       </footer>
     </div>

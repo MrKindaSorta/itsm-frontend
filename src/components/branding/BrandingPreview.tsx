@@ -12,7 +12,7 @@ interface BrandingPreviewProps {
 export default function BrandingPreview({ branding, previewMode }: BrandingPreviewProps) {
   const [deviceView, setDeviceView] = useState<'desktop' | 'mobile'>('desktop');
 
-  const colors = branding.colors;
+  const colors = branding.colors.light;
 
   return (
     <Card>
@@ -83,7 +83,7 @@ function LoginPreview({
   branding: BrandingConfiguration;
   isMobile: boolean;
 }) {
-  const colors = branding.colors;
+  const colors = branding.colors.light;
   const content = branding.content;
 
   return (
@@ -187,7 +187,7 @@ function PortalPreview({
   branding: BrandingConfiguration;
   isMobile: boolean;
 }) {
-  const colors = branding.colors;
+  const colors = branding.colors.light;
   const content = branding.content;
   const settings = branding.portalSettings;
 

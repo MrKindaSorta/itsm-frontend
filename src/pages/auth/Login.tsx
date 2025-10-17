@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBranding } from '@/contexts/BrandingContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +13,7 @@ export default function Login() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
+  const { branding } = useBranding();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -49,17 +51,31 @@ export default function Login() {
         {/* Logo/Brand */}
         <div className="flex justify-center mb-8">
           <div className="flex items-center space-x-2">
-            <div className="h-12 w-12 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-2xl">IT</span>
-            </div>
-            <span className="font-bold text-2xl">ITSM</span>
+            {branding.logo?.url || branding.logoSmall?.url ? (
+              <img
+                src={branding.logo?.url || branding.logoSmall?.url}
+                alt={branding.content.companyName}
+                className="h-12 w-auto"
+              />
+            ) : (
+              <div className="h-12 w-12 rounded-lg bg-primary flex items-center justify-center">
+                <span className="text-primary-foreground font-bold text-2xl">
+                  {branding.content.companyName.substring(0, 2).toUpperCase()}
+                </span>
+              </div>
+            )}
+            <span className="font-bold text-2xl">{branding.content.companyName}</span>
           </div>
         </div>
 
         <Card>
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
-            <CardDescription>Enter your credentials to access your account</CardDescription>
+            <CardTitle className="text-2xl font-bold">
+              {branding.content.loginTitle || 'Welcome back'}
+            </CardTitle>
+            <CardDescription>
+              {branding.content.loginSubtitle || 'Enter your credentials to access your account'}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -109,12 +125,14 @@ export default function Login() {
                 Sign up
               </Link>
             </div>
-            <div className="text-xs text-center text-muted-foreground border-t pt-4">
-              <p className="mb-2 font-medium">Demo Accounts:</p>
-              <p>User: user@demo.com / demo123</p>
-              <p>Agent: agent@demo.com / demo123</p>
-              <p>Admin: admin@demo.com / demo123</p>
-            </div>
+            {branding.authSettings?.showDemoAccounts && (
+              <div className="text-xs text-center text-muted-foreground border-t pt-4">
+                <p className="mb-2 font-medium">Demo Accounts:</p>
+                <p>User: user@demo.com / demo123</p>
+                <p>Agent: agent@demo.com / demo123</p>
+                <p>Admin: admin@demo.com / demo123</p>
+              </div>
+            )}
           </CardFooter>
         </Card>
       </div>
