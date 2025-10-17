@@ -172,3 +172,88 @@ export function generateAvatarColor(seed: string): string {
   }
   return colors[Math.abs(hash) % colors.length];
 }
+
+// Ticket sorting utilities
+import type { Ticket } from '@/types';
+
+export type SortColumn = 'id' | 'title' | 'status' | 'priority' | 'assignee' | 'requester' | 'sla' | 'updated';
+export type SortDirection = 'asc' | 'desc' | null;
+
+export function sortTickets(
+  tickets: Ticket[],
+  column: SortColumn | null,
+  direction: SortDirection
+): Ticket[] {
+  if (!column || !direction) return tickets;
+
+  const sorted = [...tickets].sort((a, b) => {
+    let comparison = 0;
+
+    switch (column) {
+      case 'id':
+        // Sort by ticket number (TCK-1001 -> 1001)
+        const numA = parseInt(a.id.split('-')[1] || '0');
+        const numB = parseInt(b.id.split('-')[1] || '0');
+        comparison = numA - numB;
+        break;
+
+      case 'title':
+        comparison = a.title.localeCompare(b.title);
+        break;
+
+      case 'status':
+        const statusOrder: Record<TicketStatus, number> = {
+          new: 1,
+          open: 2,
+          in_progress: 3,
+          waiting: 4,
+          resolved: 5,
+          closed: 6,
+        };
+        comparison = statusOrder[a.status] - statusOrder[b.status];
+        break;
+
+      case 'priority':
+        const priorityOrder: Record<TicketPriority, number> = {
+          urgent: 4,
+          high: 3,
+          medium: 2,
+          low: 1,
+        };
+        comparison = priorityOrder[a.priority] - priorityOrder[b.priority];
+        break;
+
+      case 'assignee':
+        // Unassigned tickets go last when ascending, first when descending
+        if (!a.assignee && !b.assignee) comparison = 0;
+        else if (!a.assignee) comparison = 1;
+        else if (!b.assignee) comparison = -1;
+        else comparison = a.assignee.name.localeCompare(b.assignee.name);
+        break;
+
+      case 'requester':
+        comparison = a.requester.name.localeCompare(b.requester.name);
+        break;
+
+      case 'sla':
+        const slaOrder: Record<SLAStatusType, number> = {
+          red: 3,
+          yellow: 2,
+          green: 1,
+        };
+        comparison = slaOrder[a.sla.status] - slaOrder[b.sla.status];
+        break;
+
+      case 'updated':
+        comparison = a.updatedAt.getTime() - b.updatedAt.getTime();
+        break;
+
+      default:
+        comparison = 0;
+    }
+
+    return direction === 'asc' ? comparison : -comparison;
+  });
+
+  return sorted;
+}

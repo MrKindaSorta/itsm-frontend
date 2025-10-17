@@ -3,13 +3,17 @@ import type { Ticket } from '@/types';
 import { StatusBadge } from './StatusBadge';
 import { PriorityBadge } from './PriorityBadge';
 import { SLAIndicator } from './SLAIndicator';
-import { formatRelativeTime, getInitials } from '@/lib/utils';
+import { SortableHeader, type SortDirection } from './SortableHeader';
+import { formatRelativeTime, getInitials, type SortColumn } from '@/lib/utils';
 
 interface TicketTableProps {
   tickets: Ticket[];
+  sortColumn: SortColumn | null;
+  sortDirection: SortDirection;
+  onSort: (column: SortColumn) => void;
 }
 
-export function TicketTable({ tickets }: TicketTableProps) {
+export function TicketTable({ tickets, sortColumn, sortDirection, onSort }: TicketTableProps) {
   const navigate = useNavigate();
 
   const handleRowClick = (ticketId: string) => {
@@ -22,14 +26,78 @@ export function TicketTable({ tickets }: TicketTableProps) {
         <table className="w-full">
           <thead className="bg-muted/50">
             <tr className="border-b">
-              <th className="px-4 py-3 text-left text-sm font-medium">ID</th>
-              <th className="px-4 py-3 text-left text-sm font-medium">Title</th>
-              <th className="px-4 py-3 text-left text-sm font-medium">Status</th>
-              <th className="px-4 py-3 text-left text-sm font-medium">Priority</th>
-              <th className="px-4 py-3 text-left text-sm font-medium">Assignee</th>
-              <th className="px-4 py-3 text-left text-sm font-medium">Requester</th>
-              <th className="px-4 py-3 text-left text-sm font-medium">SLA</th>
-              <th className="px-4 py-3 text-left text-sm font-medium">Updated</th>
+              <th className="px-4 py-3 text-left">
+                <SortableHeader
+                  label="ID"
+                  column="id"
+                  currentColumn={sortColumn}
+                  currentDirection={sortDirection}
+                  onSort={onSort}
+                />
+              </th>
+              <th className="px-4 py-3 text-left">
+                <SortableHeader
+                  label="Title"
+                  column="title"
+                  currentColumn={sortColumn}
+                  currentDirection={sortDirection}
+                  onSort={onSort}
+                />
+              </th>
+              <th className="px-4 py-3 text-left">
+                <SortableHeader
+                  label="Status"
+                  column="status"
+                  currentColumn={sortColumn}
+                  currentDirection={sortDirection}
+                  onSort={onSort}
+                />
+              </th>
+              <th className="px-4 py-3 text-left">
+                <SortableHeader
+                  label="Priority"
+                  column="priority"
+                  currentColumn={sortColumn}
+                  currentDirection={sortDirection}
+                  onSort={onSort}
+                />
+              </th>
+              <th className="px-4 py-3 text-left">
+                <SortableHeader
+                  label="Assignee"
+                  column="assignee"
+                  currentColumn={sortColumn}
+                  currentDirection={sortDirection}
+                  onSort={onSort}
+                />
+              </th>
+              <th className="px-4 py-3 text-left">
+                <SortableHeader
+                  label="Requester"
+                  column="requester"
+                  currentColumn={sortColumn}
+                  currentDirection={sortDirection}
+                  onSort={onSort}
+                />
+              </th>
+              <th className="px-4 py-3 text-left">
+                <SortableHeader
+                  label="SLA"
+                  column="sla"
+                  currentColumn={sortColumn}
+                  currentDirection={sortDirection}
+                  onSort={onSort}
+                />
+              </th>
+              <th className="px-4 py-3 text-left">
+                <SortableHeader
+                  label="Updated"
+                  column="updated"
+                  currentColumn={sortColumn}
+                  currentDirection={sortDirection}
+                  onSort={onSort}
+                />
+              </th>
             </tr>
           </thead>
           <tbody>

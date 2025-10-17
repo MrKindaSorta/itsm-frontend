@@ -2,19 +2,32 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Filter, Plus, Loader2 } from 'lucide-react';
+import { Search, Filter, Plus, Loader2, User, UserCheck } from 'lucide-react';
 import { TicketTable } from '@/components/tickets/TicketTable';
 import { TicketCreateModal } from '@/components/tickets/TicketCreateModal';
-import type { Ticket } from '@/types';
+import { StatusTabs } from '@/components/tickets/StatusTabs';
+import { useAuth } from '@/contexts/AuthContext';
+import { sortTickets, type SortColumn, type SortDirection } from '@/lib/utils';
+import type { Ticket, TicketStatus } from '@/types';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
 export default function Tickets() {
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  // Sorting state
+  const [sortColumn, setSortColumn] = useState<SortColumn | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+
+  // Filtering state
+  const [statusFilter, setStatusFilter] = useState<TicketStatus | 'all'>('all');
+  const [showMyTickets, setShowMyTickets] = useState(false);
+  const [showUnassigned, setShowUnassigned] = useState(false);
 
   // Fetch tickets from API
   useEffect(() => {
@@ -71,17 +84,61 @@ export default function Tickets() {
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
 
-  // Filter tickets based on search query (client-side backup)
+  // Handle sort
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      // Cycle through: null -> asc -> desc -> null
+      if (sortDirection === null) {
+        setSortDirection('asc');
+      } else if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else {
+        setSortColumn(null);
+        setSortDirection(null);
+      }
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
+  // Filter tickets based on all active filters
   const filteredTickets = tickets.filter((ticket) => {
-    if (!searchQuery) return true;
-    const searchLower = searchQuery.toLowerCase();
-    return (
-      ticket.id.toLowerCase().includes(searchLower) ||
-      ticket.title.toLowerCase().includes(searchLower) ||
-      ticket.requester?.name.toLowerCase().includes(searchLower) ||
-      ticket.category.toLowerCase().includes(searchLower)
-    );
+    // Search filter
+    if (searchQuery) {
+      const searchLower = searchQuery.toLowerCase();
+      const matchesSearch =
+        ticket.id.toLowerCase().includes(searchLower) ||
+        ticket.title.toLowerCase().includes(searchLower) ||
+        ticket.requester?.name.toLowerCase().includes(searchLower) ||
+        ticket.category.toLowerCase().includes(searchLower);
+      if (!matchesSearch) return false;
+    }
+
+    // Status filter
+    if (statusFilter !== 'all' && ticket.status !== statusFilter) {
+      return false;
+    }
+
+    // My Tickets filter
+    if (showMyTickets && ticket.assignee?.id !== user?.id) {
+      return false;
+    }
+
+    // Unassigned filter
+    if (showUnassigned && ticket.assignee !== undefined && ticket.assignee !== null) {
+      return false;
+    }
+
+    return true;
   });
+
+  // Apply sorting
+  const sortedAndFilteredTickets = sortTickets(filteredTickets, sortColumn, sortDirection);
+
+  // Count My Tickets
+  const myTicketsCount = tickets.filter(t => t.assignee?.id === user?.id).length;
+  const unassignedCount = tickets.filter(t => !t.assignee).length;
 
   return (
     <div className="space-y-6">
@@ -95,7 +152,7 @@ export default function Tickets() {
         <CardHeader>
           <div className="flex items-start justify-between gap-4">
             <div>
-              <CardTitle>All Tickets ({filteredTickets.length})</CardTitle>
+              <CardTitle>All Tickets ({sortedAndFilteredTickets.length})</CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
                 Manage and track all support tickets
               </p>
@@ -114,6 +171,38 @@ export default function Tickets() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
+              <Button
+                variant={showMyTickets ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => {
+                  setShowMyTickets(!showMyTickets);
+                  if (!showMyTickets) setShowUnassigned(false); // Disable unassigned when enabling my tickets
+                }}
+              >
+                <UserCheck className="h-4 w-4 mr-2" />
+                My Tickets
+                {myTicketsCount > 0 && (
+                  <span className="ml-2 px-1.5 py-0.5 text-xs font-semibold rounded-full bg-background text-foreground">
+                    {myTicketsCount}
+                  </span>
+                )}
+              </Button>
+              <Button
+                variant={showUnassigned ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => {
+                  setShowUnassigned(!showUnassigned);
+                  if (!showUnassigned) setShowMyTickets(false); // Disable my tickets when enabling unassigned
+                }}
+              >
+                <User className="h-4 w-4 mr-2" />
+                Unassigned
+                {unassignedCount > 0 && (
+                  <span className="ml-2 px-1.5 py-0.5 text-xs font-semibold rounded-full bg-background text-foreground">
+                    {unassignedCount}
+                  </span>
+                )}
+              </Button>
               <Button variant="outline" size="sm">
                 <Filter className="h-4 w-4 mr-2" />
                 Filters
@@ -121,7 +210,15 @@ export default function Tickets() {
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+
+        {/* Status Filter Tabs */}
+        <StatusTabs
+          tickets={tickets}
+          activeStatus={statusFilter}
+          onStatusChange={setStatusFilter}
+        />
+
+        <CardContent className="pt-6">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -135,7 +232,12 @@ export default function Tickets() {
               </Button>
             </div>
           ) : (
-            <TicketTable tickets={filteredTickets} />
+            <TicketTable
+              tickets={sortedAndFilteredTickets}
+              sortColumn={sortColumn}
+              sortDirection={sortDirection}
+              onSort={handleSort}
+            />
           )}
         </CardContent>
       </Card>
