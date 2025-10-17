@@ -151,11 +151,13 @@ export default function TicketDetail() {
 
   // Handler for Quick Actions changes
   const handleQuickActionChange = async (field: 'status' | 'priority' | 'assignee', value: string) => {
-    if (!ticket) return;
+    if (!ticket || !user) return;
 
     setIsSaving(true);
     try {
-      const payload: any = {};
+      const payload: any = {
+        updated_by_id: user.id, // Include user ID for system activity tracking
+      };
 
       if (field === 'status') {
         payload.status = value;
