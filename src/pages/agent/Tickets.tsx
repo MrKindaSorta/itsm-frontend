@@ -85,14 +85,6 @@ export default function Tickets() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <p className="text-muted-foreground">Manage and track all support tickets</p>
-        <Button onClick={() => setIsCreateModalOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Create Ticket
-        </Button>
-      </div>
-
       <TicketCreateModal
         open={isCreateModalOpen}
         onOpenChange={setIsCreateModalOpen}
@@ -101,9 +93,18 @@ export default function Tickets() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>All Tickets ({filteredTickets.length})</CardTitle>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <CardTitle>All Tickets ({filteredTickets.length})</CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                Manage and track all support tickets
+              </p>
+            </div>
             <div className="flex items-center space-x-2">
+              <Button onClick={() => setIsCreateModalOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Ticket
+              </Button>
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input

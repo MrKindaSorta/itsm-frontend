@@ -5,17 +5,20 @@ import { Plus } from 'lucide-react';
 export default function KnowledgeBase() {
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <p className="text-muted-foreground">Manage articles and documentation</p>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          New Article
-        </Button>
-      </div>
-
       <Card>
         <CardHeader>
-          <CardTitle>Articles</CardTitle>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <CardTitle>Articles</CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                Manage articles and documentation
+              </p>
+            </div>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              New Article
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">

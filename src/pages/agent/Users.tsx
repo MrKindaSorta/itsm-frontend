@@ -313,14 +313,6 @@ export default function Users() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <p className="text-muted-foreground">Manage users and agents</p>
-        <Button onClick={() => setIsCreateModalOpen(true)}>
-          <UserPlus className="h-4 w-4 mr-2" />
-          Add User
-        </Button>
-      </div>
-
       <UserCreateModal
         open={isCreateModalOpen}
         onOpenChange={setIsCreateModalOpen}
@@ -335,6 +327,13 @@ export default function Users() {
       />
 
       <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)} className="w-full">
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-muted-foreground">Manage users and agents</p>
+          <Button onClick={() => setIsCreateModalOpen(true)}>
+            <UserPlus className="h-4 w-4 mr-2" />
+            Add User
+          </Button>
+        </div>
         <TabsList>
           <TabsTrigger value="active">Active Users ({filteredUsers.length})</TabsTrigger>
           <TabsTrigger value="deleted">Deleted Users ({filteredDeletedUsers.length})</TabsTrigger>
