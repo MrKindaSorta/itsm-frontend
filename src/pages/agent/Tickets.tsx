@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Filter, Plus, Loader2, User, UserCheck } from 'lucide-react';
+import { Search, Filter, Plus, Loader2, User, UserCheck, Settings } from 'lucide-react';
 import { TicketTable } from '@/components/tickets/TicketTable';
 import { TicketCreateModal } from '@/components/tickets/TicketCreateModal';
+import { ColumnCustomizer } from '@/components/tickets/ColumnCustomizer';
 import { StatusTabs } from '@/components/tickets/StatusTabs';
 import { useAuth } from '@/contexts/AuthContext';
+import { useViewPreferences } from '@/contexts/ViewPreferencesContext';
 import { sortTickets, type SortColumn, type SortDirection } from '@/lib/utils';
 import type { Ticket, TicketStatus } from '@/types';
 
@@ -14,11 +16,13 @@ const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
 export default function Tickets() {
   const { user } = useAuth();
+  const { isLoading: isPreferencesLoading } = useViewPreferences();
   const [searchQuery, setSearchQuery] = useState('');
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isColumnCustomizerOpen, setIsColumnCustomizerOpen] = useState(false);
 
   // Sorting state
   const [sortColumn, setSortColumn] = useState<SortColumn | null>(null);
@@ -148,6 +152,11 @@ export default function Tickets() {
         onSuccess={fetchTickets}
       />
 
+      <ColumnCustomizer
+        open={isColumnCustomizerOpen}
+        onOpenChange={setIsColumnCustomizerOpen}
+      />
+
       <Card>
         <CardHeader>
           <div className="flex items-start justify-between gap-4">
@@ -207,6 +216,14 @@ export default function Tickets() {
                 <Filter className="h-4 w-4 mr-2" />
                 Filters
               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsColumnCustomizerOpen(true)}
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Columns
+              </Button>
             </div>
           </div>
         </CardHeader>
@@ -219,10 +236,12 @@ export default function Tickets() {
         />
 
         <CardContent className="pt-6">
-          {isLoading ? (
+          {isLoading || isPreferencesLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              <span className="ml-3 text-muted-foreground">Loading tickets...</span>
+              <span className="ml-3 text-muted-foreground">
+                {isPreferencesLoading ? 'Loading preferences...' : 'Loading tickets...'}
+              </span>
             </div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center py-12">

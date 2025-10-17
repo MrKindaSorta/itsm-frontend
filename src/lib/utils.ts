@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import type { TicketStatus, TicketPriority, SLAStatusType } from '@/types';
+import type { TicketStatus, TicketPriority, SLAStatusType, ColumnConfig } from '@/types';
 
 // Utility for merging Tailwind classes
 export function cn(...inputs: ClassValue[]) {
@@ -257,3 +257,124 @@ export function sortTickets(
 
   return sorted;
 }
+
+// Default column configuration for ticket table
+export const DEFAULT_TICKET_COLUMNS: ColumnConfig[] = [
+  {
+    id: 'id',
+    label: 'ID',
+    visible: true,
+    order: 0,
+    width: 120,
+    sortable: true,
+    resizable: true,
+  },
+  {
+    id: 'title',
+    label: 'Title',
+    visible: true,
+    order: 1,
+    width: 300,
+    sortable: true,
+    resizable: true,
+  },
+  {
+    id: 'status',
+    label: 'Status',
+    visible: true,
+    order: 2,
+    width: 140,
+    sortable: true,
+    resizable: true,
+  },
+  {
+    id: 'priority',
+    label: 'Priority',
+    visible: true,
+    order: 3,
+    width: 120,
+    sortable: true,
+    resizable: true,
+  },
+  {
+    id: 'category',
+    label: 'Category',
+    visible: false,
+    order: 4,
+    width: 150,
+    sortable: true,
+    resizable: true,
+  },
+  {
+    id: 'assignee',
+    label: 'Assignee',
+    visible: true,
+    order: 5,
+    width: 180,
+    sortable: true,
+    resizable: true,
+  },
+  {
+    id: 'requester',
+    label: 'Requester',
+    visible: true,
+    order: 6,
+    width: 180,
+    sortable: true,
+    resizable: true,
+  },
+  {
+    id: 'department',
+    label: 'Department',
+    visible: false,
+    order: 7,
+    width: 150,
+    sortable: true,
+    resizable: true,
+  },
+  {
+    id: 'sla',
+    label: 'SLA',
+    visible: true,
+    order: 8,
+    width: 100,
+    sortable: true,
+    resizable: false,
+  },
+  {
+    id: 'created',
+    label: 'Created',
+    visible: false,
+    order: 9,
+    width: 150,
+    sortable: true,
+    resizable: true,
+  },
+  {
+    id: 'updated',
+    label: 'Updated',
+    visible: true,
+    order: 10,
+    width: 150,
+    sortable: true,
+    resizable: true,
+  },
+  {
+    id: 'dueDate',
+    label: 'Due Date',
+    visible: false,
+    order: 11,
+    width: 150,
+    sortable: true,
+    resizable: true,
+  },
+  {
+    id: 'tags',
+    label: 'Tags',
+    visible: false,
+    order: 12,
+    width: 200,
+    sortable: false,
+    resizable: true,
+  },
+];

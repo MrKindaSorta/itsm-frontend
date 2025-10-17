@@ -294,3 +294,20 @@ export interface SavedView {
   isDefault: boolean;
   createdAt: Date;
 }
+
+// Column customization
+export interface ColumnConfig {
+  id: string;
+  label: string;
+  visible: boolean;
+  order: number;
+  width?: number;
+  sortable: boolean;
+  resizable: boolean;
+}
+
+export interface ViewPreferences {
+  ticketList: {
+    columns: ColumnConfig[];
+  };
+}
