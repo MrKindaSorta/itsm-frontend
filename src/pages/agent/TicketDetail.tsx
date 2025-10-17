@@ -461,6 +461,7 @@ export default function TicketDetail() {
             <CardContent className="flex-1 overflow-y-auto p-3 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-muted [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:hover:bg-muted-foreground/40">
               <ActivityFeed
                 activities={activities}
+                currentUserId={user?.id}
                 onReply={(activity) => setReplyingToActivity(activity)}
                 onFlag={handleFlagActivity}
               />
