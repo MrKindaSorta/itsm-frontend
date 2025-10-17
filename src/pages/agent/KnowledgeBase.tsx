@@ -6,10 +6,7 @@ export default function KnowledgeBase() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Knowledge Base</h1>
-          <p className="text-muted-foreground mt-2">Manage articles and documentation</p>
-        </div>
+        <p className="text-muted-foreground">Manage articles and documentation</p>
         <Button>
           <Plus className="h-4 w-4 mr-2" />
           New Article

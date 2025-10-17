@@ -86,10 +86,7 @@ export default function Tickets() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Tickets</h1>
-          <p className="text-muted-foreground mt-2">Manage and track all support tickets</p>
-        </div>
+        <p className="text-muted-foreground">Manage and track all support tickets</p>
         <Button onClick={() => setIsCreateModalOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Create Ticket

@@ -314,10 +314,7 @@ export default function Users() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Users</h1>
-          <p className="text-muted-foreground mt-2">Manage users and agents</p>
-        </div>
+        <p className="text-muted-foreground">Manage users and agents</p>
         <Button onClick={() => setIsCreateModalOpen(true)}>
           <UserPlus className="h-4 w-4 mr-2" />
           Add User
