@@ -16,6 +16,32 @@ interface BrandingContextType {
 
 const BrandingContext = createContext<BrandingContextType | undefined>(undefined);
 
+// Migration function to convert legacy branding format to theme-aware format
+function migrateLegacyBranding(data: any): BrandingConfiguration {
+  // Check if this is legacy format (colors is a flat object, not theme-aware)
+  if (data.colors && data.colors.primary && !data.colors.light && !data.colors.dark) {
+    console.log('Migrating legacy branding format to theme-aware structure');
+
+    // Legacy format detected - convert to theme-aware
+    return {
+      ...data,
+      colors: {
+        light: { ...data.colors }, // Use old colors for light mode
+        dark: { ...data.colors },  // Duplicate for dark mode (can be customized later)
+      },
+    };
+  }
+
+  // Check if colors structure exists at all
+  if (!data.colors || !data.colors.light || !data.colors.dark) {
+    console.warn('Invalid branding structure, using defaults');
+    return DEFAULT_BRANDING;
+  }
+
+  // Already in new format
+  return data;
+}
+
 export function BrandingProvider({ children }: { children: ReactNode }) {
   const [branding, setBranding] = useState<BrandingConfiguration>(DEFAULT_BRANDING);
   const [isLoading, setIsLoading] = useState(true);
@@ -32,12 +58,16 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
       const data = await response.json();
 
       if (data.success && data.config) {
-        loadedBranding = {
+        const rawConfig = {
           ...data.config,
           createdAt: new Date(data.config.createdAt),
           updatedAt: new Date(data.config.updatedAt),
         };
-        // Cache in localStorage
+
+        // Migrate legacy format if needed
+        loadedBranding = migrateLegacyBranding(rawConfig);
+
+        // Cache migrated version in localStorage
         localStorage.setItem(BRANDING_STORAGE_KEY, JSON.stringify(loadedBranding));
       } else {
         throw new Error('No branding config from API');
@@ -50,11 +80,19 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
-          loadedBranding = {
+          const rawConfig = {
             ...parsed,
             createdAt: new Date(parsed.createdAt),
             updatedAt: new Date(parsed.updatedAt),
           };
+
+          // Migrate legacy format if needed
+          loadedBranding = migrateLegacyBranding(rawConfig);
+
+          // Save migrated version back to localStorage
+          if (loadedBranding !== DEFAULT_BRANDING) {
+            localStorage.setItem(BRANDING_STORAGE_KEY, JSON.stringify(loadedBranding));
+          }
         } catch (parseError) {
           console.error('Failed to parse localStorage branding:', parseError);
           loadedBranding = DEFAULT_BRANDING;
@@ -70,6 +108,12 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
 
   // Apply branding colors as CSS custom properties
   const applyBrandingStyles = () => {
+    // Safety check: ensure colors structure is valid
+    if (!branding.colors?.light || !branding.colors?.dark) {
+      console.warn('Invalid branding colors structure, using defaults');
+      return;
+    }
+
     const colors = actualTheme === 'dark' ? branding.colors.dark : branding.colors.light;
 
     // Create or update style element
