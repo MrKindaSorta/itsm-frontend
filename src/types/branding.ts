@@ -88,8 +88,8 @@ export const BRANDING_PRESETS: BrandingPreset[] = [
     colors: {
       light: {
         primary: '#3b82f6',
-        secondary: '#64748b',
-        accent: '#06b6d4',
+        secondary: '#f1f5f9',
+        accent: '#f1f5f9',
         background: '#ffffff',
         foreground: '#0f172a',
         muted: '#f1f5f9',
@@ -97,8 +97,8 @@ export const BRANDING_PRESETS: BrandingPreset[] = [
       },
       dark: {
         primary: '#60a5fa',
-        secondary: '#94a3b8',
-        accent: '#22d3ee',
+        secondary: '#334155',
+        accent: '#334155',
         background: '#0f172a',
         foreground: '#f1f5f9',
         muted: '#1e293b',
