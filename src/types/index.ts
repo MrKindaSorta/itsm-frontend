@@ -153,6 +153,7 @@ export interface Activity {
       name: string;
     };
     contentPreview: string;
+    isInternal: boolean;
   } | null;
   isFlagged?: boolean;
   flaggedBy?: {

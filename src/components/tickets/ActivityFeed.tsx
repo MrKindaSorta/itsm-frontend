@@ -133,8 +133,8 @@ export function ActivityFeed({ activities, onReply, onFlag }: ActivityFeedProps)
                     onFlag={handleFlag}
                   />
                 </div>
-                {/* Show parent activity reference if this is a reply */}
-                {activity.parentActivity && (
+                {/* Show parent activity reference if this is a reply AND parent is not internal */}
+                {activity.parentActivity && !activity.parentActivity.isInternal && (
                   <div className="mt-2 mb-2 p-2 bg-muted/50 rounded text-xs border-l-2 border-primary/50">
                     <span className="text-muted-foreground">Replying to </span>
                     <span className="font-medium">{activity.parentActivity.author.name}</span>
