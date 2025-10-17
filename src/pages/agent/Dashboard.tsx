@@ -268,7 +268,7 @@ export default function Dashboard() {
                         </div>
                         <p className="text-sm font-medium truncate">{ticket.title}</p>
                         <div className="mt-2">
-                          <SLAIndicator sla={ticket.sla} compact />
+                          <SLAIndicator sla={ticket.sla} />
                         </div>
                       </div>
                       <ExternalLink className="h-4 w-4 text-muted-foreground flex-shrink-0" />
