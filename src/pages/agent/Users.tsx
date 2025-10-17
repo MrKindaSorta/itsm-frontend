@@ -326,18 +326,27 @@ export default function Users() {
         user={selectedUser}
       />
 
-      <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)} className="w-full">
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-muted-foreground">Manage users and agents</p>
-          <Button onClick={() => setIsCreateModalOpen(true)}>
-            <UserPlus className="h-4 w-4 mr-2" />
-            Add User
-          </Button>
-        </div>
-        <TabsList>
-          <TabsTrigger value="active">Active Users ({filteredUsers.length})</TabsTrigger>
-          <TabsTrigger value="deleted">Deleted Users ({filteredDeletedUsers.length})</TabsTrigger>
-        </TabsList>
+      <Card>
+        <CardHeader>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <CardTitle>Users</CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                Manage users and agents
+              </p>
+            </div>
+            <Button onClick={() => setIsCreateModalOpen(true)}>
+              <UserPlus className="h-4 w-4 mr-2" />
+              Add User
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)} className="w-full">
+            <TabsList>
+              <TabsTrigger value="active">Active Users ({filteredUsers.length})</TabsTrigger>
+              <TabsTrigger value="deleted">Deleted Users ({filteredDeletedUsers.length})</TabsTrigger>
+            </TabsList>
 
         <TabsContent value="active" className="mt-6">
           <Card>
@@ -399,7 +408,9 @@ export default function Users() {
             <CardContent>{renderDeletedUserTable()}</CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 }
