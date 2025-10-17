@@ -7,12 +7,13 @@ import { useState } from 'react';
 interface BrandingPreviewProps {
   branding: BrandingConfiguration;
   previewMode: 'login' | 'portal';
+  previewTheme?: 'light' | 'dark';
 }
 
-export default function BrandingPreview({ branding, previewMode }: BrandingPreviewProps) {
+export default function BrandingPreview({ branding, previewMode, previewTheme = 'light' }: BrandingPreviewProps) {
   const [deviceView, setDeviceView] = useState<'desktop' | 'mobile'>('desktop');
 
-  const colors = branding.colors.light;
+  const colors = branding.colors[previewTheme];
 
   return (
     <Card>
@@ -61,9 +62,9 @@ export default function BrandingPreview({ branding, previewMode }: BrandingPrevi
             }}
           >
             {previewMode === 'login' ? (
-              <LoginPreview branding={branding} isMobile={deviceView === 'mobile'} />
+              <LoginPreview branding={branding} isMobile={deviceView === 'mobile'} previewTheme={previewTheme} />
             ) : (
-              <PortalPreview branding={branding} isMobile={deviceView === 'mobile'} />
+              <PortalPreview branding={branding} isMobile={deviceView === 'mobile'} previewTheme={previewTheme} />
             )}
           </div>
 
@@ -79,11 +80,13 @@ export default function BrandingPreview({ branding, previewMode }: BrandingPrevi
 function LoginPreview({
   branding,
   isMobile,
+  previewTheme = 'light',
 }: {
   branding: BrandingConfiguration;
   isMobile: boolean;
+  previewTheme?: 'light' | 'dark';
 }) {
-  const colors = branding.colors.light;
+  const colors = branding.colors[previewTheme];
   const content = branding.content;
 
   return (
@@ -183,11 +186,13 @@ function LoginPreview({
 function PortalPreview({
   branding,
   isMobile,
+  previewTheme = 'light',
 }: {
   branding: BrandingConfiguration;
   isMobile: boolean;
+  previewTheme?: 'light' | 'dark';
 }) {
-  const colors = branding.colors.light;
+  const colors = branding.colors[previewTheme];
   const content = branding.content;
   const settings = branding.portalSettings;
 

@@ -18,13 +18,14 @@ import {
 interface BrandingCustomizerProps {
   branding: BrandingConfiguration;
   onUpdate: (branding: BrandingConfiguration) => void;
+  previewTheme: 'light' | 'dark';
+  onPreviewThemeChange: (theme: 'light' | 'dark') => void;
 }
 
-export default function BrandingCustomizer({ branding, onUpdate }: BrandingCustomizerProps) {
+export default function BrandingCustomizer({ branding, onUpdate, previewTheme, onPreviewThemeChange }: BrandingCustomizerProps) {
   const [activeSection, setActiveSection] = useState<'colors' | 'logos' | 'content' | 'settings'>(
     'colors'
   );
-  const [colorTheme, setColorTheme] = useState<'light' | 'dark'>('light');
 
   const updateBranding = (updates: Partial<BrandingConfiguration>) => {
     onUpdate({
@@ -172,17 +173,17 @@ export default function BrandingCustomizer({ branding, onUpdate }: BrandingCusto
                 <Label className="text-sm font-medium">Custom Colors</Label>
                 <div className="flex gap-1 p-1 bg-muted rounded-lg">
                   <button
-                    onClick={() => setColorTheme('light')}
+                    onClick={() => onPreviewThemeChange('light')}
                     className={`px-3 py-1 text-xs rounded transition-colors ${
-                      colorTheme === 'light' ? 'bg-background shadow-sm' : 'hover:bg-background/50'
+                      previewTheme === 'light' ? 'bg-background shadow-sm' : 'hover:bg-background/50'
                     }`}
                   >
                     Light Mode
                   </button>
                   <button
-                    onClick={() => setColorTheme('dark')}
+                    onClick={() => onPreviewThemeChange('dark')}
                     className={`px-3 py-1 text-xs rounded transition-colors ${
-                      colorTheme === 'dark' ? 'bg-background shadow-sm' : 'hover:bg-background/50'
+                      previewTheme === 'dark' ? 'bg-background shadow-sm' : 'hover:bg-background/50'
                     }`}
                   >
                     Dark Mode
@@ -193,38 +194,38 @@ export default function BrandingCustomizer({ branding, onUpdate }: BrandingCusto
                 <ColorPicker
                   label="Primary"
                   description="Main brand color, buttons"
-                  value={branding.colors[colorTheme].primary}
-                  onChange={(val) => updateColors(colorTheme, 'primary', val)}
+                  value={branding.colors[previewTheme].primary}
+                  onChange={(val) => updateColors(previewTheme, 'primary', val)}
                 />
                 <ColorPicker
                   label="Secondary"
                   description="Text, labels, icons"
-                  value={branding.colors[colorTheme].secondary}
-                  onChange={(val) => updateColors(colorTheme, 'secondary', val)}
+                  value={branding.colors[previewTheme].secondary}
+                  onChange={(val) => updateColors(previewTheme, 'secondary', val)}
                 />
                 <ColorPicker
                   label="Accent"
                   description="Highlights, links"
-                  value={branding.colors[colorTheme].accent}
-                  onChange={(val) => updateColors(colorTheme, 'accent', val)}
+                  value={branding.colors[previewTheme].accent}
+                  onChange={(val) => updateColors(previewTheme, 'accent', val)}
                 />
                 <ColorPicker
                   label="Background"
                   description="Page background"
-                  value={branding.colors[colorTheme].background}
-                  onChange={(val) => updateColors(colorTheme, 'background', val)}
+                  value={branding.colors[previewTheme].background}
+                  onChange={(val) => updateColors(previewTheme, 'background', val)}
                 />
                 <ColorPicker
                   label="Foreground"
                   description="Primary text color"
-                  value={branding.colors[colorTheme].foreground}
-                  onChange={(val) => updateColors(colorTheme, 'foreground', val)}
+                  value={branding.colors[previewTheme].foreground}
+                  onChange={(val) => updateColors(previewTheme, 'foreground', val)}
                 />
                 <ColorPicker
                   label="Border"
                   description="Card borders, dividers"
-                  value={branding.colors[colorTheme].border}
-                  onChange={(val) => updateColors(colorTheme, 'border', val)}
+                  value={branding.colors[previewTheme].border}
+                  onChange={(val) => updateColors(previewTheme, 'border', val)}
                 />
               </div>
             </div>

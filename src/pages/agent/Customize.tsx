@@ -39,6 +39,7 @@ export default function Customize() {
   const { branding: contextBranding, updateBranding: updateContextBranding } = useBranding();
   const [localBranding, setLocalBranding] = useState<BrandingConfiguration>(contextBranding);
   const [brandingPreviewMode, setBrandingPreviewMode] = useState<'login' | 'portal'>('login');
+  const [brandingPreviewTheme, setBrandingPreviewTheme] = useState<'light' | 'dark'>('light');
   const [brandingSaveMessage, setBrandingSaveMessage] = useState<string>('');
 
   // Load form configuration from API (fallback to localStorage) on mount
@@ -505,6 +506,8 @@ export default function Customize() {
                     <BrandingCustomizer
                       branding={localBranding}
                       onUpdate={handleUpdateBranding}
+                      previewTheme={brandingPreviewTheme}
+                      onPreviewThemeChange={setBrandingPreviewTheme}
                     />
                   </div>
 
@@ -513,6 +516,7 @@ export default function Customize() {
                     <BrandingPreview
                       branding={localBranding}
                       previewMode={brandingPreviewMode}
+                      previewTheme={brandingPreviewTheme}
                     />
                   </div>
                 </div>
