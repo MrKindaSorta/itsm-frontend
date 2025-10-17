@@ -73,18 +73,22 @@ export default function PortalLayout() {
             </div>
 
             {/* Navigation - Centered with expandable descriptions */}
-            <nav className="hidden md:flex items-start justify-center flex-1 gap-6">
+            <nav className="hidden md:flex items-start justify-center flex-1 gap-4">
               {navigation.map((item) => {
                 const isActive = location.pathname === item.href;
                 return (
                   <Link
                     key={item.name}
                     to={item.href}
-                    className="flex flex-col items-center group"
+                    className={`flex flex-col items-center px-4 py-2 rounded-t-lg transition-all border-b-2 ${
+                      isActive
+                        ? 'bg-accent/50 border-primary'
+                        : 'border-transparent hover:bg-accent/30 hover:border-accent'
+                    }`}
                   >
                     <span
-                      className={`text-sm font-medium transition-colors hover:text-primary ${
-                        isActive ? 'text-foreground' : 'text-muted-foreground'
+                      className={`text-sm font-medium transition-colors ${
+                        isActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
                       }`}
                     >
                       {item.name}
