@@ -70,6 +70,11 @@ export default function TicketDetail() {
             .map((act: any) => ({
               ...act,
               createdAt: new Date(act.createdAt),
+              // Remove parentActivity if it references an internal note
+              // Explicit === false check to guard against undefined/null/missing fields
+              parentActivity: act.parentActivity?.isInternal === false
+                ? act.parentActivity
+                : null,
             }));
           setActivities(transformedActivities.reverse()); // Newest first
         }
