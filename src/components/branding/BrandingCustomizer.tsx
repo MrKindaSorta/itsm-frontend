@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import type { BrandingConfiguration } from '@/types/branding';
 import { BRANDING_PRESETS } from '@/types/branding';
 import {
@@ -419,17 +418,6 @@ export default function BrandingCustomizer({ branding, onUpdate }: BrandingCusto
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="welcomeMessage">Welcome Message</Label>
-                <Textarea
-                  id="welcomeMessage"
-                  value={branding.content.welcomeMessage || ''}
-                  onChange={(e) => updateContent('welcomeMessage', e.target.value)}
-                  placeholder="Welcome to our support portal. We're here to help!"
-                  rows={2}
-                />
-              </div>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="loginTitle">Login Page Title</Label>
@@ -448,30 +436,6 @@ export default function BrandingCustomizer({ branding, onUpdate }: BrandingCusto
                     value={branding.content.loginSubtitle || ''}
                     onChange={(e) => updateContent('loginSubtitle', e.target.value)}
                     placeholder="Sign in to your account"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="supportEmail">Support Email</Label>
-                  <Input
-                    id="supportEmail"
-                    type="email"
-                    value={branding.content.supportEmail || ''}
-                    onChange={(e) => updateContent('supportEmail', e.target.value)}
-                    placeholder="support@company.com"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="supportPhone">Support Phone</Label>
-                  <Input
-                    id="supportPhone"
-                    type="tel"
-                    value={branding.content.supportPhone || ''}
-                    onChange={(e) => updateContent('supportPhone', e.target.value)}
-                    placeholder="1-800-SUPPORT"
                   />
                 </div>
               </div>
@@ -548,32 +512,6 @@ export default function BrandingCustomizer({ branding, onUpdate }: BrandingCusto
                     />
                   </button>
                 </div>
-
-                <div className="space-y-2">
-                  <Label className="text-sm">Header Style</Label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {(['minimal', 'standard', 'full'] as const).map((style) => (
-                      <button
-                        key={style}
-                        onClick={() =>
-                          updateBranding({
-                            portalSettings: {
-                              ...branding.portalSettings!,
-                              headerStyle: style,
-                            },
-                          })
-                        }
-                        className={`p-2 border rounded-lg text-sm capitalize transition-colors ${
-                          branding.portalSettings?.headerStyle === style
-                            ? 'border-primary bg-primary/5'
-                            : 'hover:border-primary/50'
-                        }`}
-                      >
-                        {style}
-                      </button>
-                    ))}
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -605,58 +543,6 @@ export default function BrandingCustomizer({ branding, onUpdate }: BrandingCusto
                       }`}
                     />
                   </button>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-sm">Background Style</Label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {(['solid', 'gradient', 'image'] as const).map((style) => (
-                      <button
-                        key={style}
-                        onClick={() =>
-                          updateBranding({
-                            authSettings: {
-                              ...branding.authSettings!,
-                              backgroundStyle: style,
-                            },
-                          })
-                        }
-                        className={`p-2 border rounded-lg text-sm capitalize transition-colors ${
-                          branding.authSettings?.backgroundStyle === style
-                            ? 'border-primary bg-primary/5'
-                            : 'hover:border-primary/50'
-                        }`}
-                      >
-                        {style}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-sm">Card Style</Label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {(['standard', 'elevated', 'minimal'] as const).map((style) => (
-                      <button
-                        key={style}
-                        onClick={() =>
-                          updateBranding({
-                            authSettings: {
-                              ...branding.authSettings!,
-                              cardStyle: style,
-                            },
-                          })
-                        }
-                        className={`p-2 border rounded-lg text-sm capitalize transition-colors ${
-                          branding.authSettings?.cardStyle === style
-                            ? 'border-primary bg-primary/5'
-                            : 'hover:border-primary/50'
-                        }`}
-                      >
-                        {style}
-                      </button>
-                    ))}
-                  </div>
                 </div>
               </div>
             </div>
