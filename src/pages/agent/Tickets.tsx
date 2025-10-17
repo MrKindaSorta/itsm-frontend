@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Filter, Plus, Loader2, User, UserCheck, Settings } from 'lucide-react';
+import { Search, Plus, Loader2, User, UserCheck, Settings } from 'lucide-react';
 import { TicketTable } from '@/components/tickets/TicketTable';
 import { TicketCreateModal } from '@/components/tickets/TicketCreateModal';
 import { ColumnCustomizer } from '@/components/tickets/ColumnCustomizer';
@@ -211,10 +211,6 @@ export default function Tickets() {
                     {unassignedCount}
                   </span>
                 )}
-              </Button>
-              <Button variant="outline" size="sm">
-                <Filter className="h-4 w-4 mr-2" />
-                Filters
               </Button>
               <Button
                 variant="outline"
