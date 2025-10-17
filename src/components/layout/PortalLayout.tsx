@@ -72,15 +72,15 @@ export default function PortalLayout() {
               </Link>
             </div>
 
-            {/* Navigation - Centered with expandable descriptions */}
-            <nav className="hidden md:flex items-start justify-center flex-1 gap-4">
+            {/* Navigation - Centered */}
+            <nav className="hidden md:flex items-center justify-center flex-1 gap-4">
               {navigation.map((item) => {
                 const isActive = location.pathname === item.href;
                 return (
                   <Link
                     key={item.name}
                     to={item.href}
-                    className={`flex flex-col items-center px-4 py-2 rounded-t-lg transition-all border-b-2 ${
+                    className={`flex items-center px-4 py-2 rounded-t-lg transition-all border-b-2 ${
                       isActive
                         ? 'bg-accent/50 border-primary'
                         : 'border-transparent hover:bg-accent/30 hover:border-accent'
@@ -93,19 +93,6 @@ export default function PortalLayout() {
                     >
                       {item.name}
                     </span>
-                    <div
-                      className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                        isActive && item.description
-                          ? 'max-h-20 opacity-100 mt-1'
-                          : 'max-h-0 opacity-0'
-                      }`}
-                    >
-                      {item.description && (
-                        <p className="text-xs text-muted-foreground text-center max-w-[200px] leading-relaxed">
-                          {item.description}
-                        </p>
-                      )}
-                    </div>
                   </Link>
                 );
               })}
@@ -173,18 +160,13 @@ export default function PortalLayout() {
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`flex flex-col px-3 py-2 rounded-md transition-all ${
+                  className={`flex items-center px-3 py-2 rounded-md transition-all ${
                     isActive
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
                   }`}
                 >
                   <span className="text-xs font-medium">{item.name}</span>
-                  {isActive && item.description && (
-                    <span className="text-[10px] mt-1 opacity-90 leading-relaxed">
-                      {item.description}
-                    </span>
-                  )}
                 </Link>
               );
             })}
