@@ -214,7 +214,7 @@ export default function Dashboard() {
                 {recentTickets.map((ticket) => (
                   <Link
                     key={ticket.id}
-                    to={`/tickets/${ticket.id}`}
+                    to={`/agent/tickets/${ticket.id}`}
                     className="block p-3 rounded-lg border hover:bg-accent transition-colors"
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -257,7 +257,7 @@ export default function Dashboard() {
                 {slaWarnings.map((ticket) => (
                   <Link
                     key={ticket.id}
-                    to={`/tickets/${ticket.id}`}
+                    to={`/agent/tickets/${ticket.id}`}
                     className="block p-3 rounded-lg border hover:bg-accent transition-colors"
                   >
                     <div className="flex items-start justify-between gap-2">
