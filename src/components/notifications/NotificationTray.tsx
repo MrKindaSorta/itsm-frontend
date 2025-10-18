@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Check, Settings, Loader2, MessageSquare, AlertCircle, Info, CheckCircle } from 'lucide-react';
+import { Bell, Check, Settings, Loader2, MessageSquare, AlertCircle, Info, CheckCircle, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
@@ -18,6 +18,7 @@ export function NotificationTray() {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [showReadNotifications, setShowReadNotifications] = useState(false);
   const viewTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const {
@@ -45,6 +46,11 @@ export function NotificationTray() {
       }
     };
   }, [isOpen, unreadCount, notifications, markAsRead]);
+
+  // Filter notifications based on show read toggle
+  const displayedNotifications = showReadNotifications
+    ? notifications
+    : notifications.filter(n => !n.read);
 
   const handleNotificationClick = (notification: any) => {
     if (notification.actionUrl) {
@@ -89,6 +95,15 @@ export function NotificationTray() {
           <div className="flex items-center justify-between border-b px-4 py-3">
             <h3 className="font-semibold">Notifications</h3>
             <div className="flex items-center gap-1">
+              <Button
+                variant={showReadNotifications ? "default" : "ghost"}
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setShowReadNotifications(!showReadNotifications)}
+                title={showReadNotifications ? "Hide past notifications" : "Show past notifications"}
+              >
+                <History className="h-4 w-4" />
+              </Button>
               {unreadCount > 0 && (
                 <Button
                   variant="ghost"
@@ -116,17 +131,21 @@ export function NotificationTray() {
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
-            ) : notifications.length === 0 ? (
+            ) : displayedNotifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center px-4">
                 <Bell className="h-12 w-12 text-muted-foreground mb-3 opacity-50" />
-                <p className="text-sm text-muted-foreground">No notifications yet</p>
+                <p className="text-sm text-muted-foreground">
+                  {showReadNotifications ? 'No notifications' : 'No new notifications'}
+                </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  You'll see updates about your tickets here
+                  {showReadNotifications
+                    ? "You don't have any notifications yet"
+                    : "Click the history icon to view past notifications"}
                 </p>
               </div>
             ) : (
               <div className="divide-y">
-                {notifications.map((notification) => (
+                {displayedNotifications.map((notification) => (
                   <div
                     key={notification.id}
                     onClick={() => handleNotificationClick(notification)}
