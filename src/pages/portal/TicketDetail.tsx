@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useWebSocket } from '@/hooks/useWebSocket';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,57 @@ export default function TicketDetail() {
 
   const [comment, setComment] = useState('');
   const [isSending, setIsSending] = useState(false);
+
+  // WebSocket for real-time updates
+  const { connected, subscribeToTicket, unsubscribeFromTicket, on } = useWebSocket();
+
+  // Subscribe to current ticket's updates
+  useEffect(() => {
+    if (!id) return;
+
+    const ticketId = parseInt(id);
+    subscribeToTicket(ticketId);
+
+    return () => {
+      unsubscribeFromTicket(ticketId);
+    };
+  }, [id, subscribeToTicket, unsubscribeFromTicket]);
+
+  // Listen for real-time ticket updates
+  useEffect(() => {
+    const unsubTicketUpdated = on('ticket:updated', (message) => {
+      if (message.ticketId === parseInt(id!)) {
+        // Update ticket state with new data
+        setTicket(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            status: message.data.status ?? prev.status,
+            priority: message.data.priority ?? prev.priority,
+          };
+        });
+      }
+    });
+
+    const unsubActivityCreated = on('activity:created', (message) => {
+      if (message.ticketId === parseInt(id!)) {
+        // Only add if not internal (portal users can't see internal notes)
+        if (!message.data.isInternal) {
+          const newActivity = {
+            ...message.data,
+            createdAt: new Date(message.data.createdAt),
+          };
+          setActivities(prev => [newActivity, ...prev]);
+        }
+      }
+    });
+
+    // Cleanup listeners
+    return () => {
+      unsubTicketUpdated();
+      unsubActivityCreated();
+    };
+  }, [id, on]);
 
   // Fetch ticket and activities from API
   useEffect(() => {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useWebSocket } from '@/hooks/useWebSocket';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -45,6 +46,74 @@ export default function TicketDetail() {
   const [isSaving, setIsSaving] = useState(false);
   const [isEditingCC, setIsEditingCC] = useState(false);
   const [tempCCUserIds, setTempCCUserIds] = useState<string[]>([]);
+
+  // WebSocket for real-time updates
+  const { connected, subscribeToTicket, unsubscribeFromTicket, on } = useWebSocket();
+
+  // Subscribe to current ticket's updates
+  useEffect(() => {
+    if (!id) return;
+
+    const ticketId = parseInt(id);
+    subscribeToTicket(ticketId);
+
+    return () => {
+      unsubscribeFromTicket(ticketId);
+    };
+  }, [id, subscribeToTicket, unsubscribeFromTicket]);
+
+  // Listen for real-time ticket updates
+  useEffect(() => {
+    const unsubTicketUpdated = on('ticket:updated', (message) => {
+      if (message.ticketId === parseInt(id!)) {
+        // Update ticket state with new data
+        setTicket(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            status: message.data.status ?? prev.status,
+            priority: message.data.priority ?? prev.priority,
+            assignee_id: message.data.assignee_id ?? prev.assignee_id,
+            assignee: message.data.assignee ?? prev.assignee,
+          };
+        });
+      }
+    });
+
+    const unsubActivityCreated = on('activity:created', (message) => {
+      if (message.ticketId === parseInt(id!)) {
+        // Add new activity to the feed (prepend since newest first)
+        const newActivity = {
+          ...message.data,
+          createdAt: new Date(message.data.createdAt),
+        };
+        setActivities(prev => [newActivity, ...prev]);
+      }
+    });
+
+    const unsubActivityFlagged = on('activity:flagged', (message) => {
+      if (message.ticketId === parseInt(id!)) {
+        // Update flagged status in activities list
+        setActivities(prev => prev.map(activity =>
+          activity.id === message.data.activityId
+            ? {
+                ...activity,
+                isFlagged: message.data.isFlagged,
+                flaggedBy: message.data.flaggedBy,
+                flaggedAt: message.data.flaggedAt,
+              }
+            : activity
+        ));
+      }
+    });
+
+    // Cleanup listeners
+    return () => {
+      unsubTicketUpdated();
+      unsubActivityCreated();
+      unsubActivityFlagged();
+    };
+  }, [id, on]);
 
   // Fetch ticket, activities, and users
   useEffect(() => {
@@ -343,7 +412,15 @@ export default function TicketDetail() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-xl font-bold">{ticket.id}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-bold">{ticket.id}</h1>
+              {connected && (
+                <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                  <div className="w-2 h-2 bg-green-600 dark:bg-green-400 rounded-full animate-pulse" />
+                  <span>Live</span>
+                </div>
+              )}
+            </div>
             <p className="text-xs text-muted-foreground">Created {formatDate(ticket.createdAt)}</p>
           </div>
         </div>
