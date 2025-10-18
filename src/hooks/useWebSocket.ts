@@ -141,6 +141,31 @@ export function useWebSocket() {
   }, []);
 
   /**
+   * Subscribe to global events (e.g., ticket creation)
+   */
+  const subscribeToGlobal = useCallback(() => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      console.warn('WebSocket not connected, queuing global subscription');
+      subscribedTicketsRef.current.add('*');
+      return;
+    }
+
+    subscribedTicketsRef.current.add('*');
+    wsRef.current.send(JSON.stringify({ type: 'subscribe', ticketId: '*' }));
+  }, []);
+
+  /**
+   * Unsubscribe from global events
+   */
+  const unsubscribeFromGlobal = useCallback(() => {
+    subscribedTicketsRef.current.delete('*');
+
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: 'unsubscribe', ticketId: '*' }));
+    }
+  }, []);
+
+  /**
    * Register an event handler
    */
   const on = useCallback((eventType: string, handler: MessageHandler) => {
@@ -187,6 +212,8 @@ export function useWebSocket() {
     connecting,
     subscribeToTicket,
     unsubscribeFromTicket,
+    subscribeToGlobal,
+    unsubscribeFromGlobal,
     on,
     reconnect: connect,
   };

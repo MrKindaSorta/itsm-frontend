@@ -9,6 +9,7 @@ import { ColumnCustomizer } from '@/components/tickets/ColumnCustomizer';
 import { StatusTabs } from '@/components/tickets/StatusTabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useViewPreferences } from '@/contexts/ViewPreferencesContext';
+import { useWebSocket } from '@/hooks/useWebSocket';
 import { sortTickets, type SortColumn, type SortDirection } from '@/lib/utils';
 import type { Ticket, TicketStatus } from '@/types';
 
@@ -17,6 +18,7 @@ const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 export default function Tickets() {
   const { user } = useAuth();
   const { isLoading: isPreferencesLoading } = useViewPreferences();
+  const { subscribeToGlobal, unsubscribeFromGlobal, on } = useWebSocket();
   const [searchQuery, setSearchQuery] = useState('');
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -32,6 +34,40 @@ export default function Tickets() {
   const [statusFilter, setStatusFilter] = useState<TicketStatus | 'all'>('all');
   const [showMyTickets, setShowMyTickets] = useState(false);
   const [showUnassigned, setShowUnassigned] = useState(false);
+
+  // Subscribe to global WebSocket events for real-time ticket creation
+  useEffect(() => {
+    subscribeToGlobal();
+
+    return () => {
+      unsubscribeFromGlobal();
+    };
+  }, [subscribeToGlobal, unsubscribeFromGlobal]);
+
+  // Listen for real-time ticket creation
+  useEffect(() => {
+    const unsubTicketCreated = on('ticket:created', (message) => {
+      // Add new ticket to the beginning of the list
+      const newTicket = {
+        ...message.data,
+        createdAt: new Date(message.data.createdAt),
+        updatedAt: new Date(message.data.updatedAt),
+        dueDate: message.data.dueDate ? new Date(message.data.dueDate) : undefined,
+        resolvedAt: message.data.resolvedAt ? new Date(message.data.resolvedAt) : undefined,
+        closedAt: message.data.closedAt ? new Date(message.data.closedAt) : undefined,
+        sla: {
+          ...message.data.sla,
+          firstResponseDue: message.data.sla.firstResponseDue ? new Date(message.data.sla.firstResponseDue) : new Date(),
+          resolutionDue: message.data.sla.resolutionDue ? new Date(message.data.sla.resolutionDue) : new Date(),
+        },
+      };
+      setTickets(prev => [newTicket, ...prev]);
+    });
+
+    return () => {
+      unsubTicketCreated();
+    };
+  }, [on]);
 
   // Fetch tickets from API
   useEffect(() => {
