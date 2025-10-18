@@ -3,6 +3,7 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
+import { NotificationTray } from '@/components/notifications/NotificationTray';
 import {
   LayoutDashboard,
   Ticket,
@@ -11,7 +12,6 @@ import {
   FileText,
   BarChart3,
   Wrench,
-  Bell,
   Moon,
   Sun,
   User,
@@ -203,10 +203,8 @@ export default function AgentLayout() {
                 <Home className="h-5 w-5" />
               </Button>
 
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
-                <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500"></span>
-              </Button>
+              {/* Notification Bell */}
+              <NotificationTray />
 
               <Button variant="ghost" size="icon" onClick={toggleTheme} title="Toggle theme">
                 {actualTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
