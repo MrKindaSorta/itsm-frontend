@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useBranding } from '@/contexts/BrandingContext';
 import { Button } from '@/components/ui/button';
+import { NotificationTray } from '@/components/notifications/NotificationTray';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -112,6 +113,9 @@ export default function PortalLayout() {
                   <LayoutDashboard className="h-5 w-5" />
                 </Button>
               )}
+
+              {/* Notification Bell */}
+              <NotificationTray />
 
               {user && (
                 <DropdownMenu>
