@@ -1,4 +1,4 @@
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useBranding } from '@/contexts/BrandingContext';
@@ -11,13 +11,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Moon, Sun, User, LogOut, ChevronDown } from 'lucide-react';
+import { Moon, Sun, User, LogOut, ChevronDown, LayoutDashboard } from 'lucide-react';
 
 export default function PortalLayout() {
   const { user, logout } = useAuth();
   const { setTheme, actualTheme } = useTheme();
   const { branding } = useBranding();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const navigation = [
     {
@@ -99,7 +100,19 @@ export default function PortalLayout() {
             </nav>
 
             {/* Right side actions - Fixed width to match logo */}
-            <div className="flex items-center justify-end w-48 pt-1">
+            <div className="flex items-center justify-end w-48 pt-1 gap-2">
+              {/* Agent Dashboard Button - Only shown for agent/manager/admin */}
+              {user && ['agent', 'manager', 'admin'].includes(user.role) && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate('/agent/dashboard')}
+                  title="Agent Dashboard"
+                >
+                  <LayoutDashboard className="h-5 w-5" />
+                </Button>
+              )}
+
               {user && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

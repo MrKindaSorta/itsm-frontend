@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
@@ -20,12 +20,14 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  Home,
 } from 'lucide-react';
 
 export default function AgentLayout() {
   const { user, logout } = useAuth();
   const { setTheme, actualTheme } = useTheme();
   const location = useLocation();
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -191,6 +193,16 @@ export default function AgentLayout() {
 
             {/* Right side actions */}
             <div className="flex items-center space-x-2">
+              {/* Portal Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate('/portal/tickets/create')}
+                title="User Portal"
+              >
+                <Home className="h-5 w-5" />
+              </Button>
+
               <Button variant="ghost" size="icon" className="relative">
                 <Bell className="h-5 w-5" />
                 <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500"></span>
