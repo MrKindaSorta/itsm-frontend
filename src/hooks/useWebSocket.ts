@@ -113,7 +113,7 @@ export function useWebSocket() {
       console.error('Failed to create WebSocket:', err);
       setConnecting(false);
     }
-  }, [user, connecting]);
+  }, [user]); // Don't include 'connecting' to avoid re-initialization loop
 
   /**
    * Subscribe to a specific ticket's updates
