@@ -32,11 +32,15 @@ export default function Login() {
           return;
         }
       }
-      // Redirect based on email (demo logic)
-      if (email.includes('agent') || email.includes('admin')) {
-        navigate('/agent/dashboard');
-      } else {
-        navigate('/portal/tickets/create');
+      // Redirect based on user role
+      const storedUserForRedirect = localStorage.getItem('user');
+      if (storedUserForRedirect) {
+        const userDataForRedirect = JSON.parse(storedUserForRedirect);
+        if (['agent', 'manager', 'admin'].includes(userDataForRedirect.role)) {
+          navigate('/agent/dashboard');
+        } else {
+          navigate('/portal/tickets/create');
+        }
       }
     } catch (err) {
       setError('Invalid email or password');
