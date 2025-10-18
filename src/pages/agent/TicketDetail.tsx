@@ -85,7 +85,12 @@ export default function TicketDetail() {
           ...message.data,
           createdAt: new Date(message.data.createdAt),
         };
-        setActivities(prev => [newActivity, ...prev]);
+        // Only add if this activity doesn't already exist (prevent duplicates from optimistic updates)
+        setActivities(prev => {
+          const exists = prev.some(act => act.id === newActivity.id);
+          if (exists) return prev;
+          return [newActivity, ...prev];
+        });
       }
     });
 
