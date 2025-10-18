@@ -113,6 +113,59 @@ export default function Tickets() {
     }
   };
 
+  // Handle inline ticket updates
+  const handleTicketUpdate = async (ticketId: string, field: 'status' | 'priority' | 'assignee', value: string | null) => {
+    if (!user) return;
+
+    try {
+      const payload: any = {
+        updated_by_id: user.id,
+      };
+
+      if (field === 'status') {
+        payload.status = value;
+      } else if (field === 'priority') {
+        payload.priority = value;
+      } else if (field === 'assignee') {
+        payload.assignee_id = value === null ? null : Number(value);
+      }
+
+      const response = await fetch(`${API_BASE}/api/tickets/${ticketId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update ticket in local state
+        setTickets(prevTickets =>
+          prevTickets.map(ticket =>
+            ticket.id === ticketId
+              ? {
+                  ...ticket,
+                  status: data.ticket.status,
+                  priority: data.ticket.priority,
+                  assignee: data.ticket.assignee,
+                  updatedAt: new Date(data.ticket.updatedAt),
+                }
+              : ticket
+          )
+        );
+      } else {
+        alert('Failed to update ticket: ' + (data.error || 'Unknown error'));
+        throw new Error(data.error || 'Failed to update ticket');
+      }
+    } catch (error) {
+      console.error('Error updating ticket:', error);
+      alert('Failed to connect to server');
+      throw error;
+    }
+  };
+
   // Debounced search
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -288,6 +341,7 @@ export default function Tickets() {
               sortColumn={sortColumn}
               sortDirection={sortDirection}
               onSort={handleSort}
+              onTicketUpdate={handleTicketUpdate}
             />
           )}
         </CardContent>

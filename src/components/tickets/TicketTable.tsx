@@ -1,8 +1,11 @@
 import { useNavigate } from 'react-router-dom';
-import type { Ticket, ColumnConfig } from '@/types';
+import type { Ticket, ColumnConfig, TicketStatus, TicketPriority } from '@/types';
 import { StatusBadge } from './StatusBadge';
 import { PriorityBadge } from './PriorityBadge';
 import { SLAIndicator } from './SLAIndicator';
+import { InlineStatusSelect } from './InlineStatusSelect';
+import { InlinePrioritySelect } from './InlinePrioritySelect';
+import { InlineAssigneeSelect } from './InlineAssigneeSelect';
 import { SortableHeader, type SortDirection } from './SortableHeader';
 import { formatRelativeTime, formatDate, getInitials, type SortColumn } from '@/lib/utils';
 import { useViewPreferences } from '@/contexts/ViewPreferencesContext';
@@ -12,14 +15,34 @@ interface TicketTableProps {
   sortColumn: SortColumn | null;
   sortDirection: SortDirection;
   onSort: (column: SortColumn) => void;
+  onTicketUpdate?: (ticketId: string, field: 'status' | 'priority' | 'assignee', value: string | null) => Promise<void>;
 }
 
-export function TicketTable({ tickets, sortColumn, sortDirection, onSort }: TicketTableProps) {
+export function TicketTable({ tickets, sortColumn, sortDirection, onSort, onTicketUpdate }: TicketTableProps) {
   const navigate = useNavigate();
   const { ticketColumns } = useViewPreferences();
 
   const handleRowClick = (ticketId: string) => {
     navigate(`/agent/tickets/${ticketId}`);
+  };
+
+  // Handlers for inline editing
+  const handleStatusChange = async (ticketId: string, newStatus: TicketStatus) => {
+    if (onTicketUpdate) {
+      await onTicketUpdate(ticketId, 'status', newStatus);
+    }
+  };
+
+  const handlePriorityChange = async (ticketId: string, newPriority: TicketPriority) => {
+    if (onTicketUpdate) {
+      await onTicketUpdate(ticketId, 'priority', newPriority);
+    }
+  };
+
+  const handleAssigneeChange = async (ticketId: string, newAssigneeId: string | null) => {
+    if (onTicketUpdate) {
+      await onTicketUpdate(ticketId, 'assignee', newAssigneeId);
+    }
   };
 
   // Get visible columns sorted by order
@@ -45,10 +68,24 @@ export function TicketTable({ tickets, sortColumn, sortDirection, onSort }: Tick
         );
 
       case 'status':
-        return <StatusBadge status={ticket.status} />;
+        return onTicketUpdate ? (
+          <InlineStatusSelect
+            status={ticket.status}
+            onStatusChange={(newStatus) => handleStatusChange(ticket.id, newStatus)}
+          />
+        ) : (
+          <StatusBadge status={ticket.status} />
+        );
 
       case 'priority':
-        return <PriorityBadge priority={ticket.priority} />;
+        return onTicketUpdate ? (
+          <InlinePrioritySelect
+            priority={ticket.priority}
+            onPriorityChange={(newPriority) => handlePriorityChange(ticket.id, newPriority)}
+          />
+        ) : (
+          <PriorityBadge priority={ticket.priority} />
+        );
 
       case 'category':
         return (
@@ -56,7 +93,12 @@ export function TicketTable({ tickets, sortColumn, sortDirection, onSort }: Tick
         );
 
       case 'assignee':
-        return ticket.assignee ? (
+        return onTicketUpdate ? (
+          <InlineAssigneeSelect
+            assignee={ticket.assignee && 'email' in ticket.assignee ? ticket.assignee : undefined}
+            onAssigneeChange={(newAssigneeId) => handleAssigneeChange(ticket.id, newAssigneeId)}
+          />
+        ) : ticket.assignee ? (
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-medium">
               {getInitials(ticket.assignee.name)}
