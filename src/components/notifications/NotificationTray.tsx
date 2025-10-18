@@ -53,6 +53,11 @@ export function NotificationTray() {
     : notifications.filter(n => !n.read);
 
   const handleNotificationClick = (notification: any) => {
+    // Mark as read when clicked
+    if (!notification.read) {
+      markAsRead(notification.id);
+    }
+
     if (notification.actionUrl) {
       navigate(notification.actionUrl);
       setIsOpen(false);
