@@ -41,6 +41,7 @@ export function useWebSocket() {
 
     try {
       const url = user ? `${WS_URL}?userId=${user.id}` : WS_URL;
+      console.log('🔌 Attempting WebSocket connection to:', url);
       const ws = new WebSocket(url);
 
       ws.onopen = () => {
@@ -82,11 +83,16 @@ export function useWebSocket() {
 
       ws.onerror = (error) => {
         console.error('WebSocket error:', error);
+        console.error('WebSocket URL:', url);
+        console.error('WebSocket readyState:', ws.readyState);
         setConnecting(false);
       };
 
-      ws.onclose = () => {
+      ws.onclose = (event) => {
         console.log('WebSocket disconnected');
+        console.log('Close code:', event.code);
+        console.log('Close reason:', event.reason);
+        console.log('Was clean:', event.wasClean);
         setConnected(false);
         setConnecting(false);
 
