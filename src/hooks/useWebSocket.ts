@@ -20,8 +20,8 @@ export function useWebSocket() {
   const [connecting, setConnecting] = useState(false);
 
   const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
-  const pingIntervalRef = useRef<NodeJS.Timeout>();
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const pingIntervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const handlersRef = useRef<Map<string, Set<MessageHandler>>>(new Map());
   const subscribedTicketsRef = useRef<Set<number>>(new Set());
 

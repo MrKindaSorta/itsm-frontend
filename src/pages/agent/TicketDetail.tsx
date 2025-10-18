@@ -73,7 +73,6 @@ export default function TicketDetail() {
             ...prev,
             status: message.data.status ?? prev.status,
             priority: message.data.priority ?? prev.priority,
-            assignee_id: message.data.assignee_id ?? prev.assignee_id,
             assignee: message.data.assignee ?? prev.assignee,
           };
         });

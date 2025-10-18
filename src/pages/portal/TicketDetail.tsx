@@ -30,7 +30,7 @@ export default function TicketDetail() {
   const [isSending, setIsSending] = useState(false);
 
   // WebSocket for real-time updates
-  const { connected, subscribeToTicket, unsubscribeFromTicket, on } = useWebSocket();
+  const { subscribeToTicket, unsubscribeFromTicket, on } = useWebSocket();
 
   // Subscribe to current ticket's updates
   useEffect(() => {
