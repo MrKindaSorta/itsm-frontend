@@ -67,6 +67,9 @@ export function ActivityFeed({ activities, currentUserId, onReply, onFlag }: Act
         return <AlertCircle className="h-3.5 w-3.5" />;
       case 'status_change':
       case 'assignment':
+      case 'priority_change':
+      case 'cc_change':
+      case 'system':
         return <ArrowRight className="h-3.5 w-3.5" />;
       default:
         return <MessageSquare className="h-3.5 w-3.5" />;
@@ -76,7 +79,7 @@ export function ActivityFeed({ activities, currentUserId, onReply, onFlag }: Act
   return (
     <div className="space-y-3">
       {activities.map((activity) => {
-        const isSystemUpdate = activity.type === 'status_change' || activity.type === 'assignment';
+        const isSystemUpdate = activity.type === 'status_change' || activity.type === 'assignment' || activity.type === 'priority_change' || activity.type === 'cc_change';
         const isInternalNote = activity.type === 'internal_note';
         const isFlagged = activity.isFlagged || false;
         const isOwnMessage = currentUserId && activity.author.id === currentUserId;
