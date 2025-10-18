@@ -12,7 +12,7 @@ import { SLAIndicator } from '@/components/tickets/SLAIndicator';
 import { ActivityFeed } from '@/components/tickets/ActivityFeed';
 import { formatDate, getInitials } from '@/lib/utils';
 import type { Ticket, Activity } from '@/types';
-import { ArrowLeft, Send, Tag, Loader2 } from 'lucide-react';
+import { ArrowLeft, Send, Loader2 } from 'lucide-react';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
