@@ -7,7 +7,7 @@ const PING_INTERVAL = 30000;
 
 interface WebSocketMessage {
   type: string;
-  ticketId?: number;
+  ticketId?: string;
   data?: any;
   timestamp: string;
 }
@@ -23,7 +23,7 @@ export function useWebSocket() {
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const pingIntervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const handlersRef = useRef<Map<string, Set<MessageHandler>>>(new Map());
-  const subscribedTicketsRef = useRef<Set<number>>(new Set());
+  const subscribedTicketsRef = useRef<Set<string>>(new Set());
 
   /**
    * Connect to WebSocket server
@@ -118,7 +118,7 @@ export function useWebSocket() {
   /**
    * Subscribe to a specific ticket's updates
    */
-  const subscribeToTicket = useCallback((ticketId: number) => {
+  const subscribeToTicket = useCallback((ticketId: string) => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
       console.warn('WebSocket not connected, queuing subscription');
       subscribedTicketsRef.current.add(ticketId);
@@ -132,7 +132,7 @@ export function useWebSocket() {
   /**
    * Unsubscribe from a ticket
    */
-  const unsubscribeFromTicket = useCallback((ticketId: number) => {
+  const unsubscribeFromTicket = useCallback((ticketId: string) => {
     subscribedTicketsRef.current.delete(ticketId);
 
     if (wsRef.current?.readyState === WebSocket.OPEN) {

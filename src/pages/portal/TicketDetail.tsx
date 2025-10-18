@@ -36,18 +36,17 @@ export default function TicketDetail() {
   useEffect(() => {
     if (!id) return;
 
-    const ticketId = parseInt(id);
-    subscribeToTicket(ticketId);
+    subscribeToTicket(id);
 
     return () => {
-      unsubscribeFromTicket(ticketId);
+      unsubscribeFromTicket(id);
     };
   }, [id, subscribeToTicket, unsubscribeFromTicket]);
 
   // Listen for real-time ticket updates
   useEffect(() => {
     const unsubTicketUpdated = on('ticket:updated', (message) => {
-      if (message.ticketId === parseInt(id!)) {
+      if (message.ticketId === id) {
         // Update ticket state with new data
         setTicket(prev => {
           if (!prev) return prev;
@@ -61,7 +60,7 @@ export default function TicketDetail() {
     });
 
     const unsubActivityCreated = on('activity:created', (message) => {
-      if (message.ticketId === parseInt(id!)) {
+      if (message.ticketId === id) {
         // Only add if not internal (portal users can't see internal notes)
         if (!message.data.isInternal) {
           const newActivity = {
