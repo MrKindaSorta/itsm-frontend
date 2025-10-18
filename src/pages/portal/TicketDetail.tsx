@@ -246,33 +246,6 @@ export default function TicketDetail() {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Ticket Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">{ticket.title}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {ticket.description}
-                </p>
-              </div>
-
-              {ticket.tags.length > 0 && (
-                <div className="flex items-center gap-2 pt-2 border-t">
-                  <Tag className="h-4 w-4 text-muted-foreground" />
-                  <div className="flex flex-wrap gap-1">
-                    {ticket.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
           {/* Conversation */}
           <Card className="flex flex-col h-[calc(100vh-10rem)]">
             <CardHeader className="border-b py-3 px-4">
@@ -341,6 +314,29 @@ export default function TicketDetail() {
             </CardHeader>
             <CardContent className="space-y-4 text-sm">
               <div>
+                <p className="text-muted-foreground mb-1">Title</p>
+                <p className="font-medium">{ticket.title}</p>
+              </div>
+
+              <div>
+                <p className="text-muted-foreground mb-1">Description</p>
+                <p className="text-sm leading-relaxed">{ticket.description}</p>
+              </div>
+
+              {ticket.tags.length > 0 && (
+                <div>
+                  <p className="text-muted-foreground mb-1">Tags</p>
+                  <div className="flex flex-wrap gap-1">
+                    {ticket.tags.map((tag) => (
+                      <Badge key={tag} variant="secondary" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="pt-2 border-t">
                 <p className="text-muted-foreground mb-1">Category</p>
                 <Badge variant="outline">{ticket.category}</Badge>
               </div>
