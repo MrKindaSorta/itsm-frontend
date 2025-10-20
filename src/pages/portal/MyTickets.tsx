@@ -95,8 +95,6 @@ export default function MyTickets() {
 
       const matchesStatus = statusFilter === 'all'
         ? (ticket.status !== 'closed' && ticket.status !== 'resolved')
-        : statusFilter === 'open'
-        ? (ticket.status === 'open' || ticket.status === 'reopened')
         : ticket.status === statusFilter;
 
       return matchesSearch && matchesStatus;
@@ -106,9 +104,6 @@ export default function MyTickets() {
   const getStatusCount = (status: string) => {
     if (status === 'all') {
       return allTickets.filter(t => t.status !== 'closed' && t.status !== 'resolved').length;
-    }
-    if (status === 'open') {
-      return allTickets.filter(t => t.status === 'open' || t.status === 'reopened').length;
     }
     return allTickets.filter(t => t.status === status).length;
   };

@@ -12,7 +12,6 @@ export function StatusBadge({ status }: StatusBadgeProps) {
   const statusLabels: Record<TicketStatus, string> = {
     new: 'New',
     open: 'Open',
-    reopened: 'Re-Opened',
     in_progress: 'In Progress',
     waiting: 'Waiting',
     resolved: 'Resolved',

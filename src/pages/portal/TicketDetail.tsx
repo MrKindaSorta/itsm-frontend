@@ -6,6 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { StatusBadge } from '@/components/tickets/StatusBadge';
 import { PriorityBadge } from '@/components/tickets/PriorityBadge';
 import { SLAIndicator } from '@/components/tickets/SLAIndicator';
@@ -28,6 +36,7 @@ export default function TicketDetail() {
 
   const [comment, setComment] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [showReopenDialog, setShowReopenDialog] = useState(false);
 
   // WebSocket for real-time updates
   const { subscribeToTicket, unsubscribeFromTicket, on } = useWebSocket();
@@ -149,11 +158,24 @@ export default function TicketDetail() {
     e.preventDefault();
     if (!comment.trim() || !user) return;
 
+    // Check if ticket is resolved or closed - show confirmation dialog
+    if (ticket && (ticket.status === 'resolved' || ticket.status === 'closed')) {
+      setShowReopenDialog(true);
+      return;
+    }
+
+    // If ticket is not resolved/closed, send comment directly
+    await sendComment();
+  };
+
+  const sendComment = async (reopenTicket: boolean = false) => {
     setIsSending(true);
+    setShowReopenDialog(false);
+
     try {
       const payload = {
         content: comment,
-        author_id: user.id,
+        author_id: user!.id,
         type: 'comment',
         isInternal: false,
       };
@@ -176,6 +198,25 @@ export default function TicketDetail() {
         };
         setActivities([newActivity, ...activities]);
         setComment('');
+
+        // If reopening, update ticket status to 'open'
+        if (reopenTicket) {
+          const updateResponse = await fetch(`${API_BASE}/api/tickets/${id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              status: 'open',
+              updated_by_id: user!.id,
+            }),
+          });
+
+          const updateData = await updateResponse.json();
+          if (updateData.success && ticket) {
+            setTicket({ ...ticket, status: 'open' });
+          }
+        }
       } else {
         alert('Failed to send comment: ' + (data.error || 'Unknown error'));
       }
@@ -223,7 +264,7 @@ export default function TicketDetail() {
     );
   }
 
-  const canComment = ticket.status !== 'closed';
+  const canComment = true; // Always allow commenting - we'll show confirmation dialog for resolved/closed tickets
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -414,6 +455,40 @@ export default function TicketDetail() {
           </Card>
         </div>
       </div>
+
+      {/* Reopen Confirmation Dialog */}
+      <Dialog open={showReopenDialog} onOpenChange={setShowReopenDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reopen Ticket?</DialogTitle>
+            <DialogDescription>
+              This ticket is currently {ticket?.status}. Replying will reopen it and set the status to Open. Do you want to continue?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowReopenDialog(false)}
+              disabled={isSending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => sendComment(true)}
+              disabled={isSending}
+            >
+              {isSending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                'Send and Reopen'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
