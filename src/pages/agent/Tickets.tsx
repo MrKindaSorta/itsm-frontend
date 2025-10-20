@@ -55,11 +55,11 @@ export default function Tickets() {
         dueDate: message.data.dueDate ? new Date(message.data.dueDate) : undefined,
         resolvedAt: message.data.resolvedAt ? new Date(message.data.resolvedAt) : undefined,
         closedAt: message.data.closedAt ? new Date(message.data.closedAt) : undefined,
-        sla: {
+        sla: message.data.sla ? {
           ...message.data.sla,
           firstResponseDue: message.data.sla.firstResponseDue ? new Date(message.data.sla.firstResponseDue) : new Date(),
           resolutionDue: message.data.sla.resolutionDue ? new Date(message.data.sla.resolutionDue) : new Date(),
-        },
+        } : null,
       };
       setTickets(prev => [newTicket, ...prev]);
     });
@@ -95,11 +95,11 @@ export default function Tickets() {
           dueDate: ticket.dueDate ? new Date(ticket.dueDate) : undefined,
           resolvedAt: ticket.resolvedAt ? new Date(ticket.resolvedAt) : undefined,
           closedAt: ticket.closedAt ? new Date(ticket.closedAt) : undefined,
-          sla: {
+          sla: ticket.sla ? {
             ...ticket.sla,
             firstResponseDue: ticket.sla.firstResponseDue ? new Date(ticket.sla.firstResponseDue) : new Date(),
             resolutionDue: ticket.sla.resolutionDue ? new Date(ticket.sla.resolutionDue) : new Date(),
-          },
+          } : null,
         }));
         setTickets(transformedTickets);
       } else {

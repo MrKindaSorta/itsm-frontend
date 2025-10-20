@@ -117,11 +117,11 @@ export default function TicketDetail() {
           dueDate: ticketData.ticket.dueDate ? new Date(ticketData.ticket.dueDate) : undefined,
           resolvedAt: ticketData.ticket.resolvedAt ? new Date(ticketData.ticket.resolvedAt) : undefined,
           closedAt: ticketData.ticket.closedAt ? new Date(ticketData.ticket.closedAt) : undefined,
-          sla: {
+          sla: ticketData.ticket.sla ? {
             ...ticketData.ticket.sla,
             firstResponseDue: ticketData.ticket.sla.firstResponseDue ? new Date(ticketData.ticket.sla.firstResponseDue) : new Date(),
             resolutionDue: ticketData.ticket.sla.resolutionDue ? new Date(ticketData.ticket.sla.resolutionDue) : new Date(),
-          },
+          } : null,
         };
         setTicket(transformedTicket);
 

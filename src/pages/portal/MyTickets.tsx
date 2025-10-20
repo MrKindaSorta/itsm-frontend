@@ -43,11 +43,11 @@ export default function MyTickets() {
             dueDate: ticket.dueDate ? new Date(ticket.dueDate) : undefined,
             resolvedAt: ticket.resolvedAt ? new Date(ticket.resolvedAt) : undefined,
             closedAt: ticket.closedAt ? new Date(ticket.closedAt) : undefined,
-            sla: {
+            sla: ticket.sla ? {
               ...ticket.sla,
               firstResponseDue: new Date(ticket.sla.firstResponseDue),
               resolutionDue: new Date(ticket.sla.resolutionDue),
-            },
+            } : null,
           }));
           setTickets(transformedTickets);
         } else {

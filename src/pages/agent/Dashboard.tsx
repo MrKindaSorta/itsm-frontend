@@ -82,11 +82,11 @@ export default function Dashboard() {
           createdAt: new Date(ticket.createdAt),
           updatedAt: new Date(ticket.updatedAt),
           dueDate: ticket.dueDate ? new Date(ticket.dueDate) : undefined,
-          sla: {
+          sla: ticket.sla ? {
             ...ticket.sla,
             firstResponseDue: ticket.sla.firstResponseDue ? new Date(ticket.sla.firstResponseDue) : new Date(),
             resolutionDue: ticket.sla.resolutionDue ? new Date(ticket.sla.resolutionDue) : new Date(),
-          },
+          } : null,
         }));
         setRecentTickets(transformedTickets);
       }
@@ -110,11 +110,11 @@ export default function Dashboard() {
           createdAt: new Date(ticket.createdAt),
           updatedAt: new Date(ticket.updatedAt),
           dueDate: ticket.dueDate ? new Date(ticket.dueDate) : undefined,
-          sla: {
+          sla: ticket.sla ? {
             ...ticket.sla,
             firstResponseDue: ticket.sla.firstResponseDue ? new Date(ticket.sla.firstResponseDue) : new Date(),
             resolutionDue: ticket.sla.resolutionDue ? new Date(ticket.sla.resolutionDue) : new Date(),
-          },
+          } : null,
         }));
         setSlaWarnings(transformedTickets);
       }
