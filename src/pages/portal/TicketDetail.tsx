@@ -6,13 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { SelectRoot as Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { StatusBadge } from '@/components/tickets/StatusBadge';
 import { PriorityBadge } from '@/components/tickets/PriorityBadge';
 import { SLAIndicator } from '@/components/tickets/SLAIndicator';
 import { ActivityFeed } from '@/components/tickets/ActivityFeed';
 import { formatDate, getInitials } from '@/lib/utils';
-import type { Ticket, Activity, User } from '@/types';
+import type { Ticket, Activity } from '@/types';
 import { ArrowLeft, Send, Loader2 } from 'lucide-react';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
@@ -24,13 +23,11 @@ export default function TicketDetail() {
 
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [comment, setComment] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
 
   // WebSocket for real-time updates
   const { subscribeToTicket, unsubscribeFromTicket, on } = useWebSocket();
@@ -87,11 +84,10 @@ export default function TicketDetail() {
     };
   }, [id, on]);
 
-  // Fetch ticket, activities, and users from API
+  // Fetch ticket and activities from API
   useEffect(() => {
     if (id) {
       fetchTicketData();
-      fetchUsers();
     }
   }, [id]);
 
@@ -146,69 +142,6 @@ export default function TicketDetail() {
       setError('Failed to connect to server');
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const fetchUsers = async () => {
-    try {
-      const response = await fetch(`${API_BASE}/api/users`);
-      const data = await response.json();
-      if (data.success) {
-        setUsers(data.users || []);
-      }
-    } catch (error) {
-      console.error('Failed to fetch users:', error);
-    }
-  };
-
-  // Handler for Quick Actions changes (status, priority, assignee)
-  const handleQuickActionChange = async (field: 'status' | 'priority' | 'assignee', value: string) => {
-    if (!ticket || !user) return;
-
-    setIsSaving(true);
-    try {
-      const payload: any = {
-        updated_by_id: user.id,
-      };
-
-      if (field === 'status') {
-        payload.status = value;
-      } else if (field === 'priority') {
-        payload.priority = value;
-      } else if (field === 'assignee') {
-        payload.assignee_id = value === 'unassigned' ? null : Number(value);
-      }
-
-      const response = await fetch(`${API_BASE}/api/tickets/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        // Update ticket state
-        setTicket({
-          ...ticket,
-          status: data.ticket.status,
-          priority: data.ticket.priority,
-          assignee: data.ticket.assignee,
-          updatedAt: new Date(data.ticket.updatedAt),
-        });
-
-        // Refresh activities to show the update
-        fetchTicketData();
-      } else {
-        alert('Failed to update ticket: ' + (data.error || 'Unknown error'));
-      }
-    } catch (error) {
-      console.error('Error updating ticket:', error);
-      alert('Failed to connect to server');
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -291,7 +224,6 @@ export default function TicketDetail() {
   }
 
   const canComment = ticket.status !== 'closed';
-  const canEdit = user && ['agent', 'manager', 'admin'].includes(user.role);
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -306,47 +238,8 @@ export default function TicketDetail() {
           <p className="text-muted-foreground mt-1">Created {formatDate(ticket.createdAt)}</p>
         </div>
         <div className="flex items-center gap-2">
-          {canEdit ? (
-            <>
-              <Select
-                value={ticket.status}
-                onValueChange={(value) => handleQuickActionChange('status', value)}
-                disabled={isSaving}
-              >
-                <SelectTrigger className="h-auto w-auto border-0 p-0 hover:opacity-80">
-                  <StatusBadge status={ticket.status} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="new">New</SelectItem>
-                  <SelectItem value="open">Open</SelectItem>
-                  <SelectItem value="in_progress">In Progress</SelectItem>
-                  <SelectItem value="waiting">Waiting</SelectItem>
-                  <SelectItem value="resolved">Resolved</SelectItem>
-                  <SelectItem value="closed">Closed</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select
-                value={ticket.priority}
-                onValueChange={(value) => handleQuickActionChange('priority', value)}
-                disabled={isSaving}
-              >
-                <SelectTrigger className="h-auto w-auto border-0 p-0 hover:opacity-80">
-                  <PriorityBadge priority={ticket.priority} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="urgent">Urgent</SelectItem>
-                </SelectContent>
-              </Select>
-            </>
-          ) : (
-            <>
-              <StatusBadge status={ticket.status} />
-              <PriorityBadge priority={ticket.priority} />
-            </>
-          )}
+          <StatusBadge status={ticket.status} />
+          <PriorityBadge priority={ticket.priority} />
         </div>
       </div>
 
@@ -453,46 +346,9 @@ export default function TicketDetail() {
                 <p className="font-medium">{ticket.department}</p>
               </div>
 
-              <div>
-                <p className="text-muted-foreground mb-2">Assigned To</p>
-                {canEdit ? (
-                  <Select
-                    value={ticket.assignee?.id?.toString() || 'unassigned'}
-                    onValueChange={(value) => handleQuickActionChange('assignee', value)}
-                    disabled={isSaving}
-                  >
-                    <SelectTrigger className="w-full h-auto border rounded-md p-2 hover:bg-accent">
-                      {ticket.assignee ? (
-                        <div className="flex items-center gap-2 text-left">
-                          <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-medium">
-                            {getInitials(ticket.assignee.name)}
-                          </div>
-                          <div>
-                            <p className="font-medium text-sm">{ticket.assignee.name}</p>
-                            {'team' in ticket.assignee && ticket.assignee.team && (
-                              <p className="text-xs text-muted-foreground">{ticket.assignee.team}</p>
-                            )}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2 text-left text-muted-foreground">
-                          <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs">
-                            ?
-                          </div>
-                          <p className="text-sm">Unassigned</p>
-                        </div>
-                      )}
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="unassigned">Unassigned</SelectItem>
-                      {users.filter(u => ['agent', 'manager', 'admin'].includes(u.role)).map((u) => (
-                        <SelectItem key={u.id} value={u.id.toString()}>
-                          {u.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : ticket.assignee ? (
+              {ticket.assignee && (
+                <div>
+                  <p className="text-muted-foreground mb-2">Assigned To</p>
                   <div className="flex items-center gap-2">
                     <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-medium">
                       {getInitials(ticket.assignee.name)}
@@ -504,10 +360,8 @@ export default function TicketDetail() {
                       )}
                     </div>
                   </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">Not assigned</p>
-                )}
-              </div>
+                </div>
+              )}
 
               {/* CC Users */}
               {ticket.ccUsers && ticket.ccUsers.length > 0 && (
