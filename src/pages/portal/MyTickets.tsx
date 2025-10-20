@@ -93,14 +93,18 @@ export default function MyTickets() {
         ticket.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         ticket.description.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesStatus = statusFilter === 'all' || ticket.status === statusFilter;
+      const matchesStatus = statusFilter === 'all'
+        ? (ticket.status !== 'closed' && ticket.status !== 'resolved')
+        : ticket.status === statusFilter;
 
       return matchesSearch && matchesStatus;
     });
   }, [allTickets, searchQuery, statusFilter]);
 
   const getStatusCount = (status: string) => {
-    if (status === 'all') return allTickets.length;
+    if (status === 'all') {
+      return allTickets.filter(t => t.status !== 'closed' && t.status !== 'resolved').length;
+    }
     return allTickets.filter(t => t.status === status).length;
   };
 
@@ -124,7 +128,7 @@ export default function MyTickets() {
               size="sm"
               onClick={() => setStatusFilter('all')}
             >
-              All ({getStatusCount('all')})
+              All Tickets ({getStatusCount('all')})
             </Button>
             <Button
               variant={statusFilter === 'new' ? 'default' : 'outline'}
