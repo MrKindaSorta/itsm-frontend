@@ -19,7 +19,6 @@ import { Save, Eye, EyeOff, RotateCcw, Plus } from 'lucide-react';
 import { mergeWithDefaults } from '@/utils/defaultFormConfig';
 
 const STORAGE_KEY = 'itsm-form-configuration';
-const SLA_STORAGE_KEY = 'itsm-sla-configuration';
 const BRANDING_STORAGE_KEY = 'itsm-branding-configuration';
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
