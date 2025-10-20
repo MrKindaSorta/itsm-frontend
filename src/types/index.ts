@@ -119,6 +119,8 @@ export interface Ticket {
   category: string;
   requester: User;
   assignee?: User | Team;
+  openedBy?: User;
+  openedAt?: string | null;
   department?: string;
   tags: string[];
   customFields: Record<string, any>;

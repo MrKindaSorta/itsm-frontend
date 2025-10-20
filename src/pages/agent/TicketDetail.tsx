@@ -41,6 +41,7 @@ export default function TicketDetail() {
   const [replyContent, setReplyContent] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [replyingToActivity, setReplyingToActivity] = useState<Activity | null>(null);
+  const [showStatusOptions, setShowStatusOptions] = useState(false);
 
   const [isSaving, setIsSaving] = useState(false);
   const [isEditingCC, setIsEditingCC] = useState(false);
@@ -129,8 +130,8 @@ export default function TicketDetail() {
     setIsLoading(true);
     setError(null);
     try {
-      // Fetch ticket
-      const ticketResponse = await fetch(`${API_BASE}/api/tickets/${id}`);
+      // Fetch ticket with user_id to enable auto-open functionality
+      const ticketResponse = await fetch(`${API_BASE}/api/tickets/${id}?user_id=${user?.id || ''}`);
       const ticketData = await ticketResponse.json();
 
       if (ticketData.success) {
@@ -310,8 +311,8 @@ export default function TicketDetail() {
     }
   };
 
-  // Handler for sending reply or note
-  const handleSendReply = async () => {
+  // Handler for sending reply or note with optional status change
+  const handleSendReply = async (newStatus?: string) => {
     if (!replyContent.trim() || !user) return;
 
     setIsSending(true);
@@ -347,6 +348,17 @@ export default function TicketDetail() {
         setActivities([newActivity, ...activities]);
         setReplyContent('');
         setReplyingToActivity(null); // Clear reply context
+        setShowStatusOptions(false); // Close status options
+
+        // If status change requested, update the ticket status
+        if (newStatus && newStatus !== ticket?.status) {
+          await handleQuickActionChange('status', newStatus);
+
+          // Navigate back to tickets list if status is waiting, resolved, or closed
+          if (newStatus === 'waiting' || newStatus === 'resolved' || newStatus === 'closed') {
+            navigate('/agent/tickets');
+          }
+        }
       } else {
         alert('Failed to send reply: ' + (data.error || 'Unknown error'));
       }
@@ -356,6 +368,22 @@ export default function TicketDetail() {
     } finally {
       setIsSending(false);
     }
+  };
+
+  // Get smart status options based on current status (for Public Replies only)
+  const getStatusOptions = () => {
+    if (!ticket) return [];
+    const currentStatus = ticket.status;
+    const allStatuses: Array<{ value: string; label: string }> = [
+      { value: 'open', label: 'Open' },
+      { value: 'in_progress', label: 'In Progress' },
+      { value: 'waiting', label: 'Waiting' },
+      { value: 'resolved', label: 'Resolved' },
+      { value: 'closed', label: 'Closed' },
+    ];
+
+    // Filter out current status and 'new' (tickets shouldn't go back to new)
+    return allStatuses.filter(s => s.value !== currentStatus && s.value !== 'new');
   };
 
   // Handler for updating CC users
@@ -516,24 +544,87 @@ export default function TicketDetail() {
                       </div>
                     </div>
                   </div>
-                  <Button
-                    size="sm"
-                    className="h-7 text-xs"
-                    onClick={handleSendReply}
-                    disabled={isSending || !replyContent.trim()}
-                  >
-                    {isSending ? (
-                      <>
-                        <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                        Sending...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="h-3.5 w-3.5 mr-1.5" />
-                        Send {replyType === 'internal' ? 'Note' : 'Reply'}
-                      </>
-                    )}
-                  </Button>
+                  {/* For Internal Notes: Simple Send Button */}
+                  {replyType === 'internal' ? (
+                    <Button
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() => handleSendReply()}
+                      disabled={isSending || !replyContent.trim()}
+                    >
+                      {isSending ? (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-3.5 w-3.5 mr-1.5" />
+                          Send Note
+                        </>
+                      )}
+                    </Button>
+                  ) : (
+                    /* For Public Replies: Animated Status Options */
+                    <div className="relative">
+                      {!showStatusOptions ? (
+                        <Button
+                          size="sm"
+                          className="h-7 text-xs"
+                          onClick={() => setShowStatusOptions(true)}
+                          disabled={isSending || !replyContent.trim()}
+                        >
+                          <Send className="h-3.5 w-3.5 mr-1.5" />
+                          Send Reply
+                        </Button>
+                      ) : (
+                        <div className="flex flex-col gap-1 p-2 bg-popover border rounded-md shadow-lg animate-in fade-in zoom-in-95 duration-200">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 text-xs justify-start"
+                            onClick={() => handleSendReply()}
+                            disabled={isSending}
+                          >
+                            {isSending ? (
+                              <>
+                                <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                                Sending...
+                              </>
+                            ) : (
+                              <>
+                                <Send className="h-3.5 w-3.5 mr-1.5" />
+                                Send Without Changing Status
+                              </>
+                            )}
+                          </Button>
+                          <div className="h-px bg-border my-1" />
+                          {getStatusOptions().map((statusOption) => (
+                            <Button
+                              key={statusOption.value}
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 text-xs justify-start"
+                              onClick={() => handleSendReply(statusOption.value)}
+                              disabled={isSending}
+                            >
+                              <Send className="h-3.5 w-3.5 mr-1.5" />
+                              Send & Mark as {statusOption.label}
+                            </Button>
+                          ))}
+                          <div className="h-px bg-border my-1" />
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 text-xs justify-start text-muted-foreground"
+                            onClick={() => setShowStatusOptions(false)}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>

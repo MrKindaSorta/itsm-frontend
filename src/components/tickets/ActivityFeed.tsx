@@ -79,7 +79,7 @@ export function ActivityFeed({ activities, currentUserId, onReply, onFlag }: Act
   return (
     <div className="space-y-3">
       {activities.map((activity) => {
-        const isSystemUpdate = activity.type === 'status_change' || activity.type === 'assignment' || activity.type === 'priority_change' || activity.type === 'cc_change';
+        const isSystemUpdate = activity.type === 'status_change' || activity.type === 'assignment' || activity.type === 'priority_change' || activity.type === 'cc_change' || activity.type === 'system';
         const isInternalNote = activity.type === 'internal_note';
         const isFlagged = activity.isFlagged || false;
         const isOwnMessage = currentUserId && activity.author.id === currentUserId;
@@ -93,7 +93,16 @@ export function ActivityFeed({ activities, currentUserId, onReply, onFlag }: Act
                   {getActivityIcon(activity.type)}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  <span className="font-medium text-foreground">{activity.author.name}</span> {activity.content.toLowerCase()}
+                  {activity.type === 'system' ? (
+                    <>
+                      <span className="font-medium text-foreground">{activity.content}</span>
+                      {activity.author?.name && <> by <span className="font-medium text-foreground">{activity.author.name}</span></>}
+                    </>
+                  ) : (
+                    <>
+                      <span className="font-medium text-foreground">{activity.author.name}</span> {activity.content.toLowerCase()}
+                    </>
+                  )}
                 </p>
                 <span className="text-xs text-muted-foreground">
                   {formatRelativeTime(activity.createdAt)}
