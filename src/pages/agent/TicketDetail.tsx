@@ -22,6 +22,7 @@ import {
   HelpCircle,
   Loader2,
   Users as UsersIcon,
+  ChevronDown,
 } from 'lucide-react';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
@@ -565,40 +566,41 @@ export default function TicketDetail() {
                       )}
                     </Button>
                   ) : (
-                    /* For Public Replies: Animated Status Options */
+                    /* For Public Replies: Split Button with Dropdown */
                     <div className="relative">
-                      {!showStatusOptions ? (
+                      <div className="flex">
+                        {/* Main Send Button (70%) */}
                         <Button
                           size="sm"
-                          className="h-7 text-xs"
-                          onClick={() => setShowStatusOptions(true)}
+                          className="h-7 text-xs rounded-r-none border-r-0 flex-[7]"
+                          onClick={() => handleSendReply()}
                           disabled={isSending || !replyContent.trim()}
                         >
-                          <Send className="h-3.5 w-3.5 mr-1.5" />
-                          Send Reply
+                          {isSending ? (
+                            <>
+                              <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                              Sending...
+                            </>
+                          ) : (
+                            <>
+                              <Send className="h-3.5 w-3.5 mr-1.5" />
+                              Send Reply
+                            </>
+                          )}
                         </Button>
-                      ) : (
-                        <div className="flex flex-col gap-1 p-2 bg-popover border rounded-md shadow-lg animate-in fade-in zoom-in-95 duration-200">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 text-xs justify-start"
-                            onClick={() => handleSendReply()}
-                            disabled={isSending}
-                          >
-                            {isSending ? (
-                              <>
-                                <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                                Sending...
-                              </>
-                            ) : (
-                              <>
-                                <Send className="h-3.5 w-3.5 mr-1.5" />
-                                Send Without Changing Status
-                              </>
-                            )}
-                          </Button>
-                          <div className="h-px bg-border my-1" />
+                        {/* Dropdown Trigger (30%) */}
+                        <Button
+                          size="sm"
+                          className="h-7 w-7 p-0 rounded-l-none flex-[3]"
+                          onClick={() => setShowStatusOptions(!showStatusOptions)}
+                          disabled={isSending || !replyContent.trim()}
+                        >
+                          <ChevronDown className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                      {/* Dropdown Menu */}
+                      {showStatusOptions && (
+                        <div className="absolute right-0 top-full mt-1 z-10 min-w-[200px] flex flex-col gap-1 p-2 bg-popover border rounded-md shadow-lg animate-in fade-in zoom-in-95 duration-200">
                           {getStatusOptions().map((statusOption) => (
                             <Button
                               key={statusOption.value}
@@ -612,15 +614,6 @@ export default function TicketDetail() {
                               Send & Mark as {statusOption.label}
                             </Button>
                           ))}
-                          <div className="h-px bg-border my-1" />
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 text-xs justify-start text-muted-foreground"
-                            onClick={() => setShowStatusOptions(false)}
-                          >
-                            Cancel
-                          </Button>
                         </div>
                       )}
                     </div>
