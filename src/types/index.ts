@@ -9,7 +9,7 @@ export const UserRole = {
 export type UserRole = (typeof UserRole)[keyof typeof UserRole];
 
 // Ticket status and priority enums
-export type TicketStatus = 'new' | 'open' | 'in_progress' | 'waiting' | 'resolved' | 'closed';
+export type TicketStatus = 'new' | 'open' | 'in_progress' | 'waiting' | 'resolved' | 'closed' | 'reopened';
 export type TicketPriority = 'low' | 'medium' | 'high' | 'urgent';
 export type SLAStatusType = 'green' | 'yellow' | 'red';
 

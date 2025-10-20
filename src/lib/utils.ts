@@ -48,6 +48,7 @@ export function getStatusColor(status: TicketStatus): string {
   const colors: Record<TicketStatus, string> = {
     new: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
     open: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+    reopened: 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200',
     in_progress: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
     waiting: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
     resolved: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
@@ -205,10 +206,11 @@ export function sortTickets(
         const statusOrder: Record<TicketStatus, number> = {
           new: 1,
           open: 2,
-          in_progress: 3,
-          waiting: 4,
-          resolved: 5,
-          closed: 6,
+          reopened: 3,
+          in_progress: 4,
+          waiting: 5,
+          resolved: 6,
+          closed: 7,
         };
         comparison = statusOrder[a.status] - statusOrder[b.status];
         break;
