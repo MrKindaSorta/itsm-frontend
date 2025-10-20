@@ -5,8 +5,7 @@ import { useWebSocket } from '@/hooks/useWebSocket';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
-import { SelectRoot as Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SelectRoot as Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { StatusBadge } from '@/components/tickets/StatusBadge';
 import { PriorityBadge } from '@/components/tickets/PriorityBadge';
@@ -557,8 +556,38 @@ export default function TicketDetail() {
             <CardHeader className="pb-3">
               <CardTitle className="text-base leading-snug mb-2">{ticket.title}</CardTitle>
               <div className="flex items-center gap-1.5 flex-wrap">
-                <StatusBadge status={ticket.status} />
-                <PriorityBadge priority={ticket.priority} />
+                <Select
+                  value={ticket.status}
+                  onValueChange={(value) => handleQuickActionChange('status', value)}
+                  disabled={isSaving}
+                >
+                  <SelectTrigger className="h-auto w-auto border-0 p-0 hover:opacity-80">
+                    <StatusBadge status={ticket.status} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="new">New</SelectItem>
+                    <SelectItem value="open">Open</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="waiting">Waiting</SelectItem>
+                    <SelectItem value="resolved">Resolved</SelectItem>
+                    <SelectItem value="closed">Closed</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={ticket.priority}
+                  onValueChange={(value) => handleQuickActionChange('priority', value)}
+                  disabled={isSaving}
+                >
+                  <SelectTrigger className="h-auto w-auto border-0 p-0 hover:opacity-80">
+                    <PriorityBadge priority={ticket.priority} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="urgent">Urgent</SelectItem>
+                  </SelectContent>
+                </Select>
                 <Badge variant="outline" className="text-xs">{ticket.category}</Badge>
               </div>
             </CardHeader>
@@ -661,71 +690,6 @@ export default function TicketDetail() {
                 )}
               </div>
 
-              {/* Quick Actions */}
-              <div className="pb-3 border-b">
-                <h3 className="text-xs font-semibold mb-2 uppercase tracking-wide text-muted-foreground">Quick Actions</h3>
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <Label htmlFor="status" className="text-xs text-muted-foreground">Status</Label>
-                    <Select
-                      value={ticket.status}
-                      onValueChange={(value) => handleQuickActionChange('status', value)}
-                      disabled={isSaving}
-                    >
-                      <SelectTrigger className="mt-1 h-8 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="new">New</SelectItem>
-                        <SelectItem value="open">Open</SelectItem>
-                        <SelectItem value="in_progress">In Progress</SelectItem>
-                        <SelectItem value="waiting">Waiting</SelectItem>
-                        <SelectItem value="resolved">Resolved</SelectItem>
-                        <SelectItem value="closed">Closed</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="priority" className="text-xs text-muted-foreground">Priority</Label>
-                    <Select
-                      value={ticket.priority}
-                      onValueChange={(value) => handleQuickActionChange('priority', value)}
-                      disabled={isSaving}
-                    >
-                      <SelectTrigger className="mt-1 h-8 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="low">Low</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
-                        <SelectItem value="urgent">Urgent</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="assignee" className="text-xs text-muted-foreground">Assignee</Label>
-                    <Select
-                      value={ticket.assignee?.id?.toString() || 'unassigned'}
-                      onValueChange={(value) => handleQuickActionChange('assignee', value)}
-                      disabled={isSaving}
-                    >
-                      <SelectTrigger className="mt-1 h-8 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="unassigned">Unassigned</SelectItem>
-                        {users.filter(u => u.role !== 'user').map((u) => (
-                          <SelectItem key={u.id} value={u.id.toString()}>
-                            {u.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-
               {/* SLA Status */}
               <div className="pb-3 border-b space-y-2">
                 <h3 className="text-xs font-semibold mb-2 uppercase tracking-wide text-muted-foreground">SLA Status</h3>
@@ -742,22 +706,45 @@ export default function TicketDetail() {
               </div>
 
               {/* Assigned To */}
-              {ticket.assignee && (
-                <div className="pb-3 border-b">
-                  <h3 className="text-xs font-semibold mb-2 uppercase tracking-wide text-muted-foreground">Assigned To</h3>
-                  <div className="flex items-center gap-2.5">
-                    <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-medium">
-                      {getInitials(ticket.assignee.name)}
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium">{ticket.assignee.name}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {'team' in ticket.assignee ? ticket.assignee.team : ticket.assignee.department}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <div className="pb-3 border-b">
+                <h3 className="text-xs font-semibold mb-2 uppercase tracking-wide text-muted-foreground">Assigned To</h3>
+                <Select
+                  value={ticket.assignee?.id?.toString() || 'unassigned'}
+                  onValueChange={(value) => handleQuickActionChange('assignee', value)}
+                  disabled={isSaving}
+                >
+                  <SelectTrigger className="w-full h-auto border rounded-md p-2 hover:bg-accent">
+                    {ticket.assignee ? (
+                      <div className="flex items-center gap-2.5 text-left">
+                        <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-medium">
+                          {getInitials(ticket.assignee.name)}
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium">{ticket.assignee.name}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {'team' in ticket.assignee ? ticket.assignee.team : ticket.assignee.department}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2.5 text-left text-muted-foreground">
+                        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs">
+                          ?
+                        </div>
+                        <p className="text-xs">Unassigned</p>
+                      </div>
+                    )}
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unassigned">Unassigned</SelectItem>
+                    {users.filter(u => u.role !== 'user').map((u) => (
+                      <SelectItem key={u.id} value={u.id.toString()}>
+                        {u.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
               {/* Details */}
               <div className="space-y-2">
