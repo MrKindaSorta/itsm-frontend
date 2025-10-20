@@ -4,10 +4,15 @@ import { getSLAStatusColor } from '@/lib/utils';
 import { Clock } from 'lucide-react';
 
 interface SLAIndicatorProps {
-  sla: SLAStatus;
+  sla: SLAStatus | null | undefined;
 }
 
 export function SLAIndicator({ sla }: SLAIndicatorProps) {
+  // If no SLA is defined, don't render anything
+  if (!sla) {
+    return null;
+  }
+
   const colorClass = getSLAStatusColor(sla.status);
 
   // Calculate time remaining until resolution due

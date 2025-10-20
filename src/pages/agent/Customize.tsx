@@ -106,17 +106,29 @@ export default function Customize() {
     loadFormConfig();
   }, []);
 
-  // Load SLA configuration from localStorage on mount
+  // Load SLA configuration from API on mount
   useEffect(() => {
-    const saved = localStorage.getItem(SLA_STORAGE_KEY);
-    if (saved) {
+    const loadSLAConfig = async () => {
       try {
-        const rules: SLARule[] = JSON.parse(saved);
-        setSlaRules(rules);
+        // Try loading from API first
+        const response = await fetch(`${API_BASE}/api/sla/rules`);
+        const data = await response.json();
+
+        if (data.success && data.rules) {
+          // Transform API dates to Date objects
+          const rules = data.rules.map((rule: any) => ({
+            ...rule,
+            createdAt: new Date(rule.createdAt),
+            updatedAt: new Date(rule.updatedAt),
+          }));
+          setSlaRules(rules);
+        }
       } catch (error) {
-        console.error('Failed to load SLA configuration:', error);
+        console.error('Failed to load SLA configuration from API:', error);
       }
-    }
+    };
+
+    loadSLAConfig();
   }, []);
 
   // Sync local branding state with context when context updates
@@ -200,39 +212,65 @@ export default function Customize() {
   };
 
   // SLA handlers
-  const handleSaveSla = (ruleData: Omit<SLARule, 'id' | 'createdAt' | 'updatedAt'>) => {
-    let updatedRules: SLARule[];
+  const handleSaveSla = async (ruleData: Omit<SLARule, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      if (editingSlaRule) {
+        // Update existing rule via API
+        const response = await fetch(`${API_BASE}/api/sla/rules/${editingSlaRule.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(ruleData),
+        });
 
-    if (editingSlaRule) {
-      // Update existing rule
-      updatedRules = slaRules.map((rule) =>
-        rule.id === editingSlaRule.id
-          ? {
-              ...ruleData,
-              id: rule.id,
-              createdAt: rule.createdAt,
-              updatedAt: new Date(),
-            }
-          : rule
-      );
-      setSlaSaveMessage('SLA rule updated successfully!');
-    } else {
-      // Create new rule
-      const newRule: SLARule = {
-        ...ruleData,
-        id: `sla-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      updatedRules = [...slaRules, newRule];
-      setSlaSaveMessage('SLA rule created successfully!');
+        const data = await response.json();
+        if (data.success) {
+          // Update local state
+          const updatedRules = slaRules.map((rule) =>
+            rule.id === editingSlaRule.id
+              ? {
+                  ...ruleData,
+                  id: rule.id,
+                  createdAt: new Date(data.rule.createdAt),
+                  updatedAt: new Date(data.rule.updatedAt),
+                }
+              : rule
+          );
+          setSlaRules(updatedRules);
+          setSlaSaveMessage('SLA rule updated successfully!');
+        } else {
+          setSlaSaveMessage('Failed to update SLA rule');
+        }
+      } else {
+        // Create new rule via API
+        const response = await fetch(`${API_BASE}/api/sla/rules`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(ruleData),
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          const newRule: SLARule = {
+            ...ruleData,
+            id: data.rule.id,
+            createdAt: new Date(data.rule.created_at),
+            updatedAt: new Date(data.rule.updated_at),
+          };
+          setSlaRules([...slaRules, newRule]);
+          setSlaSaveMessage('SLA rule created successfully!');
+        } else {
+          setSlaSaveMessage('Failed to create SLA rule');
+        }
+      }
+
+      setShowSlaForm(false);
+      setEditingSlaRule(null);
+      setTimeout(() => setSlaSaveMessage(''), 3000);
+    } catch (error) {
+      console.error('Failed to save SLA rule:', error);
+      setSlaSaveMessage('Error saving SLA rule');
+      setTimeout(() => setSlaSaveMessage(''), 3000);
     }
-
-    setSlaRules(updatedRules);
-    localStorage.setItem(SLA_STORAGE_KEY, JSON.stringify(updatedRules));
-    setShowSlaForm(false);
-    setEditingSlaRule(null);
-    setTimeout(() => setSlaSaveMessage(''), 3000);
   };
 
   const handleEditSla = (rule: SLARule) => {
@@ -240,24 +278,53 @@ export default function Customize() {
     setShowSlaForm(true);
   };
 
-  const handleDeleteSla = (ruleId: string) => {
+  const handleDeleteSla = async (ruleId: string) => {
     if (confirm('Are you sure you want to delete this SLA rule?')) {
-      const updatedRules = slaRules.filter((rule) => rule.id !== ruleId);
-      setSlaRules(updatedRules);
-      localStorage.setItem(SLA_STORAGE_KEY, JSON.stringify(updatedRules));
-      setSlaSaveMessage('SLA rule deleted successfully!');
-      setTimeout(() => setSlaSaveMessage(''), 3000);
+      try {
+        const response = await fetch(`${API_BASE}/api/sla/rules/${ruleId}`, {
+          method: 'DELETE',
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          const updatedRules = slaRules.filter((rule) => rule.id !== ruleId);
+          setSlaRules(updatedRules);
+          setSlaSaveMessage('SLA rule deleted successfully!');
+        } else {
+          setSlaSaveMessage('Failed to delete SLA rule');
+        }
+        setTimeout(() => setSlaSaveMessage(''), 3000);
+      } catch (error) {
+        console.error('Failed to delete SLA rule:', error);
+        setSlaSaveMessage('Error deleting SLA rule');
+        setTimeout(() => setSlaSaveMessage(''), 3000);
+      }
     }
   };
 
-  const handleToggleSlaEnabled = (ruleId: string) => {
-    const updatedRules = slaRules.map((rule) =>
-      rule.id === ruleId
-        ? { ...rule, enabled: !rule.enabled, updatedAt: new Date() }
-        : rule
-    );
-    setSlaRules(updatedRules);
-    localStorage.setItem(SLA_STORAGE_KEY, JSON.stringify(updatedRules));
+  const handleToggleSlaEnabled = async (ruleId: string) => {
+    try {
+      const rule = slaRules.find((r) => r.id === ruleId);
+      if (!rule) return;
+
+      const response = await fetch(`${API_BASE}/api/sla/rules/${ruleId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: !rule.enabled }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        const updatedRules = slaRules.map((r) =>
+          r.id === ruleId
+            ? { ...r, enabled: !r.enabled, updatedAt: new Date() }
+            : r
+        );
+        setSlaRules(updatedRules);
+      }
+    } catch (error) {
+      console.error('Failed to toggle SLA rule:', error);
+    }
   };
 
   const handleCancelSlaForm = () => {

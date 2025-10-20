@@ -774,20 +774,22 @@ export default function TicketDetail() {
                 )}
               </div>
 
-              {/* SLA Status */}
-              <div className="pb-3 border-b space-y-2">
-                <h3 className="text-xs font-semibold mb-2 uppercase tracking-wide text-muted-foreground">SLA Status</h3>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Resolution Due</span>
-                  <SLAIndicator sla={ticket.sla} />
+              {/* SLA Status - Only show if SLA is defined */}
+              {ticket.sla && (
+                <div className="pb-3 border-b space-y-2">
+                  <h3 className="text-xs font-semibold mb-2 uppercase tracking-wide text-muted-foreground">SLA Status</h3>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Resolution Due</span>
+                    <SLAIndicator sla={ticket.sla} />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">First Response</span>
+                    <span className={ticket.sla.firstResponseBreached ? 'text-red-500 font-medium' : 'text-green-600 font-medium'}>
+                      {ticket.sla.firstResponseBreached ? 'Breached' : 'Met'}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">First Response</span>
-                  <span className={ticket.sla.firstResponseBreached ? 'text-red-500 font-medium' : 'text-green-600 font-medium'}>
-                    {ticket.sla.firstResponseBreached ? 'Breached' : 'Met'}
-                  </span>
-                </div>
-              </div>
+              )}
 
               {/* Assigned To */}
               <div className="pb-3 border-b">

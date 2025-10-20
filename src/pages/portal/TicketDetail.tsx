@@ -424,10 +424,13 @@ export default function TicketDetail() {
                 </div>
               )}
 
-              <div>
-                <p className="text-muted-foreground mb-1">SLA Status</p>
-                <SLAIndicator sla={ticket.sla} />
-              </div>
+              {/* SLA Status - Only show if SLA is defined */}
+              {ticket.sla && (
+                <div>
+                  <p className="text-muted-foreground mb-1">SLA Status</p>
+                  <SLAIndicator sla={ticket.sla} />
+                </div>
+              )}
 
               <div className="pt-2 border-t space-y-2">
                 <div className="flex items-center justify-between">
