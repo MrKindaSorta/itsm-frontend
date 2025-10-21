@@ -32,13 +32,13 @@ export default function AgentLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navigation = [
-    { name: 'Dashboard', href: '/agent/dashboard', icon: LayoutDashboard },
-    { name: 'Tickets', href: '/agent/tickets', icon: Ticket },
-    { name: 'Users', href: '/agent/users', icon: Users },
-    { name: 'Customize', href: '/agent/customize', icon: Wrench },
-    { name: 'Reports', href: '/agent/reports', icon: BarChart3 },
-    { name: 'Knowledge Base', href: '/agent/knowledge-base', icon: FileText },
-    { name: 'Settings', href: '/agent/settings', icon: Settings },
+    { name: 'Dashboard', href: '/agent/dashboard', icon: LayoutDashboard, mobileVisible: true },
+    { name: 'Tickets', href: '/agent/tickets', icon: Ticket, mobileVisible: true },
+    { name: 'Users', href: '/agent/users', icon: Users, mobileVisible: true },
+    { name: 'Customize', href: '/agent/customize', icon: Wrench, mobileVisible: false },
+    { name: 'Reports', href: '/agent/reports', icon: BarChart3, mobileVisible: false },
+    { name: 'Knowledge Base', href: '/agent/knowledge-base', icon: FileText, mobileVisible: false },
+    { name: 'Settings', href: '/agent/settings', icon: Settings, mobileVisible: true },
   ];
 
   const toggleTheme = () => {
@@ -100,7 +100,10 @@ export default function AgentLayout() {
                 const Icon = item.icon;
                 const isActive = location.pathname.startsWith(item.href);
                 return (
-                  <li key={item.name}>
+                  <li
+                    key={item.name}
+                    className={!item.mobileVisible ? 'hidden lg:block' : ''}
+                  >
                     <Link
                       to={item.href}
                       className={`flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
