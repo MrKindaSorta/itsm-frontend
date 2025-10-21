@@ -228,47 +228,72 @@ export default function MyTickets() {
               )}
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {filteredTickets.map((ticket) => (
                 <Link
                   key={ticket.id}
                   to={`/portal/tickets/${ticket.id}`}
                   className="block"
                 >
-                  <div className="p-4 border rounded-lg hover:bg-accent transition-colors">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-mono text-sm font-medium">{ticket.id}</span>
+                  <div className="p-4 sm:p-5 border rounded-lg hover:bg-accent transition-colors">
+                    {/* Mobile: Stack vertically | Desktop: Horizontal layout */}
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+                      {/* Left side content */}
+                      <div className="flex-1 min-w-0 space-y-3">
+                        {/* Ticket ID */}
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs font-medium text-muted-foreground">{ticket.id}</span>
+                        </div>
+
+                        {/* Title */}
+                        <h4 className="font-semibold text-base leading-tight">{ticket.title}</h4>
+
+                        {/* Badges - Mobile: Stack, Desktop: Inline */}
+                        <div className="flex flex-wrap items-center gap-1.5">
                           <StatusBadge status={ticket.status} />
                           <PriorityBadge priority={ticket.priority} />
                           {ticket.isCCd && (
-                            <Badge variant="outline" className="text-xs bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+                            <Badge variant="outline" className="text-[10px] sm:text-xs bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
                               CC'd
                             </Badge>
                           )}
-                        </div>
-                        <h4 className="font-medium mb-1 truncate">{ticket.title}</h4>
-                        <p className="text-sm text-muted-foreground line-clamp-2">
-                          {ticket.description}
-                        </p>
-                        <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            Created {formatDate(ticket.createdAt)}
-                          </div>
-                          {ticket.isCCd && (
-                            <div>Requested by {ticket.requester.name}</div>
-                          )}
-                          {ticket.assignee && (
-                            <div>Assigned to {ticket.assignee.name}</div>
-                          )}
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className="text-[10px] sm:text-xs hidden sm:inline-flex">
                             {ticket.category}
                           </Badge>
                         </div>
+
+                        {/* Description */}
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {ticket.description}
+                        </p>
+
+                        {/* Metadata - Mobile: Vertical stack, Desktop: Horizontal */}
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1.5">
+                            <Clock className="h-3.5 w-3.5" />
+                            <span>{formatDate(ticket.createdAt)}</span>
+                          </div>
+                          {ticket.isCCd && (
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-medium">Requested by</span>
+                              <span>{ticket.requester.name}</span>
+                            </div>
+                          )}
+                          {ticket.assignee && (
+                            <div className="hidden sm:flex items-center gap-1.5">
+                              <span className="font-medium">Assigned to</span>
+                              <span>{ticket.assignee.name}</span>
+                            </div>
+                          )}
+                          {/* Show category on mobile as text instead of badge */}
+                          <div className="sm:hidden">
+                            <span className="font-medium">Category:</span> {ticket.category}
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex-shrink-0">
+
+                      {/* SLA Indicator - Below on mobile, Right side on desktop */}
+                      <div className="sm:flex-shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0">
                         <SLAIndicator sla={ticket.sla} />
                       </div>
                     </div>
