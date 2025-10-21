@@ -58,8 +58,8 @@ export default function SLAList({ rules, onEdit, onDelete, onToggleEnabled }: SL
 
   // Check if a rule references disabled fields
   const hasDisabledFieldConditions = (rule: SLARule): boolean => {
-    const hasPriorityCondition = rule.conditions.priority && rule.conditions.priority.length > 0;
-    const hasCategoryCondition = rule.conditions.category && rule.conditions.category.length > 0;
+    const hasPriorityCondition = !!(rule.conditions.priority && rule.conditions.priority.length > 0);
+    const hasCategoryCondition = !!(rule.conditions.category && rule.conditions.category.length > 0);
 
     return (hasPriorityCondition && !hasPriorityField) || (hasCategoryCondition && !hasCategoryField);
   };
