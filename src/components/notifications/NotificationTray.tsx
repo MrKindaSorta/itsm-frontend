@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, Check, Settings, Loader2, MessageSquare, AlertCircle, Info, CheckCircle, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,14 +12,11 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { NotificationSettingsModal } from './NotificationSettingsModal';
 import { formatDistanceToNow } from 'date-fns';
 
-const MARK_READ_DELAY = 3000; // 3 seconds
-
 export function NotificationTray() {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showReadNotifications, setShowReadNotifications] = useState(false);
-  const viewTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const {
     notifications,
@@ -28,24 +25,6 @@ export function NotificationTray() {
     markAsRead,
     markAllAsRead,
   } = useNotifications();
-
-  // Auto-mark notifications as read after viewing tray for a few seconds
-  useEffect(() => {
-    if (isOpen && unreadCount > 0) {
-      viewTimerRef.current = setTimeout(() => {
-        // Mark all unread notifications as read
-        notifications
-          .filter(n => !n.read)
-          .forEach(n => markAsRead(n.id));
-      }, MARK_READ_DELAY);
-    }
-
-    return () => {
-      if (viewTimerRef.current) {
-        clearTimeout(viewTimerRef.current);
-      }
-    };
-  }, [isOpen, unreadCount, notifications, markAsRead]);
 
   // Filter notifications based on show read toggle
   const displayedNotifications = showReadNotifications
@@ -184,12 +163,6 @@ export function NotificationTray() {
               </div>
             )}
           </ScrollArea>
-
-          <div className="border-t px-4 py-2 flex items-center justify-center">
-            <p className="text-xs text-muted-foreground">
-              Viewing after {MARK_READ_DELAY / 1000}s marks as read
-            </p>
-          </div>
         </PopoverContent>
       </Popover>
 
