@@ -21,6 +21,7 @@ export default function Tickets() {
   const { subscribeToGlobal, unsubscribeFromGlobal, on } = useWebSocket();
   const [searchQuery, setSearchQuery] = useState('');
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [closedTicketCount, setClosedTicketCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -72,6 +73,7 @@ export default function Tickets() {
   // Fetch tickets from API
   useEffect(() => {
     fetchTickets();
+    fetchClosedTicketCount(); // Fetch count separately for display
   }, []);
 
   // Reload tickets when switching to/from closed status
@@ -80,6 +82,24 @@ export default function Tickets() {
       fetchTickets();
     }
   }, [statusFilter]);
+
+  // Fetch closed ticket count for display (doesn't load full ticket data)
+  const fetchClosedTicketCount = async () => {
+    try {
+      const url = new URL(`${API_BASE}/api/tickets`);
+      url.searchParams.set('status', 'closed');
+
+      const response = await fetch(url.toString());
+      const data = await response.json();
+
+      if (data.success) {
+        setClosedTicketCount(data.tickets.length);
+      }
+    } catch (err) {
+      console.error('Error fetching closed ticket count:', err);
+      // Don't show error for count fetch - not critical
+    }
+  };
 
   const fetchTickets = async () => {
     setIsLoading(true);
@@ -118,6 +138,11 @@ export default function Tickets() {
           } : null,
         }));
         setTickets(transformedTickets);
+
+        // Update closed count if we just fetched closed tickets
+        if (statusFilter === 'closed') {
+          setClosedTicketCount(transformedTickets.length);
+        }
       } else {
         setError(data.error || 'Failed to fetch tickets');
       }
@@ -367,6 +392,7 @@ export default function Tickets() {
           activeStatus={statusFilter}
           onStatusChange={setStatusFilter}
           currentUser={user}
+          closedTicketCount={closedTicketCount}
         />
 
         <CardContent className="pt-6">

@@ -6,6 +6,7 @@ interface StatusTabsProps {
   activeStatus: TicketStatus | 'all' | 'my_tickets';
   onStatusChange: (status: TicketStatus | 'all' | 'my_tickets') => void;
   currentUser?: User | null;
+  closedTicketCount?: number;
 }
 
 interface StatusCount {
@@ -16,11 +17,15 @@ interface StatusCount {
   mobileVisible?: boolean;
 }
 
-export function StatusTabs({ tickets, activeStatus, onStatusChange, currentUser }: StatusTabsProps) {
+export function StatusTabs({ tickets, activeStatus, onStatusChange, currentUser, closedTicketCount = 0 }: StatusTabsProps) {
   const getStatusCount = (status: TicketStatus | 'all' | 'my_tickets'): number => {
     if (status === 'all') return tickets.length;
     if (status === 'my_tickets') {
       return tickets.filter(t => t.assignee?.id === currentUser?.id).length;
+    }
+    // Use prop for closed count (pre-fetched separately)
+    if (status === 'closed') {
+      return closedTicketCount;
     }
     return tickets.filter(t => t.status === status).length;
   };
@@ -28,12 +33,12 @@ export function StatusTabs({ tickets, activeStatus, onStatusChange, currentUser 
   const statusTabs: StatusCount[] = [
     { label: 'All Tickets', value: 'all', count: getStatusCount('all'), color: 'text-foreground', mobileVisible: true },
     { label: 'My Tickets', value: 'my_tickets', count: getStatusCount('my_tickets'), color: 'text-foreground', mobileVisible: true },
-    { label: 'Closed', value: 'closed', count: getStatusCount('closed'), color: 'text-gray-600 dark:text-gray-400', mobileVisible: true },
     { label: 'New', value: 'new', count: getStatusCount('new'), color: 'text-blue-600 dark:text-blue-400', mobileVisible: false },
     { label: 'Open', value: 'open', count: getStatusCount('open'), color: 'text-purple-600 dark:text-purple-400', mobileVisible: false },
     { label: 'In Progress', value: 'in_progress', count: getStatusCount('in_progress'), color: 'text-orange-600 dark:text-orange-400', mobileVisible: false },
     { label: 'Waiting', value: 'waiting', count: getStatusCount('waiting'), color: 'text-yellow-600 dark:text-yellow-400', mobileVisible: false },
     { label: 'Resolved', value: 'resolved', count: getStatusCount('resolved'), color: 'text-green-600 dark:text-green-400', mobileVisible: false },
+    { label: 'Closed', value: 'closed', count: getStatusCount('closed'), color: 'text-gray-600 dark:text-gray-400', mobileVisible: true },
   ];
 
   return (
