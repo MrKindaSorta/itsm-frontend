@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UserPlus, Search, Loader2, Trash2, RotateCcw } from 'lucide-react';
 import { UserTable } from '@/components/users/UserTable';
 import { UserCreateModal } from '@/components/users/UserCreateModal';
