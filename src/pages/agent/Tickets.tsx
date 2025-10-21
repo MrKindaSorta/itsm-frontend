@@ -262,9 +262,9 @@ export default function Tickets() {
               </p>
             </div>
 
-            {/* Actions - Mobile: Stack, Desktop: Horizontal */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              {/* Search - Full width on mobile */}
+            {/* Actions - Horizontal on all screen sizes */}
+            <div className="flex flex-row items-center gap-2">
+              {/* Search - Takes available space */}
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -275,8 +275,8 @@ export default function Tickets() {
                 />
               </div>
 
-              {/* Filter buttons - Wrap on mobile */}
-              <div className="flex items-center gap-2 flex-wrap">
+              {/* Filter buttons */}
+              <div className="flex items-center gap-2">
                 <Button
                   variant={showMyTickets ? 'default' : 'outline'}
                   size="sm"
