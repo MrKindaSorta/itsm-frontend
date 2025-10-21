@@ -21,6 +21,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Home,
+  UserCircle,
 } from 'lucide-react';
 
 export default function AgentLayout() {
@@ -38,6 +39,7 @@ export default function AgentLayout() {
     { name: 'Customize', href: '/agent/customize', icon: Wrench, mobileVisible: false },
     { name: 'Reports', href: '/agent/reports', icon: BarChart3, mobileVisible: false },
     { name: 'Knowledge Base', href: '/agent/knowledge-base', icon: FileText, mobileVisible: false },
+    { name: 'Profile', href: '/agent/profile', icon: UserCircle, mobileVisible: true },
     { name: 'Settings', href: '/agent/settings', icon: Settings, mobileVisible: true },
   ];
 

@@ -220,6 +220,14 @@ export const router = createBrowserRouter([
           </Lazy>
         ),
       },
+      {
+        path: 'profile',
+        element: (
+          <Lazy>
+            <PortalProfile />
+          </Lazy>
+        ),
+      },
     ],
   },
 ]);
