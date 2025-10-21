@@ -14,7 +14,8 @@ import { Send, FileText, AlertCircle, Lightbulb } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import type { FormConfiguration, FormField } from '@/types/formBuilder';
-import type { User } from '@/types';
+import type { User, TicketPriority } from '@/types';
+import { getPriorityColor } from '@/lib/utils';
 
 const FORM_CONFIG_STORAGE_KEY = 'itsm-form-configuration';
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
@@ -434,20 +435,27 @@ export default function CreateTicket() {
             <Label htmlFor={field.id}>
               {field.label} {field.required && '*'}
             </Label>
-            <Select
-              id={field.id}
-              value={value || field.defaultValue || ''}
-              onChange={(e) => setFieldValues({ ...fieldValues, [field.id]: e.target.value })}
-              required={field.required}
-              disabled={showSuccess}
-            >
-              {!field.required && <option value="">{field.placeholder || 'Select priority'}</option>}
-              {field.options?.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </Select>
+            <div className="flex flex-wrap gap-2">
+              {field.options?.map((option) => {
+                const normalizedValue = option.toLowerCase() as TicketPriority;
+                const isSelected = value === option;
+
+                return (
+                  <Badge
+                    key={option}
+                    variant={isSelected ? 'default' : 'outline'}
+                    className={`cursor-pointer transition-all ${
+                      isSelected
+                        ? getPriorityColor(normalizedValue) + ' ring-2 ring-offset-2'
+                        : 'hover:bg-accent'
+                    } ${showSuccess ? 'pointer-events-none opacity-50' : ''}`}
+                    onClick={() => !showSuccess && setFieldValues({ ...fieldValues, [field.id]: option })}
+                  >
+                    {option}
+                  </Badge>
+                );
+              })}
+            </div>
             {field.helpText && (
               <p className="text-xs text-muted-foreground">{field.helpText}</p>
             )}
