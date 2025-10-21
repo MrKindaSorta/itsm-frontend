@@ -8,7 +8,9 @@ export type FormFieldType =
   | 'multiselect'
   | 'checkbox'
   | 'file'
-  | 'cc_users';
+  | 'cc_users'
+  | 'priority'
+  | 'category';
 
 // Form field configuration
 export interface FormField {

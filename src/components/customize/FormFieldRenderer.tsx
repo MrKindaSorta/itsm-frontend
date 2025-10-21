@@ -15,6 +15,8 @@ import {
   Trash2,
   Settings,
   Lock,
+  Flag,
+  FolderOpen,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -29,6 +31,8 @@ const fieldIcons = {
   checkbox: CheckSquare,
   file: Upload,
   cc_users: Users,
+  priority: Flag,
+  category: FolderOpen,
 };
 
 interface FormFieldRendererProps {

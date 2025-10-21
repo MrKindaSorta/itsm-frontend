@@ -145,32 +145,20 @@ export default function CreateTicket() {
     if (!user) return;
 
     try {
-      // Extract title, description, category, and priority from field values
+      // Extract title, description, priority, and category from field values
       const title = fieldValues['system-title'] || '';
       const description = fieldValues['system-description'] || '';
-      let extractedCategory = 'General'; // default category if none found
-      let extractedPriority = 'medium'; // default
 
-      allFields.forEach(field => {
-        const value = fieldValues[field.id];
-
-        // Look for category field (by label or type)
-        if (field.label?.toLowerCase() === 'category' || field.id.includes('category')) {
-          extractedCategory = value || 'General';
-        }
-
-        // Look for priority field (by label)
-        if (field.label?.toLowerCase() === 'priority' || field.id.includes('priority')) {
-          extractedPriority = value || 'medium';
-        }
-      });
+      // Use system field IDs directly, with defaults if fields are disabled
+      const priority = fieldValues['system-priority'] || 'medium';
+      const category = fieldValues['system-category'] || 'General';
 
       // Build ticket payload
       const payload = {
         title,
         description,
-        priority: extractedPriority,
-        category: extractedCategory,
+        priority: priority.toLowerCase(), // Ensure lowercase for backend
+        category,
         requester_id: Number(user.id),
         department: user.department || null,
         cc_user_ids: ccUserIds.map(id => Number(id)),
@@ -434,6 +422,58 @@ export default function CreateTicket() {
                 Selected: {value.name}
               </div>
             )}
+            {field.helpText && (
+              <p className="text-xs text-muted-foreground">{field.helpText}</p>
+            )}
+          </div>
+        );
+
+      case 'priority':
+        return (
+          <div key={field.id} className="space-y-2">
+            <Label htmlFor={field.id}>
+              {field.label} {field.required && '*'}
+            </Label>
+            <Select
+              id={field.id}
+              value={value || field.defaultValue || ''}
+              onChange={(e) => setFieldValues({ ...fieldValues, [field.id]: e.target.value })}
+              required={field.required}
+              disabled={showSuccess}
+            >
+              {!field.required && <option value="">{field.placeholder || 'Select priority'}</option>}
+              {field.options?.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </Select>
+            {field.helpText && (
+              <p className="text-xs text-muted-foreground">{field.helpText}</p>
+            )}
+          </div>
+        );
+
+      case 'category':
+        return (
+          <div key={field.id} className="space-y-2">
+            <Label htmlFor={field.id}>
+              {field.label} {field.required && '*'}
+            </Label>
+            <Select
+              id={field.id}
+              value={value || field.defaultValue || ''}
+              onChange={(e) => setFieldValues({ ...fieldValues, [field.id]: e.target.value })}
+              required={field.required}
+              disabled={showSuccess}
+            >
+              {!field.required && <option value="">{field.placeholder || 'Select category'}</option>}
+              {field.options?.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </Select>
             {field.helpText && (
               <p className="text-xs text-muted-foreground">{field.helpText}</p>
             )}

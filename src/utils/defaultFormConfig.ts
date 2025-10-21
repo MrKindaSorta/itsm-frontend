@@ -2,8 +2,8 @@ import type { FormField } from '@/types/formBuilder';
 
 /**
  * Default system fields that appear in every ticket form
- * These fields are non-deletable but can be customized
- * Only Title and Description are mandatory system fields
+ * Title and Description are mandatory (non-deletable)
+ * Priority and Category are optional system fields (deletable, enabled by default)
  */
 export function getDefaultFormFields(): FormField[] {
   return [
@@ -32,6 +32,32 @@ export function getDefaultFormFields(): FormField[] {
       deletable: false,
       helpText: 'Describe your issue in detail so we can help you better',
     },
+    {
+      id: 'system-priority',
+      type: 'priority',
+      label: 'Priority',
+      placeholder: 'Select priority...',
+      required: false,
+      order: 2,
+      isSystemField: true,
+      deletable: true,
+      helpText: 'How urgent is this issue?',
+      options: ['Low', 'Medium', 'High', 'Urgent'],
+      defaultValue: 'Medium',
+    },
+    {
+      id: 'system-category',
+      type: 'category',
+      label: 'Category',
+      placeholder: 'Select category...',
+      required: false,
+      order: 3,
+      isSystemField: true,
+      deletable: true,
+      helpText: 'What type of issue is this?',
+      options: ['General', 'Hardware', 'Software', 'Network', 'Email', 'Access', 'Onboarding', 'Infrastructure'],
+      defaultValue: 'General',
+    },
   ];
 }
 
@@ -44,12 +70,12 @@ export function shouldInitializeDefaults(fields: FormField[]): boolean {
     return true;
   }
 
-  // Check if any system fields are missing (only Title and Description)
-  const systemFieldIds = ['system-title', 'system-description'];
-  const existingSystemFields = fields.filter(f => systemFieldIds.includes(f.id));
+  // Check if any mandatory system fields are missing (only Title and Description)
+  const mandatoryFieldIds = ['system-title', 'system-description'];
+  const existingMandatoryFields = fields.filter(f => mandatoryFieldIds.includes(f.id));
 
-  // If we're missing system fields, we should reinitialize
-  return existingSystemFields.length < systemFieldIds.length;
+  // If we're missing mandatory fields, we should reinitialize
+  return existingMandatoryFields.length < mandatoryFieldIds.length;
 }
 
 /**
@@ -60,12 +86,12 @@ export function shouldInitializeDefaults(fields: FormField[]): boolean {
 export function mergeWithDefaults(existingFields: FormField[]): FormField[] {
   const defaults = getDefaultFormFields();
 
-  // All possible system field IDs (including deprecated ones)
+  // All possible system field IDs
   const allSystemFieldIds = new Set([
     'system-title',
     'system-description',
-    'system-category',      // deprecated
-    'system-priority',      // deprecated
+    'system-priority',
+    'system-category',
     'system-attachments',   // deprecated
   ]);
 

@@ -10,6 +10,8 @@ import {
   CheckSquare,
   Upload,
   Users,
+  Flag,
+  FolderOpen,
 } from 'lucide-react';
 
 // Available field types in the palette
@@ -122,6 +124,38 @@ const FIELD_TYPES: PaletteFieldType[] = [
       required: false,
     },
   },
+  {
+    type: 'priority',
+    icon: 'Flag',
+    label: 'Priority',
+    description: 'Ticket priority level (system field)',
+    defaultConfig: {
+      type: 'priority',
+      label: 'Priority',
+      placeholder: 'Select priority...',
+      required: false,
+      options: ['Low', 'Medium', 'High', 'Urgent'],
+      defaultValue: 'Medium',
+      isSystemField: true,
+      deletable: true,
+    },
+  },
+  {
+    type: 'category',
+    icon: 'FolderOpen',
+    label: 'Category',
+    description: 'Ticket category (system field)',
+    defaultConfig: {
+      type: 'category',
+      label: 'Category',
+      placeholder: 'Select category...',
+      required: false,
+      options: ['General', 'Hardware', 'Software', 'Network', 'Email', 'Access', 'Onboarding', 'Infrastructure'],
+      defaultValue: 'General',
+      isSystemField: true,
+      deletable: true,
+    },
+  },
 ];
 
 // Icon component mapping
@@ -135,6 +169,8 @@ const IconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   CheckSquare,
   Upload,
   Users,
+  Flag,
+  FolderOpen,
 };
 
 interface FieldPaletteProps {

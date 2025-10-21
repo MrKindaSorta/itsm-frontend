@@ -1,8 +1,13 @@
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { SLARule } from '@/types/sla';
-import { Clock, Edit, Trash2, AlertTriangle } from 'lucide-react';
+import type { FormConfiguration } from '@/types/formBuilder';
+import { Clock, Edit, Trash2, AlertTriangle, AlertCircle } from 'lucide-react';
+
+const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
+const FORM_CONFIG_STORAGE_KEY = 'itsm-form-configuration';
 
 interface SLAListProps {
   rules: SLARule[];
@@ -12,6 +17,66 @@ interface SLAListProps {
 }
 
 export default function SLAList({ rules, onEdit, onDelete, onToggleEnabled }: SLAListProps) {
+  const [hasPriorityField, setHasPriorityField] = useState(true);
+  const [hasCategoryField, setHasCategoryField] = useState(true);
+
+  // Check if priority/category fields are enabled in form configuration
+  useEffect(() => {
+    const loadFormConfig = async () => {
+      try {
+        // Try loading from API first
+        const response = await fetch(`${API_BASE}/api/config/form`);
+        const data = await response.json();
+
+        if (data.success && data.config.fields) {
+          const fields = data.config.fields;
+          setHasPriorityField(fields.some((f: any) => f.id === 'system-priority'));
+          setHasCategoryField(fields.some((f: any) => f.id === 'system-category'));
+        } else {
+          throw new Error('No fields in API response');
+        }
+      } catch (error) {
+        console.error('Failed to load form configuration from API, using localStorage:', error);
+
+        // Fallback to localStorage
+        const saved = localStorage.getItem(FORM_CONFIG_STORAGE_KEY);
+        if (saved) {
+          try {
+            const config: FormConfiguration = JSON.parse(saved);
+            const fields = config.fields || [];
+            setHasPriorityField(fields.some(f => f.id === 'system-priority'));
+            setHasCategoryField(fields.some(f => f.id === 'system-category'));
+          } catch (parseError) {
+            console.error('Failed to parse localStorage config:', parseError);
+          }
+        }
+      }
+    };
+
+    loadFormConfig();
+  }, []);
+
+  // Check if a rule references disabled fields
+  const hasDisabledFieldConditions = (rule: SLARule): boolean => {
+    const hasPriorityCondition = rule.conditions.priority && rule.conditions.priority.length > 0;
+    const hasCategoryCondition = rule.conditions.category && rule.conditions.category.length > 0;
+
+    return (hasPriorityCondition && !hasPriorityField) || (hasCategoryCondition && !hasCategoryField);
+  };
+
+  // Get warning message for disabled fields
+  const getDisabledFieldsMessage = (rule: SLARule): string => {
+    const disabledFields: string[] = [];
+
+    if (rule.conditions.priority && rule.conditions.priority.length > 0 && !hasPriorityField) {
+      disabledFields.push('Priority');
+    }
+    if (rule.conditions.category && rule.conditions.category.length > 0 && !hasCategoryField) {
+      disabledFields.push('Category');
+    }
+
+    return `${disabledFields.join(' and ')} field${disabledFields.length > 1 ? 's are' : ' is'} disabled in the ticket form`;
+  };
   const formatMinutes = (minutes: number): string => {
     if (minutes < 60) return `${minutes}m`;
     const hours = Math.floor(minutes / 60);
@@ -65,10 +130,22 @@ export default function SLAList({ rules, onEdit, onDelete, onToggleEnabled }: SL
                       Auto-escalate
                     </Badge>
                   )}
+                  {hasDisabledFieldConditions(rule) && (
+                    <Badge variant="outline" className="gap-1 border-orange-300 text-orange-700 dark:border-orange-700 dark:text-orange-300" title={getDisabledFieldsMessage(rule)}>
+                      <AlertCircle className="h-3 w-3" />
+                      Field Warning
+                    </Badge>
+                  )}
                 </div>
 
                 {rule.description && (
                   <p className="text-sm text-muted-foreground mb-3">{rule.description}</p>
+                )}
+
+                {hasDisabledFieldConditions(rule) && (
+                  <div className="mb-3 text-xs text-orange-600 bg-orange-50 dark:bg-orange-950 p-2 rounded border border-orange-200 dark:border-orange-800">
+                    ⚠️ {getDisabledFieldsMessage(rule)}. This condition will be skipped.
+                  </div>
                 )}
 
                 <div className="space-y-2">

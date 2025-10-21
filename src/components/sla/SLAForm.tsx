@@ -5,9 +5,11 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { SLARule } from '@/types/sla';
-import { X, AlertTriangle, Loader2 } from 'lucide-react';
+import type { FormConfiguration } from '@/types/formBuilder';
+import { X, AlertTriangle, Loader2, Info } from 'lucide-react';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
+const FORM_CONFIG_STORAGE_KEY = 'itsm-form-configuration';
 
 interface SLAFormProps {
   rule?: SLARule | null;
@@ -44,6 +46,44 @@ export default function SLAForm({ rule, onSave, onCancel }: SLAFormProps) {
   const [isJobTitlesLoading, setIsJobTitlesLoading] = useState(true);
   const [managers, setManagers] = useState<string[]>([]);
   const [isManagersLoading, setIsManagersLoading] = useState(true);
+  const [hasPriorityField, setHasPriorityField] = useState(true);
+  const [hasCategoryField, setHasCategoryField] = useState(true);
+
+  // Check if priority/category fields are enabled in form configuration
+  useEffect(() => {
+    const loadFormConfig = async () => {
+      try {
+        // Try loading from API first
+        const response = await fetch(`${API_BASE}/api/config/form`);
+        const data = await response.json();
+
+        if (data.success && data.config.fields) {
+          const fields = data.config.fields;
+          setHasPriorityField(fields.some((f: any) => f.id === 'system-priority'));
+          setHasCategoryField(fields.some((f: any) => f.id === 'system-category'));
+        } else {
+          throw new Error('No fields in API response');
+        }
+      } catch (error) {
+        console.error('Failed to load form configuration from API, using localStorage:', error);
+
+        // Fallback to localStorage
+        const saved = localStorage.getItem(FORM_CONFIG_STORAGE_KEY);
+        if (saved) {
+          try {
+            const config: FormConfiguration = JSON.parse(saved);
+            const fields = config.fields || [];
+            setHasPriorityField(fields.some(f => f.id === 'system-priority'));
+            setHasCategoryField(fields.some(f => f.id === 'system-category'));
+          } catch (parseError) {
+            console.error('Failed to parse localStorage config:', parseError);
+          }
+        }
+      }
+    };
+
+    loadFormConfig();
+  }, []);
 
   useEffect(() => {
     if (rule) {
@@ -263,14 +303,26 @@ export default function SLAForm({ rule, onSave, onCancel }: SLAFormProps) {
             </div>
 
             <div>
-              <Label className="text-xs text-muted-foreground mb-2 block">Priority</Label>
-              <div className="flex flex-wrap gap-2">
+              <Label className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
+                Priority
+                {!hasPriorityField && (
+                  <span className="inline-flex items-center gap-1 text-orange-600" title="Priority field is disabled in the ticket form">
+                    <Info className="h-3 w-3" />
+                  </span>
+                )}
+              </Label>
+              {!hasPriorityField && (
+                <div className="mb-2 text-xs text-orange-600 bg-orange-50 dark:bg-orange-950 p-2 rounded border border-orange-200 dark:border-orange-800">
+                  ⚠️ Priority field is disabled in the ticket form. Enable it in Form Builder to use this condition.
+                </div>
+              )}
+              <div className={`flex flex-wrap gap-2 ${!hasPriorityField ? 'opacity-50 pointer-events-none' : ''}`}>
                 {PRIORITY_OPTIONS.map((priority) => (
                   <Badge
                     key={priority}
                     variant={selectedPriorities.includes(priority) ? 'default' : 'outline'}
                     className="cursor-pointer"
-                    onClick={() => toggleSelection(priority, selectedPriorities, setSelectedPriorities)}
+                    onClick={() => hasPriorityField && toggleSelection(priority, selectedPriorities, setSelectedPriorities)}
                   >
                     {priority}
                   </Badge>
@@ -279,14 +331,26 @@ export default function SLAForm({ rule, onSave, onCancel }: SLAFormProps) {
             </div>
 
             <div>
-              <Label className="text-xs text-muted-foreground mb-2 block">Category</Label>
-              <div className="flex flex-wrap gap-2">
+              <Label className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
+                Category
+                {!hasCategoryField && (
+                  <span className="inline-flex items-center gap-1 text-orange-600" title="Category field is disabled in the ticket form">
+                    <Info className="h-3 w-3" />
+                  </span>
+                )}
+              </Label>
+              {!hasCategoryField && (
+                <div className="mb-2 text-xs text-orange-600 bg-orange-50 dark:bg-orange-950 p-2 rounded border border-orange-200 dark:border-orange-800">
+                  ⚠️ Category field is disabled in the ticket form. Enable it in Form Builder to use this condition.
+                </div>
+              )}
+              <div className={`flex flex-wrap gap-2 ${!hasCategoryField ? 'opacity-50 pointer-events-none' : ''}`}>
                 {CATEGORY_OPTIONS.map((category) => (
                   <Badge
                     key={category}
                     variant={selectedCategories.includes(category) ? 'default' : 'outline'}
                     className="cursor-pointer"
-                    onClick={() => toggleSelection(category, selectedCategories, setSelectedCategories)}
+                    onClick={() => hasCategoryField && toggleSelection(category, selectedCategories, setSelectedCategories)}
                   >
                     {category}
                   </Badge>
