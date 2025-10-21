@@ -4,17 +4,21 @@ import { RoleBadge } from './RoleBadge';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Edit, ToggleLeft, ToggleRight, Trash2 } from 'lucide-react';
-import { formatRelativeTime, getInitials } from '@/lib/utils';
+import { formatRelativeTime, getInitials, type UserSortColumn, type SortDirection } from '@/lib/utils';
+import { SortableHeader } from '@/components/tickets/SortableHeader';
 import { UserCards } from './UserCards';
 
 interface UserTableProps {
   users: User[];
+  sortColumn: UserSortColumn | null;
+  sortDirection: SortDirection;
+  onSort: (column: UserSortColumn) => void;
   onEdit: (user: User) => void;
   onToggleActive: (userId: string) => void;
   onDelete: (userId: string) => void;
 }
 
-export function UserTable({ users, onEdit, onToggleActive, onDelete }: UserTableProps) {
+export function UserTable({ users, sortColumn, sortDirection, onSort, onEdit, onToggleActive, onDelete }: UserTableProps) {
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
 
   const handleDelete = (userId: string, userName: string) => {
@@ -34,13 +38,69 @@ export function UserTable({ users, onEdit, onToggleActive, onDelete }: UserTable
           <table className="w-full">
           <thead className="bg-muted/50">
             <tr className="border-b">
-              <th className="px-4 py-3 text-left text-sm font-medium">User</th>
-              <th className="px-4 py-3 text-left text-sm font-medium">Email</th>
-              <th className="px-4 py-3 text-left text-sm font-medium">Role</th>
-              <th className="px-4 py-3 text-left text-sm font-medium">Department</th>
-              <th className="px-4 py-3 text-left text-sm font-medium">Team</th>
-              <th className="px-4 py-3 text-left text-sm font-medium">Status</th>
-              <th className="px-4 py-3 text-left text-sm font-medium">Last Login</th>
+              <th className="px-4 py-3 text-left">
+                <SortableHeader
+                  label="User"
+                  column="name"
+                  currentColumn={sortColumn}
+                  currentDirection={sortDirection}
+                  onSort={onSort}
+                />
+              </th>
+              <th className="px-4 py-3 text-left">
+                <SortableHeader
+                  label="Email"
+                  column="email"
+                  currentColumn={sortColumn}
+                  currentDirection={sortDirection}
+                  onSort={onSort}
+                />
+              </th>
+              <th className="px-4 py-3 text-left">
+                <SortableHeader
+                  label="Role"
+                  column="role"
+                  currentColumn={sortColumn}
+                  currentDirection={sortDirection}
+                  onSort={onSort}
+                />
+              </th>
+              <th className="px-4 py-3 text-left">
+                <SortableHeader
+                  label="Department"
+                  column="department"
+                  currentColumn={sortColumn}
+                  currentDirection={sortDirection}
+                  onSort={onSort}
+                />
+              </th>
+              <th className="px-4 py-3 text-left">
+                <SortableHeader
+                  label="Team"
+                  column="team"
+                  currentColumn={sortColumn}
+                  currentDirection={sortDirection}
+                  onSort={onSort}
+                />
+              </th>
+              <th className="px-4 py-3 text-left">
+                <SortableHeader
+                  label="Status"
+                  column="status"
+                  currentColumn={sortColumn}
+                  currentDirection={sortDirection}
+                  onSort={onSort}
+                />
+              </th>
+              <th className="px-4 py-3 text-left">
+                <SortableHeader
+                  label="Last Login"
+                  column="lastLogin"
+                  currentColumn={sortColumn}
+                  currentDirection={sortDirection}
+                  onSort={onSort}
+                />
+              </th>
               <th className="px-4 py-3 text-right text-sm font-medium">Actions</th>
             </tr>
           </thead>

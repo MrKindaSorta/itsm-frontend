@@ -1,26 +1,25 @@
 import { ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { SortColumn } from '@/lib/utils';
 
 export type SortDirection = 'asc' | 'desc' | null;
 
-interface SortableHeaderProps {
+interface SortableHeaderProps<T extends string> {
   label: string;
-  column: SortColumn;
-  currentColumn: SortColumn | null;
+  column: T;
+  currentColumn: T | null;
   currentDirection: SortDirection;
-  onSort: (column: SortColumn) => void;
+  onSort: (column: T) => void;
   className?: string;
 }
 
-export function SortableHeader({
+export function SortableHeader<T extends string>({
   label,
   column,
   currentColumn,
   currentDirection,
   onSort,
   className,
-}: SortableHeaderProps) {
+}: SortableHeaderProps<T>) {
   const isActive = currentColumn === column;
 
   const getSortIcon = () => {

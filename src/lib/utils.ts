@@ -174,9 +174,10 @@ export function generateAvatarColor(seed: string): string {
 }
 
 // Ticket sorting utilities
-import type { Ticket } from '@/types';
+import type { Ticket, User, UserRole } from '@/types';
 
 export type SortColumn = 'id' | 'title' | 'status' | 'priority' | 'assignee' | 'requester' | 'sla' | 'updated';
+export type UserSortColumn = 'name' | 'email' | 'role' | 'department' | 'team' | 'status' | 'lastLogin';
 export type SortDirection = 'asc' | 'desc' | null;
 
 export function sortTickets(
@@ -246,6 +247,79 @@ export function sortTickets(
 
       case 'updated':
         comparison = a.updatedAt.getTime() - b.updatedAt.getTime();
+        break;
+
+      default:
+        comparison = 0;
+    }
+
+    return direction === 'asc' ? comparison : -comparison;
+  });
+
+  return sorted;
+}
+
+// User sorting utility
+export function sortUsers(
+  users: User[],
+  column: UserSortColumn | null,
+  direction: SortDirection
+): User[] {
+  if (!column || !direction) return users;
+
+  const sorted = [...users].sort((a, b) => {
+    let comparison = 0;
+
+    switch (column) {
+      case 'name':
+        comparison = a.name.localeCompare(b.name);
+        break;
+
+      case 'email':
+        comparison = a.email.localeCompare(b.email);
+        break;
+
+      case 'role':
+        const roleOrder: Record<UserRole, number> = {
+          admin: 4,
+          manager: 3,
+          agent: 2,
+          user: 1,
+        };
+        comparison = roleOrder[a.role] - roleOrder[b.role];
+        break;
+
+      case 'department':
+        // Handle null/undefined departments - put them last when ascending
+        if (!a.department && !b.department) comparison = 0;
+        else if (!a.department) comparison = 1;
+        else if (!b.department) comparison = -1;
+        else comparison = a.department.localeCompare(b.department);
+        break;
+
+      case 'team':
+        // Handle null/undefined teams - put them last when ascending
+        if (!a.team && !b.team) comparison = 0;
+        else if (!a.team) comparison = 1;
+        else if (!b.team) comparison = -1;
+        else comparison = a.team.localeCompare(b.team);
+        break;
+
+      case 'status':
+        // Active users first (1), inactive last (0)
+        comparison = (a.active ? 1 : 0) - (b.active ? 1 : 0);
+        break;
+
+      case 'lastLogin':
+        // Handle null/undefined lastLogin - never logged in go last when ascending
+        if (!a.lastLogin && !b.lastLogin) comparison = 0;
+        else if (!a.lastLogin) comparison = 1;
+        else if (!b.lastLogin) comparison = -1;
+        else {
+          const dateA = new Date(a.lastLogin).getTime();
+          const dateB = new Date(b.lastLogin).getTime();
+          comparison = dateA - dateB;
+        }
         break;
 
       default:

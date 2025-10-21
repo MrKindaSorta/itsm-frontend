@@ -9,6 +9,7 @@ import { UserTable } from '@/components/users/UserTable';
 import { UserCreateModal } from '@/components/users/UserCreateModal';
 import { UserEditModal } from '@/components/users/UserEditModal';
 import { useAuth } from '@/contexts/AuthContext';
+import { sortUsers, type UserSortColumn, type SortDirection } from '@/lib/utils';
 import type { User } from '@/types';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
@@ -26,6 +27,10 @@ export default function Users() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
+  // Sorting state
+  const [sortColumn, setSortColumn] = useState<UserSortColumn | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
 
   // Fetch users from API
   useEffect(() => {
@@ -225,6 +230,24 @@ export default function Users() {
     }
   };
 
+  // Handle sort
+  const handleSort = (column: UserSortColumn) => {
+    if (sortColumn === column) {
+      // Cycle through: null -> asc -> desc -> null
+      if (sortDirection === null) {
+        setSortDirection('asc');
+      } else if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else {
+        setSortColumn(null);
+        setSortDirection(null);
+      }
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
   // Helper function for search filtering
   const matchesSearch = (user: User) => {
     if (!searchQuery) return true;
@@ -264,7 +287,8 @@ export default function Users() {
     }
   };
 
-  const currentUsers = getCurrentTabUsers();
+  // Apply sorting to current tab's users
+  const currentUsers = sortUsers(getCurrentTabUsers(), sortColumn, sortDirection);
 
   const renderDeletedUserTable = () => (
     <>
@@ -467,6 +491,9 @@ export default function Users() {
           ) : (
             <UserTable
               users={currentUsers}
+              sortColumn={sortColumn}
+              sortDirection={sortDirection}
+              onSort={handleSort}
               onEdit={handleEdit}
               onToggleActive={handleToggleActive}
               onDelete={handleDelete}
