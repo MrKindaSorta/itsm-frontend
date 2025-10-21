@@ -2,6 +2,10 @@ export interface SLAConditions {
   priority?: string[];
   category?: string[];
   department?: string[];
+  team?: string[];
+  location?: string[];
+  jobTitle?: string[];
+  manager?: string[];
 }
 
 export interface SLATargets {

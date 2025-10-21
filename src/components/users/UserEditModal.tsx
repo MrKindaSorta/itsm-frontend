@@ -5,6 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SelectRoot as Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DepartmentCombobox } from '@/components/ui/department-combobox';
+import { TeamCombobox } from '@/components/ui/team-combobox';
+import { LocationCombobox } from '@/components/ui/location-combobox';
+import { JobTitleCombobox } from '@/components/ui/job-title-combobox';
+import { ManagerCombobox } from '@/components/ui/manager-combobox';
 import { Loader2, Eye, EyeOff, Key } from 'lucide-react';
 import { isValidEmail } from '@/lib/utils';
 import type { User } from '@/types';
@@ -223,13 +227,13 @@ export function UserEditModal({ open, onOpenChange, onSuccess, user }: UserEditM
 
             <div className="space-y-2">
               <Label htmlFor="team">Team (Optional)</Label>
-              <Input
-                id="team"
-                placeholder="e.g., Support Team, Dev Team"
+              <TeamCombobox
                 value={formData.team}
-                onChange={(e) => setFormData({ ...formData, team: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, team: value })}
+                placeholder="Select or type team..."
                 disabled={isLoading}
               />
+              <p className="text-xs text-muted-foreground">Start typing to see existing teams</p>
             </div>
           </div>
 
@@ -261,36 +265,36 @@ export function UserEditModal({ open, onOpenChange, onSuccess, user }: UserEditM
 
           <div className="space-y-2">
             <Label htmlFor="location">Office Location (Optional)</Label>
-            <Input
-              id="location"
-              placeholder="e.g., New York, NY - Building 5, Floor 3"
+            <LocationCombobox
               value={formData.location}
-              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+              onChange={(value) => setFormData({ ...formData, location: value })}
+              placeholder="Select or type location..."
               disabled={isLoading}
             />
+            <p className="text-xs text-muted-foreground">Start typing to see existing locations</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="job_title">Job Title (Optional)</Label>
-              <Input
-                id="job_title"
-                placeholder="e.g., Senior Developer"
+              <JobTitleCombobox
                 value={formData.job_title}
-                onChange={(e) => setFormData({ ...formData, job_title: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, job_title: value })}
+                placeholder="Select or type job title..."
                 disabled={isLoading}
               />
+              <p className="text-xs text-muted-foreground">Start typing to see existing job titles</p>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="manager">Manager (Optional)</Label>
-              <Input
-                id="manager"
-                placeholder="e.g., Jane Smith"
+              <ManagerCombobox
                 value={formData.manager}
-                onChange={(e) => setFormData({ ...formData, manager: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, manager: value })}
+                placeholder="Select or type manager..."
                 disabled={isLoading}
               />
+              <p className="text-xs text-muted-foreground">Includes users with manager role</p>
             </div>
           </div>
 

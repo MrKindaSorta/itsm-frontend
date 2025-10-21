@@ -25,6 +25,10 @@ export default function SLAForm({ rule, onSave, onCancel }: SLAFormProps) {
   const [selectedPriorities, setSelectedPriorities] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
+  const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
+  const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
+  const [selectedJobTitles, setSelectedJobTitles] = useState<string[]>([]);
+  const [selectedManagers, setSelectedManagers] = useState<string[]>([]);
   const [firstResponseMinutes, setFirstResponseMinutes] = useState<number>(60);
   const [resolutionMinutes, setResolutionMinutes] = useState<number>(240);
   const [escalationEnabled, setEscalationEnabled] = useState(false);
@@ -32,6 +36,14 @@ export default function SLAForm({ rule, onSave, onCancel }: SLAFormProps) {
   const [escalationPriority, setEscalationPriority] = useState('High');
   const [departments, setDepartments] = useState<string[]>([]);
   const [isDepartmentsLoading, setIsDepartmentsLoading] = useState(true);
+  const [teams, setTeams] = useState<string[]>([]);
+  const [isTeamsLoading, setIsTeamsLoading] = useState(true);
+  const [locations, setLocations] = useState<string[]>([]);
+  const [isLocationsLoading, setIsLocationsLoading] = useState(true);
+  const [jobTitles, setJobTitles] = useState<string[]>([]);
+  const [isJobTitlesLoading, setIsJobTitlesLoading] = useState(true);
+  const [managers, setManagers] = useState<string[]>([]);
+  const [isManagersLoading, setIsManagersLoading] = useState(true);
 
   useEffect(() => {
     if (rule) {
@@ -41,6 +53,10 @@ export default function SLAForm({ rule, onSave, onCancel }: SLAFormProps) {
       setSelectedPriorities(rule.conditions.priority || []);
       setSelectedCategories(rule.conditions.category || []);
       setSelectedDepartments(rule.conditions.department || []);
+      setSelectedTeams(rule.conditions.team || []);
+      setSelectedLocations(rule.conditions.location || []);
+      setSelectedJobTitles(rule.conditions.jobTitle || []);
+      setSelectedManagers(rule.conditions.manager || []);
       setFirstResponseMinutes(rule.targets.firstResponseMinutes);
       setResolutionMinutes(rule.targets.resolutionMinutes);
       setEscalationEnabled(rule.escalation?.enabled || false);
@@ -66,6 +82,74 @@ export default function SLAForm({ rule, onSave, onCancel }: SLAFormProps) {
     fetchDepartments();
   }, []);
 
+  useEffect(() => {
+    const fetchTeams = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/api/teams/unique`);
+        const data = await response.json();
+        if (data.success) {
+          setTeams(data.teams || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch teams:', error);
+      } finally {
+        setIsTeamsLoading(false);
+      }
+    };
+    fetchTeams();
+  }, []);
+
+  useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/api/locations/unique`);
+        const data = await response.json();
+        if (data.success) {
+          setLocations(data.locations || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch locations:', error);
+      } finally {
+        setIsLocationsLoading(false);
+      }
+    };
+    fetchLocations();
+  }, []);
+
+  useEffect(() => {
+    const fetchJobTitles = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/api/job-titles/unique`);
+        const data = await response.json();
+        if (data.success) {
+          setJobTitles(data.jobTitles || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch job titles:', error);
+      } finally {
+        setIsJobTitlesLoading(false);
+      }
+    };
+    fetchJobTitles();
+  }, []);
+
+  useEffect(() => {
+    const fetchManagers = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/api/managers/unique`);
+        const data = await response.json();
+        if (data.success) {
+          setManagers(data.managers || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch managers:', error);
+      } finally {
+        setIsManagersLoading(false);
+      }
+    };
+    fetchManagers();
+  }, []);
+
   const toggleSelection = (value: string, current: string[], setter: (arr: string[]) => void) => {
     if (current.includes(value)) {
       setter(current.filter((v) => v !== value));
@@ -85,6 +169,10 @@ export default function SLAForm({ rule, onSave, onCancel }: SLAFormProps) {
         priority: selectedPriorities.length > 0 ? selectedPriorities : undefined,
         category: selectedCategories.length > 0 ? selectedCategories : undefined,
         department: selectedDepartments.length > 0 ? selectedDepartments : undefined,
+        team: selectedTeams.length > 0 ? selectedTeams : undefined,
+        location: selectedLocations.length > 0 ? selectedLocations : undefined,
+        jobTitle: selectedJobTitles.length > 0 ? selectedJobTitles : undefined,
+        manager: selectedManagers.length > 0 ? selectedManagers : undefined,
       },
       targets: {
         firstResponseMinutes,
@@ -229,6 +317,114 @@ export default function SLAForm({ rule, onSave, onCancel }: SLAFormProps) {
               ) : (
                 <p className="text-sm text-muted-foreground">
                   No departments found. Add departments to users first.
+                </p>
+              )}
+            </div>
+
+            <div>
+              <Label className="text-xs text-muted-foreground mb-2 block">Team</Label>
+              {isTeamsLoading ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading teams...
+                </div>
+              ) : teams.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {teams.map((team) => (
+                    <Badge
+                      key={team}
+                      variant={selectedTeams.includes(team) ? 'default' : 'outline'}
+                      className="cursor-pointer"
+                      onClick={() => toggleSelection(team, selectedTeams, setSelectedTeams)}
+                    >
+                      {team}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No teams found. Add teams to users first.
+                </p>
+              )}
+            </div>
+
+            <div>
+              <Label className="text-xs text-muted-foreground mb-2 block">Office Location</Label>
+              {isLocationsLoading ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading locations...
+                </div>
+              ) : locations.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {locations.map((location) => (
+                    <Badge
+                      key={location}
+                      variant={selectedLocations.includes(location) ? 'default' : 'outline'}
+                      className="cursor-pointer"
+                      onClick={() => toggleSelection(location, selectedLocations, setSelectedLocations)}
+                    >
+                      {location}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No locations found. Add locations to users first.
+                </p>
+              )}
+            </div>
+
+            <div>
+              <Label className="text-xs text-muted-foreground mb-2 block">Job Title</Label>
+              {isJobTitlesLoading ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading job titles...
+                </div>
+              ) : jobTitles.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {jobTitles.map((jobTitle) => (
+                    <Badge
+                      key={jobTitle}
+                      variant={selectedJobTitles.includes(jobTitle) ? 'default' : 'outline'}
+                      className="cursor-pointer"
+                      onClick={() => toggleSelection(jobTitle, selectedJobTitles, setSelectedJobTitles)}
+                    >
+                      {jobTitle}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No job titles found. Add job titles to users first.
+                </p>
+              )}
+            </div>
+
+            <div>
+              <Label className="text-xs text-muted-foreground mb-2 block">Manager</Label>
+              {isManagersLoading ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading managers...
+                </div>
+              ) : managers.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {managers.map((manager) => (
+                    <Badge
+                      key={manager}
+                      variant={selectedManagers.includes(manager) ? 'default' : 'outline'}
+                      className="cursor-pointer"
+                      onClick={() => toggleSelection(manager, selectedManagers, setSelectedManagers)}
+                    >
+                      {manager}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No managers found. Add managers to users first.
                 </p>
               )}
             </div>
