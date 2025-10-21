@@ -2,14 +2,7 @@ import * as React from 'react';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
+import { Input } from '@/components/ui/input';
 import {
   Popover,
   PopoverContent,
@@ -65,8 +58,19 @@ export function DepartmentCombobox({
     );
   }, [departments, searchValue]);
 
-  // Check if current value is a custom (not in list)
-  const isCustomValue = value && !departments.includes(value);
+  const handleSelect = (selectedDept: string) => {
+    onChange(selectedDept);
+    setOpen(false);
+    setSearchValue('');
+  };
+
+  const handleCreateNew = () => {
+    if (searchValue.trim()) {
+      onChange(searchValue.trim());
+      setOpen(false);
+      setSearchValue('');
+    }
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -83,43 +87,44 @@ export function DepartmentCombobox({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0" align="start">
-        <Command>
-          <CommandInput
+        <div className="p-2">
+          <Input
             placeholder="Search or type new department..."
             value={searchValue}
-            onValueChange={setSearchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+            className="mb-2"
+            autoFocus
           />
-          <CommandList>
+
+          <div className="max-h-[200px] overflow-y-auto">
             {isLoading ? (
-              <CommandEmpty>Loading departments...</CommandEmpty>
+              <div className="py-6 text-center text-sm text-muted-foreground">
+                Loading departments...
+              </div>
             ) : (
               <>
                 {filteredDepartments.length === 0 && searchValue && (
-                  <CommandGroup>
-                    <CommandItem
-                      value={searchValue}
-                      onSelect={() => {
-                        onChange(searchValue.trim());
-                        setOpen(false);
-                        setSearchValue('');
-                      }}
-                    >
-                      <span className="text-muted-foreground mr-2">Create:</span>
-                      <span className="font-medium">{searchValue}</span>
-                    </CommandItem>
-                  </CommandGroup>
+                  <button
+                    onClick={handleCreateNew}
+                    className="w-full flex items-center px-2 py-1.5 text-sm rounded hover:bg-accent cursor-pointer"
+                  >
+                    <span className="text-muted-foreground mr-2">Create:</span>
+                    <span className="font-medium">{searchValue}</span>
+                  </button>
                 )}
+
                 {filteredDepartments.length > 0 && (
-                  <CommandGroup heading="Existing Departments">
+                  <>
+                    {searchValue && (
+                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                        Existing Departments
+                      </div>
+                    )}
                     {filteredDepartments.map((dept) => (
-                      <CommandItem
+                      <button
                         key={dept}
-                        value={dept}
-                        onSelect={(currentValue) => {
-                          onChange(currentValue === value ? '' : currentValue);
-                          setOpen(false);
-                          setSearchValue('');
-                        }}
+                        onClick={() => handleSelect(dept)}
+                        className="w-full flex items-center px-2 py-1.5 text-sm rounded hover:bg-accent cursor-pointer"
                       >
                         <Check
                           className={cn(
@@ -128,29 +133,33 @@ export function DepartmentCombobox({
                           )}
                         />
                         {dept}
-                      </CommandItem>
+                      </button>
                     ))}
-                  </CommandGroup>
+
+                    {searchValue && (
+                      <>
+                        <div className="border-t my-1" />
+                        <button
+                          onClick={handleCreateNew}
+                          className="w-full flex items-center px-2 py-1.5 text-sm rounded hover:bg-accent cursor-pointer"
+                        >
+                          <span className="text-muted-foreground mr-2">Create:</span>
+                          <span className="font-medium">{searchValue}</span>
+                        </button>
+                      </>
+                    )}
+                  </>
                 )}
-                {searchValue && filteredDepartments.length > 0 && (
-                  <CommandGroup>
-                    <CommandItem
-                      value={searchValue}
-                      onSelect={() => {
-                        onChange(searchValue.trim());
-                        setOpen(false);
-                        setSearchValue('');
-                      }}
-                    >
-                      <span className="text-muted-foreground mr-2">Create:</span>
-                      <span className="font-medium">{searchValue}</span>
-                    </CommandItem>
-                  </CommandGroup>
+
+                {filteredDepartments.length === 0 && !searchValue && (
+                  <div className="py-6 text-center text-sm text-muted-foreground">
+                    No departments found
+                  </div>
                 )}
               </>
             )}
-          </CommandList>
-        </Command>
+          </div>
+        </div>
       </PopoverContent>
     </Popover>
   );
