@@ -8,6 +8,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Bell, Mail, User as UserIcon, Lock, Check, Building2, Shield, Phone, MapPin } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { getInitials } from '@/lib/utils';
+import { DepartmentCombobox } from '@/components/ui/department-combobox';
+import { TeamCombobox } from '@/components/ui/team-combobox';
+import { LocationCombobox } from '@/components/ui/location-combobox';
+import { JobTitleCombobox } from '@/components/ui/job-title-combobox';
+import { ManagerCombobox } from '@/components/ui/manager-combobox';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
@@ -20,25 +25,12 @@ export default function Profile() {
   // Personal info state
   const [name, setName] = useState(user?.name || '');
   const [department, setDepartment] = useState(user?.department || '');
+  const [team, setTeam] = useState(user?.team || '');
   const [phone, setPhone] = useState(user?.phone || '');
   const [mobilePhone, setMobilePhone] = useState(user?.mobile_phone || '');
   const [location, setLocation] = useState(user?.location || '');
   const [jobTitle, setJobTitle] = useState(user?.job_title || '');
   const [manager, setManager] = useState(user?.manager || '');
-
-  // Mock data - in production these would come from API
-  const departmentOptions = [
-    'Engineering',
-    'Product',
-    'Marketing',
-    'Sales',
-    'Customer Support',
-    'HR',
-    'Finance',
-    'Operations',
-    'IT',
-    'Legal'
-  ];
 
   // Notification preferences state
   const [emailEnabled, setEmailEnabled] = useState(user?.notificationPreferences?.emailEnabled ?? true);
@@ -67,6 +59,7 @@ export default function Profile() {
         body: JSON.stringify({
           name,
           department: department || null,
+          team: team || null,
           phone: phone || null,
           mobile_phone: mobilePhone || null,
           location: location || null,
@@ -87,6 +80,7 @@ export default function Profile() {
         ...user,
         name,
         department: department || undefined,
+        team: team || undefined,
         phone: phone || undefined,
         mobile_phone: mobilePhone || undefined,
         location: location || undefined,
@@ -250,6 +244,14 @@ export default function Profile() {
                   <span>{user?.department || department || 'No department'}</span>
                 </div>
 
+                {/* Team */}
+                {team && (
+                  <div className="flex items-center gap-2">
+                    <UserIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <span>{team}</span>
+                  </div>
+                )}
+
                 {/* Location */}
                 {location && (
                   <div className="flex items-center gap-2">
@@ -357,51 +359,51 @@ export default function Profile() {
 
                   <div className="space-y-2">
                     <Label htmlFor="department" className="text-sm">Department</Label>
-                    <Select
-                      id="department"
+                    <DepartmentCombobox
                       value={department}
-                      onChange={(e) => setDepartment(e.target.value)}
-                      className="h-9"
-                    >
-                      <option value="">Select a department</option>
-                      {departmentOptions.map((dept) => (
-                        <option key={dept} value={dept}>
-                          {dept}
-                        </option>
-                      ))}
-                    </Select>
+                      onChange={(value) => setDepartment(value)}
+                      placeholder="Select or type department..."
+                      disabled={isLoading}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="team" className="text-sm">Team</Label>
+                    <TeamCombobox
+                      value={team}
+                      onChange={(value) => setTeam(value)}
+                      placeholder="Select or type team..."
+                      disabled={isLoading}
+                    />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="jobTitle" className="text-sm">Job Title</Label>
-                    <Input
-                      id="jobTitle"
+                    <JobTitleCombobox
                       value={jobTitle}
-                      onChange={(e) => setJobTitle(e.target.value)}
-                      className="h-9"
-                      placeholder="Senior Developer"
+                      onChange={(value) => setJobTitle(value)}
+                      placeholder="Select or type job title..."
+                      disabled={isLoading}
                     />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="location" className="text-sm">Office Location</Label>
-                    <Input
-                      id="location"
+                    <LocationCombobox
                       value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                      className="h-9"
-                      placeholder="New York, NY"
+                      onChange={(value) => setLocation(value)}
+                      placeholder="Select or type location..."
+                      disabled={isLoading}
                     />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="manager" className="text-sm">Manager</Label>
-                    <Input
-                      id="manager"
+                    <ManagerCombobox
                       value={manager}
-                      onChange={(e) => setManager(e.target.value)}
-                      className="h-9"
-                      placeholder="Jane Smith"
+                      onChange={(value) => setManager(value)}
+                      placeholder="Select or type manager..."
+                      disabled={isLoading}
                     />
                   </div>
 
