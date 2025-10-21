@@ -5,7 +5,9 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { SLARule } from '@/types/sla';
-import { X, AlertTriangle } from 'lucide-react';
+import { X, AlertTriangle, Loader2 } from 'lucide-react';
+
+const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
 interface SLAFormProps {
   rule?: SLARule | null;
@@ -15,7 +17,6 @@ interface SLAFormProps {
 
 const PRIORITY_OPTIONS = ['Low', 'Medium', 'High', 'Urgent'];
 const CATEGORY_OPTIONS = ['Hardware', 'Software', 'Network', 'Account Access', 'Other'];
-const DEPARTMENT_OPTIONS = ['IT', 'HR', 'Finance', 'Sales', 'Marketing', 'Operations'];
 
 export default function SLAForm({ rule, onSave, onCancel }: SLAFormProps) {
   const [name, setName] = useState('');
@@ -29,6 +30,8 @@ export default function SLAForm({ rule, onSave, onCancel }: SLAFormProps) {
   const [escalationEnabled, setEscalationEnabled] = useState(false);
   const [escalationAfterMinutes, setEscalationAfterMinutes] = useState<number>(120);
   const [escalationPriority, setEscalationPriority] = useState('High');
+  const [departments, setDepartments] = useState<string[]>([]);
+  const [isDepartmentsLoading, setIsDepartmentsLoading] = useState(true);
 
   useEffect(() => {
     if (rule) {
@@ -45,6 +48,23 @@ export default function SLAForm({ rule, onSave, onCancel }: SLAFormProps) {
       setEscalationPriority(rule.escalation?.newPriority || 'High');
     }
   }, [rule]);
+
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/api/departments/unique`);
+        const data = await response.json();
+        if (data.success) {
+          setDepartments(data.departments || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch departments:', error);
+      } finally {
+        setIsDepartmentsLoading(false);
+      }
+    };
+    fetchDepartments();
+  }, []);
 
   const toggleSelection = (value: string, current: string[], setter: (arr: string[]) => void) => {
     if (current.includes(value)) {
@@ -188,18 +208,29 @@ export default function SLAForm({ rule, onSave, onCancel }: SLAFormProps) {
 
             <div>
               <Label className="text-xs text-muted-foreground mb-2 block">Department</Label>
-              <div className="flex flex-wrap gap-2">
-                {DEPARTMENT_OPTIONS.map((dept) => (
-                  <Badge
-                    key={dept}
-                    variant={selectedDepartments.includes(dept) ? 'default' : 'outline'}
-                    className="cursor-pointer"
-                    onClick={() => toggleSelection(dept, selectedDepartments, setSelectedDepartments)}
-                  >
-                    {dept}
-                  </Badge>
-                ))}
-              </div>
+              {isDepartmentsLoading ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading departments...
+                </div>
+              ) : departments.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {departments.map((dept) => (
+                    <Badge
+                      key={dept}
+                      variant={selectedDepartments.includes(dept) ? 'default' : 'outline'}
+                      className="cursor-pointer"
+                      onClick={() => toggleSelection(dept, selectedDepartments, setSelectedDepartments)}
+                    >
+                      {dept}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No departments found. Add departments to users first.
+                </p>
+              )}
             </div>
           </div>
 

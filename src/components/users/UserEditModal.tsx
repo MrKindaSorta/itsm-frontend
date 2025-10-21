@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SelectRoot as Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DepartmentCombobox } from '@/components/ui/department-combobox';
 import { Loader2, Eye, EyeOff, Key } from 'lucide-react';
 import { isValidEmail } from '@/lib/utils';
 import type { User } from '@/types';
@@ -211,13 +212,13 @@ export function UserEditModal({ open, onOpenChange, onSuccess, user }: UserEditM
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="department">Department (Optional)</Label>
-              <Input
-                id="department"
-                placeholder="e.g., IT, Sales, Marketing"
+              <DepartmentCombobox
                 value={formData.department}
-                onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, department: value })}
+                placeholder="Select or type department..."
                 disabled={isLoading}
               />
+              <p className="text-xs text-muted-foreground">Start typing to see existing departments</p>
             </div>
 
             <div className="space-y-2">
