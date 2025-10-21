@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Edit, ToggleLeft, ToggleRight, Trash2 } from 'lucide-react';
 import { formatRelativeTime, getInitials } from '@/lib/utils';
+import { UserCards } from './UserCards';
 
 interface UserTableProps {
   users: User[];
@@ -26,9 +27,11 @@ export function UserTable({ users, onEdit, onToggleActive, onDelete }: UserTable
   };
 
   return (
-    <div className="rounded-md border">
-      <div className="overflow-x-auto">
-        <table className="w-full">
+    <>
+      {/* Desktop: Table View */}
+      <div className="hidden md:block rounded-md border">
+        <div className="overflow-x-auto">
+          <table className="w-full">
           <thead className="bg-muted/50">
             <tr className="border-b">
               <th className="px-4 py-3 text-left text-sm font-medium">User</th>
@@ -130,5 +133,16 @@ export function UserTable({ users, onEdit, onToggleActive, onDelete }: UserTable
         </table>
       </div>
     </div>
+
+      {/* Mobile: Card View */}
+      <div className="md:hidden">
+        <UserCards
+          users={users}
+          onEdit={onEdit}
+          onToggleActive={onToggleActive}
+          onDelete={onDelete}
+        />
+      </div>
+    </>
   );
 }

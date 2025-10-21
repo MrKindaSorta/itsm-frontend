@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UserPlus, Search, Loader2, Trash2, RotateCcw } from 'lucide-react';
 import { UserTable } from '@/components/users/UserTable';
@@ -12,11 +13,11 @@ import type { User } from '@/types';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
-type ViewMode = 'active' | 'deleted';
+type ViewMode = 'users' | 'agents' | 'inactive' | 'deleted';
 
 export default function Users() {
   const { user: currentUser } = useAuth();
-  const [viewMode, setViewMode] = useState<ViewMode>('active');
+  const [viewMode, setViewMode] = useState<ViewMode>('users');
   const [searchQuery, setSearchQuery] = useState('');
   const [users, setUsers] = useState<User[]>([]);
   const [deletedUsers, setDeletedUsers] = useState<User[]>([]);
@@ -224,8 +225,8 @@ export default function Users() {
     }
   };
 
-  // Filter users based on search query
-  const filteredUsers = users.filter((user) => {
+  // Helper function for search filtering
+  const matchesSearch = (user: User) => {
     if (!searchQuery) return true;
     const searchLower = searchQuery.toLowerCase();
     return (
@@ -235,80 +236,157 @@ export default function Users() {
       (user.department && user.department.toLowerCase().includes(searchLower)) ||
       (user.team && user.team.toLowerCase().includes(searchLower))
     );
-  });
+  };
 
-  const filteredDeletedUsers = deletedUsers.filter((user) => {
-    if (!searchQuery) return true;
-    const searchLower = searchQuery.toLowerCase();
-    return (
-      user.name.toLowerCase().includes(searchLower) ||
-      user.email.toLowerCase().includes(searchLower) ||
-      user.role.toLowerCase().includes(searchLower) ||
-      (user.department && user.department.toLowerCase().includes(searchLower)) ||
-      (user.team && user.team.toLowerCase().includes(searchLower))
-    );
-  });
+  // Filter users by category
+  const regularUsers = users.filter((user) => user.role === 'user' && user.active && matchesSearch(user));
+  const agentUsers = users.filter((user) =>
+    (user.role === 'agent' || user.role === 'manager' || user.role === 'admin') &&
+    user.active &&
+    matchesSearch(user)
+  );
+  const inactiveUsers = users.filter((user) => !user.active && matchesSearch(user));
+  const filteredDeletedUsers = deletedUsers.filter(matchesSearch);
+
+  // Get current tab's users
+  const getCurrentTabUsers = () => {
+    switch (viewMode) {
+      case 'users':
+        return regularUsers;
+      case 'agents':
+        return agentUsers;
+      case 'inactive':
+        return inactiveUsers;
+      case 'deleted':
+        return filteredDeletedUsers;
+      default:
+        return [];
+    }
+  };
+
+  const currentUsers = getCurrentTabUsers();
 
   const renderDeletedUserTable = () => (
-    <div className="rounded-md border">
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-muted/50">
-            <tr className="border-b">
-              <th className="px-4 py-3 text-left text-sm font-medium">User</th>
-              <th className="px-4 py-3 text-left text-sm font-medium">Email</th>
-              <th className="px-4 py-3 text-left text-sm font-medium">Role</th>
-              <th className="px-4 py-3 text-left text-sm font-medium">Department</th>
-              <th className="px-4 py-3 text-left text-sm font-medium">Deleted At</th>
-              <th className="px-4 py-3 text-right text-sm font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredDeletedUsers.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">
-                  No deleted users found
-                </td>
+    <>
+      {/* Desktop: Table View */}
+      <div className="hidden md:block rounded-md border">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-muted/50">
+              <tr className="border-b">
+                <th className="px-4 py-3 text-left text-sm font-medium">User</th>
+                <th className="px-4 py-3 text-left text-sm font-medium">Email</th>
+                <th className="px-4 py-3 text-left text-sm font-medium">Role</th>
+                <th className="px-4 py-3 text-left text-sm font-medium">Department</th>
+                <th className="px-4 py-3 text-left text-sm font-medium">Deleted At</th>
+                <th className="px-4 py-3 text-right text-sm font-medium">Actions</th>
               </tr>
-            ) : (
-              filteredDeletedUsers.map((user) => (
-                <tr key={user.id} className="border-b hover:bg-muted/30 transition-colors">
-                  <td className="px-4 py-3 text-sm font-medium">{user.name}</td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground">{user.email}</td>
-                  <td className="px-4 py-3 text-sm">{user.role}</td>
-                  <td className="px-4 py-3 text-sm">{user.department || '-'}</td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground">
-                    {user.deleted_at ? new Date(user.deleted_at).toLocaleDateString() : '-'}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleRestore(user.id)}
-                        title="Restore user"
-                      >
-                        <RotateCcw className="h-4 w-4 sm:mr-1" />
-                        <span className="hidden sm:inline">Restore</span>
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handlePermanentDelete(user.id, user.name)}
-                        title="Permanently delete user"
-                      >
-                        <Trash2 className="h-4 w-4 sm:mr-1" />
-                        <span className="hidden sm:inline">Delete</span>
-                      </Button>
-                    </div>
+            </thead>
+            <tbody>
+              {filteredDeletedUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                    No deleted users found
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                filteredDeletedUsers.map((user) => (
+                  <tr key={user.id} className="border-b hover:bg-muted/30 transition-colors">
+                    <td className="px-4 py-3 text-sm font-medium">{user.name}</td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">{user.email}</td>
+                    <td className="px-4 py-3 text-sm">{user.role}</td>
+                    <td className="px-4 py-3 text-sm">{user.department || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">
+                      {user.deleted_at ? new Date(user.deleted_at).toLocaleDateString() : '-'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleRestore(user.id)}
+                          title="Restore user"
+                        >
+                          <RotateCcw className="h-4 w-4 sm:mr-1" />
+                          <span className="hidden sm:inline">Restore</span>
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handlePermanentDelete(user.id, user.name)}
+                          title="Permanently delete user"
+                        >
+                          <Trash2 className="h-4 w-4 sm:mr-1" />
+                          <span className="hidden sm:inline">Delete</span>
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+
+      {/* Mobile: Card View */}
+      <div className="md:hidden">
+        {filteredDeletedUsers.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">No deleted users found</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredDeletedUsers.map((user) => (
+              <div key={user.id} className="p-4 border rounded-lg bg-card">
+                {/* User Info */}
+                <div className="mb-3">
+                  <p className="text-base font-semibold">{user.name}</p>
+                  <p className="text-sm text-muted-foreground">{user.email}</p>
+                  <p className="text-xs text-muted-foreground mt-1">ID: {user.id}</p>
+                </div>
+
+                {/* Role & Department */}
+                <div className="flex flex-wrap gap-2 mb-3 text-sm">
+                  <Badge variant="outline">{user.role}</Badge>
+                  {user.department && (
+                    <Badge variant="outline">{user.department}</Badge>
+                  )}
+                </div>
+
+                {/* Deleted Date */}
+                <p className="text-sm text-muted-foreground mb-4">
+                  <span className="font-medium">Deleted:</span>{' '}
+                  {user.deleted_at ? new Date(user.deleted_at).toLocaleDateString() : '-'}
+                </p>
+
+                {/* Actions */}
+                <div className="flex items-center gap-2 pt-3 border-t">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleRestore(user.id)}
+                    className="flex-1"
+                  >
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Restore
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => handlePermanentDelete(user.id, user.name)}
+                    className="flex-1"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </>
   );
 
   return (
@@ -359,12 +437,14 @@ export default function Users() {
           </div>
         </CardHeader>
 
-        {/* Tabs for Active/Deleted Users */}
+        {/* Tabs for User Categories */}
         <div className="border-b px-6">
           <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)} className="w-full">
-            <TabsList>
-              <TabsTrigger value="active">Active Users ({filteredUsers.length})</TabsTrigger>
-              <TabsTrigger value="deleted">Deleted Users ({filteredDeletedUsers.length})</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="users">Users ({regularUsers.length})</TabsTrigger>
+              <TabsTrigger value="agents">Agents ({agentUsers.length})</TabsTrigger>
+              <TabsTrigger value="inactive">Inactive ({inactiveUsers.length})</TabsTrigger>
+              <TabsTrigger value="deleted">Deleted ({filteredDeletedUsers.length})</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
@@ -382,15 +462,15 @@ export default function Users() {
                 Retry
               </Button>
             </div>
-          ) : viewMode === 'active' ? (
+          ) : viewMode === 'deleted' ? (
+            renderDeletedUserTable()
+          ) : (
             <UserTable
-              users={filteredUsers}
+              users={currentUsers}
               onEdit={handleEdit}
               onToggleActive={handleToggleActive}
               onDelete={handleDelete}
             />
-          ) : (
-            renderDeletedUserTable()
           )}
         </CardContent>
       </Card>
