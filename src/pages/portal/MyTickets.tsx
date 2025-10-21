@@ -110,75 +110,81 @@ export default function MyTickets() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      <div className="flex justify-end">
-        <Link to="/portal/tickets/create">
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            New Ticket
-          </Button>
-        </Link>
-      </div>
-
-      {/* Status Filter Tabs - Horizontal scroll on mobile */}
+      {/* Status Filter Tabs with New Ticket Button */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory">
-            <Button
-              variant={statusFilter === 'all' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setStatusFilter('all')}
-              className="whitespace-nowrap snap-start"
-            >
-              All ({getStatusCount('all')})
-            </Button>
-            <Button
-              variant={statusFilter === 'new' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setStatusFilter('new')}
-              className="whitespace-nowrap snap-start"
-            >
-              New ({getStatusCount('new')})
-            </Button>
-            <Button
-              variant={statusFilter === 'open' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setStatusFilter('open')}
-              className="whitespace-nowrap snap-start"
-            >
-              Open ({getStatusCount('open')})
-            </Button>
-            <Button
-              variant={statusFilter === 'in_progress' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setStatusFilter('in_progress')}
-              className="whitespace-nowrap snap-start"
-            >
-              In Progress ({getStatusCount('in_progress')})
-            </Button>
-            <Button
-              variant={statusFilter === 'waiting' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setStatusFilter('waiting')}
-              className="whitespace-nowrap snap-start"
-            >
-              Waiting ({getStatusCount('waiting')})
-            </Button>
-            <Button
-              variant={statusFilter === 'resolved' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setStatusFilter('resolved')}
-              className="whitespace-nowrap snap-start"
-            >
-              Resolved ({getStatusCount('resolved')})
-            </Button>
-            <Button
-              variant={statusFilter === 'closed' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setStatusFilter('closed')}
-              className="whitespace-nowrap snap-start"
-            >
-              Closed ({getStatusCount('closed')})
-            </Button>
+          <div className="flex items-center gap-4">
+            {/* Status Tabs - Scrollable on mobile */}
+            <div className="flex-1 overflow-x-auto pb-2 scrollbar-hide">
+              <div className="flex gap-2 snap-x snap-mandatory">
+                <Button
+                  variant={statusFilter === 'all' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setStatusFilter('all')}
+                  className="whitespace-nowrap snap-start"
+                >
+                  All ({getStatusCount('all')})
+                </Button>
+                <Button
+                  variant={statusFilter === 'new' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setStatusFilter('new')}
+                  className="whitespace-nowrap snap-start"
+                >
+                  New ({getStatusCount('new')})
+                </Button>
+                <Button
+                  variant={statusFilter === 'open' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setStatusFilter('open')}
+                  className="whitespace-nowrap snap-start"
+                >
+                  Open ({getStatusCount('open')})
+                </Button>
+                <Button
+                  variant={statusFilter === 'in_progress' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setStatusFilter('in_progress')}
+                  className="whitespace-nowrap snap-start"
+                >
+                  In Progress ({getStatusCount('in_progress')})
+                </Button>
+                <Button
+                  variant={statusFilter === 'waiting' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setStatusFilter('waiting')}
+                  className="whitespace-nowrap snap-start"
+                >
+                  Waiting ({getStatusCount('waiting')})
+                </Button>
+                <Button
+                  variant={statusFilter === 'resolved' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setStatusFilter('resolved')}
+                  className="whitespace-nowrap snap-start"
+                >
+                  Resolved ({getStatusCount('resolved')})
+                </Button>
+                <Button
+                  variant={statusFilter === 'closed' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setStatusFilter('closed')}
+                  className="whitespace-nowrap snap-start"
+                >
+                  Closed ({getStatusCount('closed')})
+                </Button>
+              </div>
+            </div>
+
+            {/* New Ticket Button - Always visible */}
+            <div className="flex-shrink-0">
+              <Link to="/portal/tickets/create">
+                <Button size="sm">
+                  <Plus className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">New Ticket</span>
+                </Button>
+              </Link>
+            </div>
           </div>
         </CardContent>
       </Card>
