@@ -2,11 +2,11 @@ import { cn } from '@/lib/utils';
 import type { TicketStatus, Ticket, User } from '@/types';
 
 interface StatusTabsProps {
-  tickets: Ticket[];
+  activeTickets: Ticket[];
   activeStatus: TicketStatus | 'all' | 'my_tickets';
   onStatusChange: (status: TicketStatus | 'all' | 'my_tickets') => void;
   currentUser?: User | null;
-  closedTicketCount?: number;
+  closedTicketsCount?: number;
 }
 
 interface StatusCount {
@@ -17,17 +17,17 @@ interface StatusCount {
   mobileVisible?: boolean;
 }
 
-export function StatusTabs({ tickets, activeStatus, onStatusChange, currentUser, closedTicketCount = 0 }: StatusTabsProps) {
+export function StatusTabs({ activeTickets, activeStatus, onStatusChange, currentUser, closedTicketsCount = 0 }: StatusTabsProps) {
   const getStatusCount = (status: TicketStatus | 'all' | 'my_tickets'): number => {
-    if (status === 'all') return tickets.length;
+    if (status === 'all') return activeTickets.length;
     if (status === 'my_tickets') {
-      return tickets.filter(t => t.assignee?.id === currentUser?.id).length;
+      return activeTickets.filter(t => t.assignee?.id === currentUser?.id).length;
     }
-    // Use prop for closed count (pre-fetched separately)
+    // Use prop for closed count (from separate array)
     if (status === 'closed') {
-      return closedTicketCount;
+      return closedTicketsCount;
     }
-    return tickets.filter(t => t.status === status).length;
+    return activeTickets.filter(t => t.status === status).length;
   };
 
   const statusTabs: StatusCount[] = [

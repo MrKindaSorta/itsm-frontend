@@ -20,8 +20,8 @@ export default function Tickets() {
   const { isLoading: isPreferencesLoading } = useViewPreferences();
   const { subscribeToGlobal, unsubscribeFromGlobal, on } = useWebSocket();
   const [searchQuery, setSearchQuery] = useState('');
-  const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [closedTicketCount, setClosedTicketCount] = useState<number>(0);
+  const [activeTickets, setActiveTickets] = useState<Ticket[]>([]);
+  const [closedTickets, setClosedTickets] = useState<Ticket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -62,7 +62,8 @@ export default function Tickets() {
           resolutionDue: message.data.sla.resolutionDue ? new Date(message.data.sla.resolutionDue) : new Date(),
         } : null,
       };
-      setTickets(prev => [newTicket, ...prev]);
+      // New tickets are always active (not closed), so add to activeTickets
+      setActiveTickets(prev => [newTicket, ...prev]);
     });
 
     return () => {
@@ -73,7 +74,6 @@ export default function Tickets() {
   // Fetch tickets from API
   useEffect(() => {
     fetchTickets();
-    fetchClosedTicketCount(); // Fetch count separately for display
   }, []);
 
   // Reload tickets when switching to/from closed status
@@ -82,24 +82,6 @@ export default function Tickets() {
       fetchTickets();
     }
   }, [statusFilter]);
-
-  // Fetch closed ticket count for display (doesn't load full ticket data)
-  const fetchClosedTicketCount = async () => {
-    try {
-      const url = new URL(`${API_BASE}/api/tickets`);
-      url.searchParams.set('status', 'closed');
-
-      const response = await fetch(url.toString());
-      const data = await response.json();
-
-      if (data.success) {
-        setClosedTicketCount(data.tickets.length);
-      }
-    } catch (err) {
-      console.error('Error fetching closed ticket count:', err);
-      // Don't show error for count fetch - not critical
-    }
-  };
 
   const fetchTickets = async () => {
     setIsLoading(true);
@@ -137,11 +119,12 @@ export default function Tickets() {
             resolutionDue: ticket.sla.resolutionDue ? new Date(ticket.sla.resolutionDue) : new Date(),
           } : null,
         }));
-        setTickets(transformedTickets);
 
-        // Update closed count if we just fetched closed tickets
+        // Update the appropriate array based on what we fetched
         if (statusFilter === 'closed') {
-          setClosedTicketCount(transformedTickets.length);
+          setClosedTickets(transformedTickets);
+        } else {
+          setActiveTickets(transformedTickets);
         }
       } else {
         setError(data.error || 'Failed to fetch tickets');
@@ -182,20 +165,20 @@ export default function Tickets() {
       const data = await response.json();
 
       if (data.success) {
-        // Update ticket in local state
-        setTickets(prevTickets =>
-          prevTickets.map(ticket =>
-            ticket.id === ticketId
-              ? {
-                  ...ticket,
-                  status: data.ticket.status,
-                  priority: data.ticket.priority,
-                  assignee: data.ticket.assignee,
-                  updatedAt: new Date(data.ticket.updatedAt),
-                }
-              : ticket
-          )
-        );
+        // Update ticket in local state (both arrays in case it moved between them)
+        const updateTicket = (ticket: Ticket) =>
+          ticket.id === ticketId
+            ? {
+                ...ticket,
+                status: data.ticket.status,
+                priority: data.ticket.priority,
+                assignee: data.ticket.assignee,
+                updatedAt: new Date(data.ticket.updatedAt),
+              }
+            : ticket;
+
+        setActiveTickets(prevTickets => prevTickets.map(updateTicket));
+        setClosedTickets(prevTickets => prevTickets.map(updateTicket));
       } else {
         alert('Failed to update ticket: ' + (data.error || 'Unknown error'));
         throw new Error(data.error || 'Failed to update ticket');
@@ -236,8 +219,11 @@ export default function Tickets() {
     }
   };
 
+  // Determine which tickets array to use based on active filter
+  const ticketsToFilter = statusFilter === 'closed' ? closedTickets : activeTickets;
+
   // Filter tickets based on all active filters
-  const filteredTickets = tickets.filter((ticket) => {
+  const filteredTickets = ticketsToFilter.filter((ticket) => {
     // Search filter
     if (searchQuery) {
       const searchLower = searchQuery.toLowerCase();
@@ -288,9 +274,9 @@ export default function Tickets() {
   // Apply sorting
   const sortedAndFilteredTickets = sortTickets(filteredTickets, sortColumn, sortDirection);
 
-  // Count My Tickets
-  const myTicketsCount = tickets.filter(t => t.assignee?.id === user?.id).length;
-  const unassignedCount = tickets.filter(t => !t.assignee).length;
+  // Count My Tickets (from active tickets only)
+  const myTicketsCount = activeTickets.filter(t => t.assignee?.id === user?.id).length;
+  const unassignedCount = activeTickets.filter(t => !t.assignee).length;
 
   return (
     <div className="space-y-6">
@@ -388,11 +374,11 @@ export default function Tickets() {
 
         {/* Status Filter Tabs */}
         <StatusTabs
-          tickets={tickets}
+          activeTickets={activeTickets}
           activeStatus={statusFilter}
           onStatusChange={setStatusFilter}
           currentUser={user}
-          closedTicketCount={closedTicketCount}
+          closedTicketsCount={closedTickets.length}
         />
 
         <CardContent className="pt-6">
