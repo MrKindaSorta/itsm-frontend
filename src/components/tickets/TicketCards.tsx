@@ -1,9 +1,8 @@
 import { useNavigate } from 'react-router-dom';
-import type { Ticket, TicketStatus, TicketPriority } from '@/types';
+import type { Ticket } from '@/types';
+import { StatusBadge } from './StatusBadge';
+import { PriorityBadge } from './PriorityBadge';
 import { Badge } from '@/components/ui/badge';
-import { InlineStatusSelect } from './InlineStatusSelect';
-import { InlinePrioritySelect } from './InlinePrioritySelect';
-import { InlineAssigneeSelect } from './InlineAssigneeSelect';
 import { SLAIndicator } from './SLAIndicator';
 import { formatRelativeTime } from '@/lib/utils';
 import { Clock, User } from 'lucide-react';
@@ -13,26 +12,8 @@ interface TicketCardsProps {
   onTicketUpdate?: (ticketId: string, field: 'status' | 'priority' | 'assignee', value: string | null) => Promise<void>;
 }
 
-export function TicketCards({ tickets, onTicketUpdate }: TicketCardsProps) {
+export function TicketCards({ tickets }: TicketCardsProps) {
   const navigate = useNavigate();
-
-  const handleStatusChange = async (ticketId: string, newStatus: TicketStatus) => {
-    if (onTicketUpdate) {
-      await onTicketUpdate(ticketId, 'status', newStatus);
-    }
-  };
-
-  const handlePriorityChange = async (ticketId: string, newPriority: TicketPriority) => {
-    if (onTicketUpdate) {
-      await onTicketUpdate(ticketId, 'priority', newPriority);
-    }
-  };
-
-  const handleAssigneeChange = async (ticketId: string, newAssigneeId: string | null) => {
-    if (onTicketUpdate) {
-      await onTicketUpdate(ticketId, 'assignee', newAssigneeId);
-    }
-  };
 
   if (tickets.length === 0) {
     return (
@@ -47,48 +28,26 @@ export function TicketCards({ tickets, onTicketUpdate }: TicketCardsProps) {
       {tickets.map((ticket) => (
         <div
           key={ticket.id}
-          className="p-4 border rounded-lg bg-card hover:bg-accent/50 transition-colors"
+          onClick={() => navigate(`/agent/tickets/${ticket.id}`)}
+          className="p-4 border rounded-lg bg-card hover:bg-accent/50 transition-colors cursor-pointer"
         >
           {/* Header: ID + SLA */}
           <div className="flex items-center justify-between mb-3">
-            <button
-              onClick={() => navigate(`/agent/tickets/${ticket.id}`)}
-              className="font-mono text-xs font-medium text-primary hover:underline"
-            >
+            <span className="font-mono text-xs font-medium text-primary">
               {ticket.id}
-            </button>
+            </span>
             {ticket.sla && <SLAIndicator sla={ticket.sla} />}
           </div>
 
-          {/* Title - Clickable */}
-          <button
-            onClick={() => navigate(`/agent/tickets/${ticket.id}`)}
-            className="w-full text-left"
-          >
-            <h4 className="font-semibold text-base leading-tight mb-3 hover:text-primary transition-colors">
-              {ticket.title}
-            </h4>
-          </button>
+          {/* Title */}
+          <h4 className="font-semibold text-base leading-tight mb-3">
+            {ticket.title}
+          </h4>
 
-          {/* Inline Editable Status & Priority */}
-          <div className="flex flex-wrap items-center gap-2 mb-3" onClick={(e) => e.stopPropagation()}>
-            {onTicketUpdate ? (
-              <>
-                <InlineStatusSelect
-                  status={ticket.status}
-                  onStatusChange={(newStatus) => handleStatusChange(ticket.id, newStatus)}
-                />
-                <InlinePrioritySelect
-                  priority={ticket.priority}
-                  onPriorityChange={(newPriority) => handlePriorityChange(ticket.id, newPriority)}
-                />
-              </>
-            ) : (
-              <>
-                <Badge>{ticket.status}</Badge>
-                <Badge>{ticket.priority}</Badge>
-              </>
-            )}
+          {/* Status & Priority Badges */}
+          <div className="flex flex-wrap items-center gap-2 mb-3">
+            <StatusBadge status={ticket.status} />
+            <PriorityBadge priority={ticket.priority} />
             <Badge variant="outline" className="text-[10px]">
               {ticket.category}
             </Badge>
@@ -110,15 +69,10 @@ export function TicketCards({ tickets, onTicketUpdate }: TicketCardsProps) {
               </span>
             </div>
 
-            {/* Assignee - Inline Editable */}
-            <div className="flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
+            {/* Assignee */}
+            <div className="flex items-center gap-2">
               <span className="font-medium">Assigned to:</span>
-              {onTicketUpdate ? (
-                <InlineAssigneeSelect
-                  assignee={ticket.assignee && 'email' in ticket.assignee ? ticket.assignee : undefined}
-                  onAssigneeChange={(newAssigneeId) => handleAssigneeChange(ticket.id, newAssigneeId)}
-                />
-              ) : ticket.assignee ? (
+              {ticket.assignee ? (
                 <span>{ticket.assignee.name}</span>
               ) : (
                 <span className="text-muted-foreground italic">Unassigned</span>
