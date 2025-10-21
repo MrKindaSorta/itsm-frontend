@@ -74,11 +74,27 @@ export default function Tickets() {
     fetchTickets();
   }, []);
 
+  // Reload tickets when switching to/from closed status
+  useEffect(() => {
+    if (statusFilter === 'closed' || statusFilter === 'all' || statusFilter === 'my_tickets') {
+      fetchTickets();
+    }
+  }, [statusFilter]);
+
   const fetchTickets = async () => {
     setIsLoading(true);
     setError(null);
     try {
       const url = new URL(`${API_BASE}/api/tickets`);
+
+      // If viewing closed tickets specifically, fetch only closed
+      if (statusFilter === 'closed') {
+        url.searchParams.set('status', 'closed');
+      } else {
+        // For "all" and "my_tickets" views, exclude closed tickets
+        url.searchParams.set('exclude_closed', 'true');
+      }
+
       if (searchQuery) {
         url.searchParams.set('search', searchQuery);
       }
@@ -208,14 +224,27 @@ export default function Tickets() {
       if (!matchesSearch) return false;
     }
 
-    // Status filter - handle 'my_tickets' special case
+    // Status filter - handle special cases
     if (statusFilter === 'my_tickets') {
-      // Show only tickets assigned to current user
+      // Show only tickets assigned to current user (excluding closed)
       if (ticket.assignee?.id !== user?.id) {
         return false;
       }
-    } else if (statusFilter !== 'all' && ticket.status !== statusFilter) {
-      return false;
+      // Also exclude closed tickets from My Tickets view
+      if (ticket.status === 'closed') {
+        return false;
+      }
+    } else if (statusFilter === 'all') {
+      // Exclude closed tickets from "All Tickets" view
+      // (Backend already filters, but double-check for safety)
+      if (ticket.status === 'closed') {
+        return false;
+      }
+    } else {
+      // Filter by specific status (statusFilter is a TicketStatus here)
+      if (ticket.status !== statusFilter) {
+        return false;
+      }
     }
 
     // My Tickets filter (for desktop button)
