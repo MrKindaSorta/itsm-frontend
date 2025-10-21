@@ -119,21 +119,23 @@ export default function MyTickets() {
         </Link>
       </div>
 
-      {/* Status Filter Tabs */}
+      {/* Status Filter Tabs - Horizontal scroll on mobile */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex flex-wrap gap-2">
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory">
             <Button
               variant={statusFilter === 'all' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setStatusFilter('all')}
+              className="whitespace-nowrap snap-start"
             >
-              All Tickets ({getStatusCount('all')})
+              All ({getStatusCount('all')})
             </Button>
             <Button
               variant={statusFilter === 'new' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setStatusFilter('new')}
+              className="whitespace-nowrap snap-start"
             >
               New ({getStatusCount('new')})
             </Button>
@@ -141,6 +143,7 @@ export default function MyTickets() {
               variant={statusFilter === 'open' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setStatusFilter('open')}
+              className="whitespace-nowrap snap-start"
             >
               Open ({getStatusCount('open')})
             </Button>
@@ -148,6 +151,7 @@ export default function MyTickets() {
               variant={statusFilter === 'in_progress' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setStatusFilter('in_progress')}
+              className="whitespace-nowrap snap-start"
             >
               In Progress ({getStatusCount('in_progress')})
             </Button>
@@ -155,6 +159,7 @@ export default function MyTickets() {
               variant={statusFilter === 'waiting' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setStatusFilter('waiting')}
+              className="whitespace-nowrap snap-start"
             >
               Waiting ({getStatusCount('waiting')})
             </Button>
@@ -162,6 +167,7 @@ export default function MyTickets() {
               variant={statusFilter === 'resolved' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setStatusFilter('resolved')}
+              className="whitespace-nowrap snap-start"
             >
               Resolved ({getStatusCount('resolved')})
             </Button>
@@ -169,6 +175,7 @@ export default function MyTickets() {
               variant={statusFilter === 'closed' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setStatusFilter('closed')}
+              className="whitespace-nowrap snap-start"
             >
               Closed ({getStatusCount('closed')})
             </Button>

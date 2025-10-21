@@ -505,17 +505,18 @@ export default function CreateTicket() {
       )}
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+        {/* Main Form - Full width on mobile */}
+        <div className="lg:col-span-2 order-1">
           <Card>
             <CardHeader>
-              <CardTitle>Ticket Details</CardTitle>
+              <CardTitle className="text-xl">Ticket Details</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Render all fields in order */}
                 {allFields.map((field) => renderField(field))}
 
-                <Button type="submit" className="w-full sm:w-auto" disabled={showSuccess}>
+                <Button type="submit" className="w-full" disabled={showSuccess}>
                   <Send className="h-4 w-4 mr-2" />
                   Submit Ticket
                 </Button>
@@ -524,12 +525,13 @@ export default function CreateTicket() {
           </Card>
         </div>
 
-        <div>
+        {/* KB Suggestions - Shown below form on mobile */}
+        <div className="order-2">
           <Card>
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Lightbulb className="h-5 w-5 text-yellow-500" />
-                <CardTitle className="text-base">Knowledge Base Suggestions</CardTitle>
+                <CardTitle className="text-base">Helpful Articles</CardTitle>
               </div>
             </CardHeader>
             <CardContent>

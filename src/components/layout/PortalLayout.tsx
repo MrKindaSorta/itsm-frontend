@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Moon, Sun, User, LogOut, ChevronDown, LayoutDashboard } from 'lucide-react';
+import { Moon, Sun, User, LogOut, ChevronDown, LayoutDashboard, PlusCircle, Ticket, BookOpen, UserCircle } from 'lucide-react';
 
 export default function PortalLayout() {
   const { user, logout } = useAuth();
@@ -25,22 +25,30 @@ export default function PortalLayout() {
     {
       name: 'Create Ticket',
       href: '/portal/tickets/create',
-      description: "Submit a support request and we'll get back to you as soon as possible"
+      description: "Submit a support request and we'll get back to you as soon as possible",
+      icon: PlusCircle,
+      mobileLabel: 'Create'
     },
     {
       name: 'My Tickets',
       href: '/portal/tickets',
-      description: 'View and track your support requests'
+      description: 'View and track your support requests',
+      icon: Ticket,
+      mobileLabel: 'Tickets'
     },
     {
       name: 'Knowledge Base',
       href: '/portal/knowledge-base',
-      description: 'Browse articles and find answers to common questions'
+      description: 'Browse articles and find answers to common questions',
+      icon: BookOpen,
+      mobileLabel: 'KB'
     },
     {
       name: 'Profile',
       href: '/portal/profile',
-      description: null // Profile page has its own header design
+      description: null, // Profile page has its own header design
+      icon: UserCircle,
+      mobileLabel: 'Profile'
     },
   ];
 
@@ -168,33 +176,36 @@ export default function PortalLayout() {
           </div>
         </div>
 
-        {/* Mobile Navigation */}
-        <nav className="md:hidden border-t px-4 py-2">
-          <div className="flex flex-col gap-3">
-            {navigation.map((item) => {
-              const isActive = location.pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={`flex items-center px-3 py-2 rounded-md transition-all ${
-                    isActive
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-                  }`}
-                >
-                  <span className="text-xs font-medium">{item.name}</span>
-                </Link>
-              );
-            })}
-          </div>
-        </nav>
       </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      {/* Main Content - Add bottom padding on mobile for fixed nav */}
+      <main className="container mx-auto px-4 py-8 pb-24 md:pb-8">
         <Outlet />
       </main>
+
+      {/* Mobile Bottom Navigation Bar */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background border-t shadow-lg">
+        <div className="flex items-center justify-around h-16 px-2">
+          {navigation.map((item) => {
+            const isActive = location.pathname === item.href;
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.name}
+                to={item.href}
+                className={`flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors ${
+                  isActive
+                    ? 'text-primary'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Icon className={`h-5 w-5 ${isActive ? 'scale-110' : ''} transition-transform`} />
+                <span className="text-xs font-medium">{item.mobileLabel}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
 
       {/* Footer */}
       <footer className="border-t py-6 mt-auto">
