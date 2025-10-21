@@ -31,7 +31,7 @@ export default function Tickets() {
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
 
   // Filtering state
-  const [statusFilter, setStatusFilter] = useState<TicketStatus | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<TicketStatus | 'all' | 'my_tickets'>('all');
   const [showMyTickets, setShowMyTickets] = useState(false);
   const [showUnassigned, setShowUnassigned] = useState(false);
 
@@ -208,12 +208,17 @@ export default function Tickets() {
       if (!matchesSearch) return false;
     }
 
-    // Status filter
-    if (statusFilter !== 'all' && ticket.status !== statusFilter) {
+    // Status filter - handle 'my_tickets' special case
+    if (statusFilter === 'my_tickets') {
+      // Show only tickets assigned to current user
+      if (ticket.assignee?.id !== user?.id) {
+        return false;
+      }
+    } else if (statusFilter !== 'all' && ticket.status !== statusFilter) {
       return false;
     }
 
-    // My Tickets filter
+    // My Tickets filter (for desktop button)
     if (showMyTickets && ticket.assignee?.id !== user?.id) {
       return false;
     }
@@ -279,6 +284,7 @@ export default function Tickets() {
                     setShowMyTickets(!showMyTickets);
                     if (!showMyTickets) setShowUnassigned(false);
                   }}
+                  className="hidden md:flex"
                 >
                   <UserCheck className="h-4 w-4 sm:mr-2" />
                   <span className="hidden sm:inline">My Tickets</span>
@@ -296,6 +302,7 @@ export default function Tickets() {
                     setShowUnassigned(!showUnassigned);
                     if (!showUnassigned) setShowMyTickets(false);
                   }}
+                  className="hidden md:flex"
                 >
                   <User className="h-4 w-4 sm:mr-2" />
                   <span className="hidden sm:inline">Unassigned</span>
@@ -330,6 +337,7 @@ export default function Tickets() {
           tickets={tickets}
           activeStatus={statusFilter}
           onStatusChange={setStatusFilter}
+          currentUser={user}
         />
 
         <CardContent className="pt-6">
