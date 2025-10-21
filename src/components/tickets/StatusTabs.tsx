@@ -31,7 +31,7 @@ export function StatusTabs({ tickets, activeStatus, onStatusChange }: StatusTabs
 
   return (
     <div className="border-b">
-      <div className="flex gap-1 overflow-x-auto">
+      <div className="flex gap-1 overflow-x-auto scrollbar-hide snap-x snap-mandatory px-2 md:px-0">
         {statusTabs.map((tab) => {
           const isActive = activeStatus === tab.value;
           return (
@@ -39,7 +39,7 @@ export function StatusTabs({ tickets, activeStatus, onStatusChange }: StatusTabs
               key={tab.value}
               onClick={() => onStatusChange(tab.value)}
               className={cn(
-                'relative px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors',
+                'relative px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors snap-start',
                 'border-b-2 hover:text-primary hover:bg-muted/50',
                 isActive
                   ? 'border-primary text-primary bg-muted/30'

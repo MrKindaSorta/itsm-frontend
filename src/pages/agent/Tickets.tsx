@@ -248,67 +248,79 @@ export default function Tickets() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-4">
+            {/* Title Section */}
             <div>
-              <CardTitle>All Tickets ({sortedAndFilteredTickets.length})</CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
+              <CardTitle className="text-xl">All Tickets ({sortedAndFilteredTickets.length})</CardTitle>
+              <p className="text-sm text-muted-foreground mt-1 hidden sm:block">
                 Manage and track all support tickets
               </p>
             </div>
-            <div className="flex items-center space-x-2">
-              <Button onClick={() => setIsCreateModalOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Ticket
-              </Button>
-              <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+
+            {/* Actions - Mobile: Stack, Desktop: Horizontal */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              {/* Search - Full width on mobile */}
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search tickets..."
-                  className="pl-8 w-64"
+                  className="pl-10 w-full"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <Button
-                variant={showMyTickets ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => {
-                  setShowMyTickets(!showMyTickets);
-                  if (!showMyTickets) setShowUnassigned(false); // Disable unassigned when enabling my tickets
-                }}
-              >
-                <UserCheck className="h-4 w-4 mr-2" />
-                My Tickets
-                {myTicketsCount > 0 && (
-                  <span className="ml-2 px-1.5 py-0.5 text-xs font-semibold rounded-full bg-background text-foreground">
-                    {myTicketsCount}
-                  </span>
-                )}
-              </Button>
-              <Button
-                variant={showUnassigned ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => {
-                  setShowUnassigned(!showUnassigned);
-                  if (!showUnassigned) setShowMyTickets(false); // Disable my tickets when enabling unassigned
-                }}
-              >
-                <User className="h-4 w-4 mr-2" />
-                Unassigned
-                {unassignedCount > 0 && (
-                  <span className="ml-2 px-1.5 py-0.5 text-xs font-semibold rounded-full bg-background text-foreground">
-                    {unassignedCount}
-                  </span>
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsColumnCustomizerOpen(true)}
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                Columns
-              </Button>
+
+              {/* Filter buttons - Wrap on mobile */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button
+                  variant={showMyTickets ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => {
+                    setShowMyTickets(!showMyTickets);
+                    if (!showMyTickets) setShowUnassigned(false);
+                  }}
+                >
+                  <UserCheck className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">My Tickets</span>
+                  {myTicketsCount > 0 && (
+                    <span className="ml-2 px-1.5 py-0.5 text-xs font-semibold rounded-full bg-background text-foreground">
+                      {myTicketsCount}
+                    </span>
+                  )}
+                </Button>
+
+                <Button
+                  variant={showUnassigned ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => {
+                    setShowUnassigned(!showUnassigned);
+                    if (!showUnassigned) setShowMyTickets(false);
+                  }}
+                >
+                  <User className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Unassigned</span>
+                  {unassignedCount > 0 && (
+                    <span className="ml-2 px-1.5 py-0.5 text-xs font-semibold rounded-full bg-background text-foreground">
+                      {unassignedCount}
+                    </span>
+                  )}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsColumnCustomizerOpen(true)}
+                  className="hidden md:flex"
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Columns
+                </Button>
+
+                <Button size="sm" onClick={() => setIsCreateModalOpen(true)}>
+                  <Plus className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Create</span>
+                </Button>
+              </div>
             </div>
           </div>
         </CardHeader>

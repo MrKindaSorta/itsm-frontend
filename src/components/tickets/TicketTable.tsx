@@ -9,6 +9,7 @@ import { InlineAssigneeSelect } from './InlineAssigneeSelect';
 import { SortableHeader, type SortDirection } from './SortableHeader';
 import { formatRelativeTime, formatDate, getInitials, type SortColumn } from '@/lib/utils';
 import { useViewPreferences } from '@/contexts/ViewPreferencesContext';
+import { TicketCards } from './TicketCards';
 
 interface TicketTableProps {
   tickets: Ticket[];
@@ -177,9 +178,11 @@ export function TicketTable({ tickets, sortColumn, sortDirection, onSort, onTick
   };
 
   return (
-    <div className="rounded-md border">
-      <div className="overflow-x-auto">
-        <table className="w-full">
+    <>
+      {/* Desktop: Table View */}
+      <div className="hidden md:block rounded-md border">
+        <div className="overflow-x-auto">
+          <table className="w-full">
           <thead className="bg-muted/50">
             <tr className="border-b">
               {visibleColumns.map((column) => (
@@ -236,5 +239,14 @@ export function TicketTable({ tickets, sortColumn, sortDirection, onSort, onTick
         </table>
       </div>
     </div>
+
+      {/* Mobile: Card View */}
+      <div className="md:hidden">
+        <TicketCards
+          tickets={tickets}
+          onTicketUpdate={onTicketUpdate}
+        />
+      </div>
+    </>
   );
 }
