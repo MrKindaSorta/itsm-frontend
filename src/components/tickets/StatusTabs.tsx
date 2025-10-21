@@ -27,6 +27,7 @@ export function StatusTabs({ tickets, activeStatus, onStatusChange }: StatusTabs
     { label: 'In Progress', value: 'in_progress', count: getStatusCount('in_progress'), color: 'text-orange-600 dark:text-orange-400' },
     { label: 'Waiting', value: 'waiting', count: getStatusCount('waiting'), color: 'text-yellow-600 dark:text-yellow-400' },
     { label: 'Resolved', value: 'resolved', count: getStatusCount('resolved'), color: 'text-green-600 dark:text-green-400' },
+    { label: 'Closed', value: 'closed', count: getStatusCount('closed'), color: 'text-gray-600 dark:text-gray-400' },
   ];
 
   return (
