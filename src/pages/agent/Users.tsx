@@ -288,8 +288,8 @@ export default function Users() {
                         onClick={() => handleRestore(user.id)}
                         title="Restore user"
                       >
-                        <RotateCcw className="h-4 w-4 mr-1" />
-                        Restore
+                        <RotateCcw className="h-4 w-4 sm:mr-1" />
+                        <span className="hidden sm:inline">Restore</span>
                       </Button>
                       <Button
                         variant="destructive"
@@ -297,8 +297,8 @@ export default function Users() {
                         onClick={() => handlePermanentDelete(user.id, user.name)}
                         title="Permanently delete user"
                       >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        Permanent Delete
+                        <Trash2 className="h-4 w-4 sm:mr-1" />
+                        <span className="hidden sm:inline">Delete</span>
                       </Button>
                     </div>
                   </td>
@@ -328,87 +328,70 @@ export default function Users() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-4">
+            {/* Title Section */}
             <div>
-              <CardTitle>Users</CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
+              <CardTitle className="text-xl">Users</CardTitle>
+              <p className="text-sm text-muted-foreground mt-1 hidden sm:block">
                 Manage users and agents
               </p>
             </div>
-            <Button onClick={() => setIsCreateModalOpen(true)}>
-              <UserPlus className="h-4 w-4 mr-2" />
-              Add User
-            </Button>
+
+            {/* Actions - Mobile: Stack, Desktop: Horizontal */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              {/* Search - Full width on mobile */}
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search users..."
+                  className="pl-10 w-full"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
+              {/* Add User button */}
+              <Button size="sm" onClick={() => setIsCreateModalOpen(true)}>
+                <UserPlus className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Add User</span>
+              </Button>
+            </div>
           </div>
         </CardHeader>
-        <CardContent>
+
+        {/* Tabs for Active/Deleted Users */}
+        <div className="border-b px-6">
           <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)} className="w-full">
             <TabsList>
               <TabsTrigger value="active">Active Users ({filteredUsers.length})</TabsTrigger>
               <TabsTrigger value="deleted">Deleted Users ({filteredDeletedUsers.length})</TabsTrigger>
             </TabsList>
-
-        <TabsContent value="active" className="mt-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Active Users</CardTitle>
-                <div className="relative">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search users..."
-                    className="pl-8 w-64"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                  <span className="ml-3 text-muted-foreground">Loading users...</span>
-                </div>
-              ) : error ? (
-                <div className="flex flex-col items-center justify-center py-12">
-                  <p className="text-destructive mb-4">{error}</p>
-                  <Button onClick={fetchUsers} variant="outline">
-                    Retry
-                  </Button>
-                </div>
-              ) : (
-                <UserTable
-                  users={filteredUsers}
-                  onEdit={handleEdit}
-                  onToggleActive={handleToggleActive}
-                  onDelete={handleDelete}
-                />
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="deleted" className="mt-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Deleted Users</CardTitle>
-                <div className="relative">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search deleted users..."
-                    className="pl-8 w-64"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>{renderDeletedUserTable()}</CardContent>
-          </Card>
-        </TabsContent>
           </Tabs>
+        </div>
+
+        <CardContent className="pt-6">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <span className="ml-3 text-muted-foreground">Loading users...</span>
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <p className="text-destructive mb-4">{error}</p>
+              <Button onClick={fetchUsers} variant="outline">
+                Retry
+              </Button>
+            </div>
+          ) : viewMode === 'active' ? (
+            <UserTable
+              users={filteredUsers}
+              onEdit={handleEdit}
+              onToggleActive={handleToggleActive}
+              onDelete={handleDelete}
+            />
+          ) : (
+            renderDeletedUserTable()
+          )}
         </CardContent>
       </Card>
     </div>
