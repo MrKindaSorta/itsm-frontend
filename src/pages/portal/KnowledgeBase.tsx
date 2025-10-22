@@ -3,10 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Search, FileText, ChevronRight, TrendingUp, ArrowLeft, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Search, FileText, ChevronRight, TrendingUp, ArrowLeft, ThumbsUp, ThumbsDown, Download } from 'lucide-react';
 import * as Icons from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import { useAuth } from '@/contexts/AuthContext';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
@@ -162,9 +160,10 @@ export default function KnowledgeBase() {
           </CardHeader>
           <CardContent className="prose prose-sm max-w-none dark:prose-invert">
             {selectedArticle.content && (
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {selectedArticle.content}
-              </ReactMarkdown>
+              <div
+                dangerouslySetInnerHTML={{ __html: selectedArticle.content }}
+                className="article-content"
+              />
             )}
           </CardContent>
 
@@ -172,20 +171,23 @@ export default function KnowledgeBase() {
             <CardContent className="border-t pt-6">
               <h4 className="font-medium mb-3">Attachments</h4>
               <div className="space-y-2">
-                {selectedArticle.attachments.map((att) => (
+                {selectedArticle.attachments.map((att: any) => (
                   <a
                     key={att.id}
-                    href={`${API_BASE}${att.url}`}
+                    href={`${API_BASE}/api/article-attachments/${att.id}/download`}
                     download
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 p-2 border rounded hover:bg-accent"
+                    className="flex items-center gap-2 p-3 border rounded-lg hover:bg-accent transition-colors"
                   >
-                    <FileText className="h-4 w-4" />
-                    <span className="text-sm">{att.fileName}</span>
-                    <span className="text-xs text-muted-foreground ml-auto">
-                      ({(att.fileSize / 1024).toFixed(1)} KB)
-                    </span>
+                    <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{att.file_name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {(att.file_size / 1024).toFixed(1)} KB
+                      </p>
+                    </div>
+                    <Download className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   </a>
                 ))}
               </div>

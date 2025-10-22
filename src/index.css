@@ -100,4 +100,36 @@
     width: 100%;
     max-width: 100%;
   }
+
+  /* Article content styling */
+  .article-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+    margin: 1rem 0;
+  }
+
+  .article-content p {
+    margin-bottom: 1rem;
+    line-height: 1.75;
+  }
+
+  .article-content h1,
+  .article-content h2,
+  .article-content h3,
+  .article-content h4 {
+    font-weight: 600;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .article-content ul,
+  .article-content ol {
+    margin-left: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .article-content li {
+    margin-bottom: 0.5rem;
+  }
 }
