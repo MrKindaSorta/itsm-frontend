@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SelectRoot, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -190,7 +190,7 @@ export default function Settings() {
 
             <div className="space-y-2">
               <Label>Default Ticket Assignment</Label>
-              <Select
+              <SelectRoot
                 value={formData.general.defaultAssignment}
                 onValueChange={(value: 'round-robin' | 'manual' | 'team-based') =>
                   setFormData({ ...formData, general: { ...formData.general, defaultAssignment: value } })
@@ -204,7 +204,7 @@ export default function Settings() {
                   <SelectItem value="round-robin">Round Robin</SelectItem>
                   <SelectItem value="team-based">Team-based</SelectItem>
                 </SelectContent>
-              </Select>
+              </SelectRoot>
               <p className="text-sm text-muted-foreground">
                 How new tickets are assigned to agents by default
               </p>

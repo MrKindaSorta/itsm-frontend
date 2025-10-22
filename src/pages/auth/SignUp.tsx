@@ -103,9 +103,9 @@ export default function SignUp() {
             </CardDescription>
           </CardHeader>
           <CardFooter>
-            <Button asChild className="w-full">
-              <Link to="/login">Go to Login</Link>
-            </Button>
+            <Link to="/login" className="w-full">
+              <Button className="w-full">Go to Login</Button>
+            </Link>
           </CardFooter>
         </Card>
       </div>
