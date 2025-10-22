@@ -239,54 +239,52 @@ export function VisualContentEditor({ value, onChange, showPreview }: VisualCont
   const imageBlocks = blocks.filter(b => b.type === 'image');
 
   return (
-    <div className={showPreview ? 'grid grid-cols-2 gap-4' : ''}>
-      {/* Markdown Editor */}
-      <div>
-        <Textarea
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="Enter article content..."
-          className="min-h-[400px] font-mono text-sm"
-        />
-      </div>
-
-      {/* Visual Preview with Image Management */}
-      {showPreview && (
-        <div className="min-h-[400px] border rounded-lg overflow-y-auto">
-          <div className="p-4 space-y-4">
-            {/* Image Management Section */}
-            {imageBlocks.length > 0 && (
-              <div className="space-y-2 pb-4 border-b">
-                <h4 className="text-sm font-medium">Images ({imageBlocks.length})</h4>
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={closestCenter}
-                  onDragEnd={handleDragEnd}
-                >
-                  <SortableContext
-                    items={imageBlocks.map(b => b.id)}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    {imageBlocks.map((block) => (
-                      <SortableImage
-                        key={block.id}
-                        block={block}
-                        onDelete={() => handleDeleteImage(block.id)}
-                        onAlignmentChange={(alignment) => handleAlignmentChange(block.id, alignment)}
-                      />
-                    ))}
-                  </SortableContext>
-                </DndContext>
-              </div>
-            )}
-
-            {/* Markdown Preview */}
-            <div className="prose prose-sm max-w-none dark:prose-invert">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{value}</ReactMarkdown>
-            </div>
-          </div>
+    <div className="space-y-4">
+      {/* Image Management Section - Always visible if images exist */}
+      {imageBlocks.length > 0 && (
+        <div className="space-y-2 p-4 border rounded-lg bg-muted/30">
+          <h4 className="text-sm font-medium">Images ({imageBlocks.length})</h4>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={imageBlocks.map(b => b.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {imageBlocks.map((block) => (
+                <SortableImage
+                  key={block.id}
+                  block={block}
+                  onDelete={() => handleDeleteImage(block.id)}
+                  onAlignmentChange={(alignment) => handleAlignmentChange(block.id, alignment)}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
         </div>
       )}
+
+      {/* Content Editor with Optional Preview */}
+      <div className={showPreview ? 'grid grid-cols-2 gap-4' : ''}>
+        {/* Markdown Editor */}
+        <div>
+          <Textarea
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder="Enter article content..."
+            className="min-h-[400px] font-mono text-sm"
+          />
+        </div>
+
+        {/* Markdown Preview (only when showPreview is true) */}
+        {showPreview && (
+          <div className="min-h-[400px] p-4 border rounded-lg prose prose-sm max-w-none dark:prose-invert overflow-y-auto">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{value}</ReactMarkdown>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

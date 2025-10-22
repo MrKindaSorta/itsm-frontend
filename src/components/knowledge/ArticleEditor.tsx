@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { SelectRoot as Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -309,21 +308,11 @@ export function ArticleEditor({ initialData, categories, userId, onSave, onCance
       {/* Content Editor */}
       <div>
         <Label htmlFor="content">Content *</Label>
-        {editorMode === 'simple' ? (
-          <Textarea
-            id="content"
-            value={formData.content}
-            onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-            placeholder="Enter article content..."
-            className="min-h-[400px] font-mono text-sm"
-          />
-        ) : (
-          <VisualContentEditor
-            value={formData.content}
-            onChange={(content) => setFormData({ ...formData, content })}
-            showPreview={showPreview}
-          />
-        )}
+        <VisualContentEditor
+          value={formData.content}
+          onChange={(content) => setFormData({ ...formData, content })}
+          showPreview={editorMode === 'markdown' && showPreview}
+        />
       </div>
 
       {/* Attachments List */}

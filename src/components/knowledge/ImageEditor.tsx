@@ -21,7 +21,7 @@ interface CroppedArea {
 }
 
 const ASPECT_RATIOS = [
-  { label: 'Free', value: 0 },
+  { label: 'Free', value: null },
   { label: '1:1', value: 1 },
   { label: '4:3', value: 4 / 3 },
   { label: '16:9', value: 16 / 9 },
@@ -43,7 +43,7 @@ export function ImageEditor({ open, imageFile, onClose, onSave }: ImageEditorPro
   const [flipH, setFlipH] = useState(false);
   const [flipV, setFlipV] = useState(false);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<CroppedArea | null>(null);
-  const [aspectRatio, setAspectRatio] = useState(0);
+  const [aspectRatio, setAspectRatio] = useState<number | null>(null);
   const [alignment, setAlignment] = useState('align-center');
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -140,7 +140,7 @@ export function ImageEditor({ open, imageFile, onClose, onSave }: ImageEditorPro
     setRotation(0);
     setFlipH(false);
     setFlipV(false);
-    setAspectRatio(0);
+    setAspectRatio(null);
     setAlignment('align-center');
     onClose();
   };
@@ -166,11 +166,10 @@ export function ImageEditor({ open, imageFile, onClose, onSave }: ImageEditorPro
                 crop={crop}
                 zoom={zoom}
                 rotation={rotation}
-                aspect={aspectRatio || undefined}
+                aspect={aspectRatio === null ? undefined : aspectRatio}
                 onCropChange={setCrop}
                 onZoomChange={setZoom}
                 onCropComplete={onCropComplete}
-                transform={`translate(${crop.x}px, ${crop.y}px) rotate(${rotation}deg) scale(${flipH ? -1 : 1}, ${flipV ? -1 : 1})`}
               />
             )}
           </div>
