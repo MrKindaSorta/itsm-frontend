@@ -49,6 +49,7 @@ export function IconPicker({ value, onChange }: IconPickerProps) {
           return (
             <Button
               key={iconName}
+              type="button"
               variant={value === iconName ? 'default' : 'outline'}
               size="sm"
               className="h-12 w-12 p-0"

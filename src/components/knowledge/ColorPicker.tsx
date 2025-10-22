@@ -41,6 +41,7 @@ export function ColorPicker({ value, onChange }: ColorPickerProps) {
         {availableColors.map((color) => (
           <Button
             key={color.value}
+            type="button"
             variant="outline"
             className="h-auto p-3 flex items-center gap-2 justify-start"
             onClick={() => onChange(color.value)}
