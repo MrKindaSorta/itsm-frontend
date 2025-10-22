@@ -212,7 +212,7 @@ export default function KnowledgeBase() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            title: 'Untitled Article',
+            title: '',
             content: '',
             category_id: selectedCategory,
             status: 'draft',
@@ -238,7 +238,7 @@ export default function KnowledgeBase() {
           };
           setEditingArticle(newArticle);
           setIsNewlyCreated(true);
-          setOriginalArticleData({ title: 'Untitled Article', content: '' });
+          setOriginalArticleData({ title: '', content: '' });
           setIsEditorOpen(true);
         } else {
           alert(data.error || 'Failed to create article');
