@@ -30,7 +30,7 @@ interface ArticleEditorProps {
   initialData?: any;
   categories: Category[];
   userId: string;
-  onSave: () => void;
+  onSave: (wasSaved: boolean) => void;
   onCancel: () => void;
   onDelete?: (article: any) => void;
 }
@@ -243,7 +243,7 @@ export function ArticleEditor({ initialData, categories, userId, onSave, onCance
       const data = await response.json();
 
       if (data.success) {
-        onSave();
+        onSave(true);
       } else {
         alert(data.error || 'Failed to save article');
       }
@@ -299,15 +299,14 @@ export function ArticleEditor({ initialData, categories, userId, onSave, onCance
             className="hidden"
             accept="image/*"
             onChange={handleImageUpload}
-            disabled={isUploading || !initialData}
+            disabled={isUploading}
           />
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={() => document.getElementById('image-upload')?.click()}
-            disabled={isUploading || !initialData}
-            title={!initialData ? 'Save the article as a draft first to add images' : 'Insert image'}
+            disabled={isUploading}
           >
             <Image className="h-4 w-4 mr-2" />
             Insert Image
@@ -317,25 +316,19 @@ export function ArticleEditor({ initialData, categories, userId, onSave, onCance
             id="file-upload"
             className="hidden"
             onChange={handleFileUpload}
-            disabled={isUploading || !initialData}
+            disabled={isUploading}
           />
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={() => document.getElementById('file-upload')?.click()}
-            disabled={isUploading || !initialData}
-            title={!initialData ? 'Save the article as a draft first to attach files' : 'Attach file'}
+            disabled={isUploading}
           >
             <Paperclip className="h-4 w-4 mr-2" />
             Attach File
           </Button>
         </div>
-        {!initialData && (
-          <p className="text-xs text-muted-foreground mb-2">
-            💡 Tip: Save as draft first to enable image and file attachments
-          </p>
-        )}
         <RichTextEditor
           value={formData.content}
           onChange={(content) => setFormData({ ...formData, content })}

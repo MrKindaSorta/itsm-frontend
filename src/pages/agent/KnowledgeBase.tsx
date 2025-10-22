@@ -107,6 +107,8 @@ export default function KnowledgeBase() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [articleToDelete, setArticleToDelete] = useState<Article | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isNewlyCreated, setIsNewlyCreated] = useState(false);
+  const [originalArticleData, setOriginalArticleData] = useState<{ title: string; content: string } | null>(null);
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -191,14 +193,86 @@ export default function KnowledgeBase() {
     }
   };
 
-  const openEditor = (article?: Article) => {
-    setEditingArticle(article || null);
-    setIsEditorOpen(true);
+  const openEditor = async (article?: Article) => {
+    if (article) {
+      // Editing existing article
+      setEditingArticle(article);
+      setIsNewlyCreated(false);
+      setOriginalArticleData({ title: article.title, content: article.content });
+      setIsEditorOpen(true);
+    } else {
+      // Creating new article - create a blank draft first
+      if (!selectedCategory) {
+        alert('Please select a category first');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE}/api/articles`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: 'Untitled Article',
+            content: '',
+            category_id: selectedCategory,
+            status: 'draft',
+            user_id: user?.id,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          // Open editor with the newly created article
+          const newArticle = {
+            ...data.article,
+            category_name: categories.find(c => c.id === selectedCategory)?.name || '',
+            category_icon: categories.find(c => c.id === selectedCategory)?.icon || '',
+            category_color: categories.find(c => c.id === selectedCategory)?.color || '',
+            author_name: user?.name || '',
+            views: 0,
+            helpful_count: 0,
+            not_helpful_count: 0,
+            tags: '',
+            attachments: [],
+          };
+          setEditingArticle(newArticle);
+          setIsNewlyCreated(true);
+          setOriginalArticleData({ title: 'Untitled Article', content: '' });
+          setIsEditorOpen(true);
+        } else {
+          alert(data.error || 'Failed to create article');
+        }
+      } catch (error) {
+        console.error('Create article error:', error);
+        alert('Failed to create article');
+      }
+    }
   };
 
-  const closeEditor = () => {
+  const closeEditor = async (wasSaved: boolean = false) => {
+    // If this was a newly created article and wasn't saved (or was unchanged), delete it
+    if (isNewlyCreated && !wasSaved && editingArticle) {
+      const isUnchanged =
+        editingArticle.title === originalArticleData?.title &&
+        editingArticle.content === originalArticleData?.content;
+
+      if (isUnchanged) {
+        // Delete the empty article
+        try {
+          await fetch(`${API_BASE}/api/articles/${editingArticle.id}?user_id=${user?.id}`, {
+            method: 'DELETE',
+          });
+        } catch (error) {
+          console.error('Failed to cleanup empty article:', error);
+        }
+      }
+    }
+
     setEditingArticle(null);
     setIsEditorOpen(false);
+    setIsNewlyCreated(false);
+    setOriginalArticleData(null);
     fetchArticles();
     fetchCategories();
   };
@@ -511,7 +585,7 @@ export default function KnowledgeBase() {
       </Dialog>
 
       {/* Article Editor Dialog */}
-      <Dialog open={isEditorOpen} onOpenChange={(open) => !open && closeEditor()}>
+      <Dialog open={isEditorOpen} onOpenChange={(open) => !open && closeEditor(false)}>
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingArticle ? 'Edit Article' : 'Create New Article'}</DialogTitle>
@@ -524,7 +598,7 @@ export default function KnowledgeBase() {
             categories={categories}
             userId={user?.id || ''}
             onSave={closeEditor}
-            onCancel={closeEditor}
+            onCancel={() => closeEditor(false)}
             onDelete={(article) => {
               setIsEditorOpen(false);
               openDeleteDialog(article);
