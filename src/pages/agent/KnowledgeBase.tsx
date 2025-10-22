@@ -166,7 +166,7 @@ export default function KnowledgeBase() {
 
       // Update server
       try {
-        await fetch(`${API_BASE}/api/categories/reorder`, {
+        const response = await fetch(`${API_BASE}/api/categories/reorder`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -174,6 +174,12 @@ export default function KnowledgeBase() {
             user_id: user?.id,
           }),
         });
+
+        const data = await response.json();
+        if (!data.success) {
+          console.error('Reorder failed:', data.error);
+          fetchCategories(); // Revert on error
+        }
       } catch (error) {
         console.error('Error reordering categories:', error);
         // Revert on error
