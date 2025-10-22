@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import type { Activity } from '@/types';
 import { formatRelativeTime, getInitials } from '@/lib/utils';
-import { MessageSquare, AlertCircle, ArrowRight, Reply, Flag, Paperclip, Download } from 'lucide-react';
+import { MessageSquare, AlertCircle, ArrowRight, Reply, Flag, Paperclip, Download, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
@@ -48,6 +49,26 @@ function MessageActions({ activity, isOwn, onReply, onFlag }: MessageActionsProp
 }
 
 export function ActivityFeed({ activities, currentUserId, onReply, onFlag }: ActivityFeedProps) {
+  const [expandedAttachments, setExpandedAttachments] = useState<Set<string>>(new Set());
+
+  const toggleAttachmentExpansion = (activityId: string) => {
+    setExpandedAttachments(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(activityId)) {
+        newSet.delete(activityId);
+      } else {
+        newSet.add(activityId);
+      }
+      return newSet;
+    });
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
   const handleReply = (activity: Activity) => {
     if (onReply) {
       onReply(activity);
@@ -89,35 +110,110 @@ export function ActivityFeed({ activities, currentUserId, onReply, onFlag }: Act
         const isFlagged = activity.isFlagged || false;
         const isOwnMessage = currentUserId && activity.author.id === currentUserId;
 
-        // Attachment system message - centered with download button
+        // Attachment system message - centered with download button(s)
         if (isAttachment) {
           const metadata = activity.metadata || {};
+          const hasMultipleAttachments = metadata.attachments && metadata.attachments.length > 1;
+          const isExpanded = expandedAttachments.has(activity.id);
+
+          // Single attachment - simple download button
+          if (!hasMultipleAttachments) {
+            return (
+              <div key={activity.id} className="flex items-center justify-center py-2">
+                <div className="flex items-center gap-3 px-4 py-2 bg-muted/50 rounded-lg border">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                    <Paperclip className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm">
+                      <span className="font-medium text-foreground">{activity.author.name}</span>{' '}
+                      <span className="text-muted-foreground">{activity.content}</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {formatRelativeTime(activity.createdAt)}
+                    </p>
+                  </div>
+                  <a
+                    href={`${API_BASE}/api/attachments/${metadata.attachmentId}/download?user_id=${currentUserId}`}
+                    download
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Button variant="outline" size="sm" className="h-8 text-xs">
+                      <Download className="h-3.5 w-3.5 mr-1.5" />
+                      Download
+                    </Button>
+                  </a>
+                </div>
+              </div>
+            );
+          }
+
+          // Multiple attachments - expandable card
           return (
             <div key={activity.id} className="flex items-center justify-center py-2">
-              <div className="flex items-center gap-3 px-4 py-2 bg-muted/50 rounded-lg border">
-                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                  <Paperclip className="h-4 w-4" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm">
-                    <span className="font-medium text-foreground">{activity.author.name}</span>{' '}
-                    <span className="text-muted-foreground">{activity.content}</span>
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {formatRelativeTime(activity.createdAt)}
-                  </p>
-                </div>
-                <a
-                  href={`${API_BASE}/api/attachments/${metadata.attachmentId}/download?user_id=${currentUserId}`}
-                  download
-                  target="_blank"
-                  rel="noopener noreferrer"
+              <div className="bg-muted/50 rounded-lg border w-full max-w-2xl">
+                {/* Header - clickable to expand/collapse */}
+                <div
+                  className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-muted/70 transition-colors rounded-lg"
+                  onClick={() => toggleAttachmentExpansion(activity.id)}
                 >
-                  <Button variant="outline" size="sm" className="h-8 text-xs">
-                    <Download className="h-3.5 w-3.5 mr-1.5" />
-                    Download
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
+                    <Paperclip className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm">
+                      <span className="font-medium text-foreground">{activity.author.name}</span>{' '}
+                      <span className="text-muted-foreground">
+                        uploaded {metadata.fileCount} file{metadata.fileCount > 1 ? 's' : ''} ({formatFileSize(metadata.totalSize)})
+                      </span>
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {formatRelativeTime(activity.createdAt)}
+                    </p>
+                  </div>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 flex-shrink-0">
+                    {isExpanded ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
                   </Button>
-                </a>
+                </div>
+
+                {/* Expanded file list */}
+                {isExpanded && (
+                  <div className="border-t px-4 py-3 space-y-2">
+                    {metadata.attachments.map((attachment: any) => (
+                      <div
+                        key={attachment.attachmentId}
+                        className="flex items-center justify-between gap-3 p-2 bg-background rounded border hover:border-primary/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <Paperclip className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium truncate">{attachment.fileName}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatFileSize(attachment.fileSize)} • {attachment.fileType}
+                            </p>
+                          </div>
+                        </div>
+                        <a
+                          href={`${API_BASE}/api/attachments/${attachment.attachmentId}/download?user_id=${currentUserId}`}
+                          download
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Button variant="outline" size="sm" className="h-8 text-xs">
+                            <Download className="h-3.5 w-3.5 mr-1.5" />
+                            Download
+                          </Button>
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           );

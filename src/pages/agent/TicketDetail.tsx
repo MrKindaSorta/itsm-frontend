@@ -44,6 +44,7 @@ export default function TicketDetail() {
   const [replyingToActivity, setReplyingToActivity] = useState<Activity | null>(null);
   const [showStatusOptions, setShowStatusOptions] = useState(false);
   const [attachmentFiles, setAttachmentFiles] = useState<File[]>([]);
+  const [isUploadingAttachments, setIsUploadingAttachments] = useState(false);
 
   const [isSaving, setIsSaving] = useState(false);
   const [isEditingCC, setIsEditingCC] = useState(false);
@@ -344,22 +345,25 @@ export default function TicketDetail() {
       if (data.success) {
         const activityId = data.activity.id;
 
-        // Upload attachments if any
+        // Upload attachments if any (as a batch)
         if (attachmentFiles.length > 0) {
-          for (const file of attachmentFiles) {
-            try {
-              const formData = new FormData();
-              formData.append('file', file);
-              formData.append('user_id', user.id);
-              formData.append('activity_id', activityId);
+          setIsUploadingAttachments(true);
+          try {
+            const formData = new FormData();
+            attachmentFiles.forEach((file) => {
+              formData.append('files', file); // Use 'files' for multiple
+            });
+            formData.append('user_id', user.id);
+            formData.append('activity_id', activityId);
 
-              await fetch(`${API_BASE}/api/tickets/${id}/attachments`, {
-                method: 'POST',
-                body: formData,
-              });
-            } catch (uploadError) {
-              console.error('Failed to upload attachment:', uploadError);
-            }
+            await fetch(`${API_BASE}/api/tickets/${id}/attachments/batch`, {
+              method: 'POST',
+              body: formData,
+            });
+          } catch (uploadError) {
+            console.error('Failed to upload attachments:', uploadError);
+          } finally {
+            setIsUploadingAttachments(false);
           }
         }
 
@@ -571,9 +575,19 @@ export default function TicketDetail() {
                         className="h-7 text-xs"
                         onClick={() => document.getElementById('attachment-input')?.click()}
                         type="button"
+                        disabled={isUploadingAttachments || isSending}
                       >
-                        <Paperclip className="h-3.5 w-3.5 mr-1.5" />
-                        Attach
+                        {isUploadingAttachments ? (
+                          <>
+                            <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                            Uploading {attachmentFiles.length > 0 && `(${attachmentFiles.length})`}
+                          </>
+                        ) : (
+                          <>
+                            <Paperclip className="h-3.5 w-3.5 mr-1.5" />
+                            Attach
+                          </>
+                        )}
                       </Button>
                       <div className="group relative">
                         <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
