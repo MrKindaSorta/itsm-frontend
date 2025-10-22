@@ -46,7 +46,6 @@ export default function CreateTicket() {
 
   // Articles for suggestions
   const [articles, setArticles] = useState<Article[]>([]);
-  const [isLoadingArticles, setIsLoadingArticles] = useState(false);
 
   // Load form configuration from API (fallback to localStorage)
   useEffect(() => {
@@ -131,7 +130,6 @@ export default function CreateTicket() {
     }
 
     const fetchArticles = async () => {
-      setIsLoadingArticles(true);
       try {
         const response = await fetch(`${API_BASE}/api/articles/search-suggestions?query=${encodeURIComponent(combinedText)}`);
         const data = await response.json();
@@ -141,8 +139,6 @@ export default function CreateTicket() {
       } catch (error) {
         console.error('Failed to fetch article suggestions:', error);
         setArticles([]);
-      } finally {
-        setIsLoadingArticles(false);
       }
     };
 
