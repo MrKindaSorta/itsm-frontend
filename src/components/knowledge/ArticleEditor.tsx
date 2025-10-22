@@ -7,8 +7,8 @@ import { SelectRoot as Select, SelectContent, SelectItem, SelectTrigger, SelectV
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Image, Paperclip, X, Eye, Code, Type, Loader2 } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import { ImageEditor } from './ImageEditor';
+import { VisualContentEditor } from './VisualContentEditor';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
@@ -52,6 +52,10 @@ export function ArticleEditor({ initialData, categories, userId, onSave, onCance
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Image editor state
+  const [isImageEditorOpen, setIsImageEditorOpen] = useState(false);
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+
   // Ticket categories for suggestions
   const ticketCategories = ['Technical Support', 'Account Issues', 'Billing', 'Hardware', 'Software', 'Network', 'Security', 'General Inquiry'];
 
@@ -72,7 +76,7 @@ export function ArticleEditor({ initialData, categories, userId, onSave, onCance
     });
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -81,11 +85,21 @@ export function ArticleEditor({ initialData, categories, userId, onSave, onCance
       return;
     }
 
+    // Open image editor
+    setSelectedImageFile(file);
+    setIsImageEditorOpen(true);
+
+    // Reset input
+    e.target.value = '';
+  };
+
+  const handleImageEditSave = async (editedBlob: Blob, alignment: string) => {
     setIsUploading(true);
+    setIsImageEditorOpen(false);
 
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', editedBlob, selectedImageFile?.name || 'image.jpg');
       formData.append('user_id', userId);
 
       const articleId = initialData?.id || 'temp';
@@ -98,10 +112,10 @@ export function ArticleEditor({ initialData, categories, userId, onSave, onCance
 
       if (data.success) {
         const imageUrl = `${API_BASE}${data.attachment.url}`;
-        const markdownImage = `\n![${file.name}](${imageUrl})\n`;
+        const htmlImage = `\n<img src="${imageUrl}" alt="${selectedImageFile?.name || 'image'}" class="${alignment}" />\n`;
         setFormData(prev => ({
           ...prev,
-          content: prev.content + markdownImage,
+          content: prev.content + htmlImage,
         }));
         setAttachments([...attachments, data.attachment]);
       } else {
@@ -112,6 +126,7 @@ export function ArticleEditor({ initialData, categories, userId, onSave, onCance
       alert('Failed to upload image');
     } finally {
       setIsUploading(false);
+      setSelectedImageFile(null);
     }
   };
 
@@ -294,7 +309,7 @@ export function ArticleEditor({ initialData, categories, userId, onSave, onCance
       {/* Content Editor */}
       <div>
         <Label htmlFor="content">Content *</Label>
-        {editorMode === 'simple' || !showPreview ? (
+        {editorMode === 'simple' ? (
           <Textarea
             id="content"
             value={formData.content}
@@ -302,22 +317,12 @@ export function ArticleEditor({ initialData, categories, userId, onSave, onCance
             placeholder="Enter article content..."
             className="min-h-[400px] font-mono text-sm"
           />
-        ) : null}
-
-        {editorMode === 'markdown' && showPreview && (
-          <div className="grid grid-cols-2 gap-4">
-            <Textarea
-              value={formData.content}
-              onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-              placeholder="Enter markdown content..."
-              className="min-h-[400px] font-mono text-sm"
-            />
-            <div className="min-h-[400px] p-4 border rounded-lg prose prose-sm max-w-none dark:prose-invert overflow-y-auto">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {formData.content}
-              </ReactMarkdown>
-            </div>
-          </div>
+        ) : (
+          <VisualContentEditor
+            value={formData.content}
+            onChange={(content) => setFormData({ ...formData, content })}
+            showPreview={showPreview}
+          />
         )}
       </div>
 
@@ -456,6 +461,17 @@ export function ArticleEditor({ initialData, categories, userId, onSave, onCance
           )}
         </Button>
       </div>
+
+      {/* Image Editor Modal */}
+      <ImageEditor
+        open={isImageEditorOpen}
+        imageFile={selectedImageFile}
+        onClose={() => {
+          setIsImageEditorOpen(false);
+          setSelectedImageFile(null);
+        }}
+        onSave={handleImageEditSave}
+      />
     </div>
   );
 }

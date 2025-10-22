@@ -68,4 +68,36 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+  /* Image alignment classes for Knowledge Base articles */
+  .prose img.align-left,
+  img.align-left {
+    float: left;
+    margin-right: 1.5rem;
+    margin-bottom: 1rem;
+    max-width: 50%;
+  }
+
+  .prose img.align-right,
+  img.align-right {
+    float: right;
+    margin-left: 1.5rem;
+    margin-bottom: 1rem;
+    max-width: 50%;
+  }
+
+  .prose img.align-center,
+  img.align-center {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 100%;
+  }
+
+  .prose img.align-full,
+  img.align-full {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+  }
 }
