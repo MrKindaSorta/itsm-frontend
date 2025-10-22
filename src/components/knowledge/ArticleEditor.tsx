@@ -5,9 +5,9 @@ import { Label } from '@/components/ui/label';
 import { SelectRoot as Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Image, Paperclip, X, Eye, Code, Type, Loader2 } from 'lucide-react';
+import { Image, Paperclip, X, Loader2 } from 'lucide-react';
 import { ImageEditor } from './ImageEditor';
-import { VisualContentEditor } from './VisualContentEditor';
+import { RichTextEditor } from './RichTextEditor';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
@@ -44,8 +44,6 @@ export function ArticleEditor({ initialData, categories, userId, onSave, onCance
     suggested_categories: initialData?.suggested_categories || [],
   });
 
-  const [editorMode, setEditorMode] = useState<'simple' | 'markdown'>('simple');
-  const [showPreview, setShowPreview] = useState(false);
   const [tagInput, setTagInput] = useState('');
   const [attachments, setAttachments] = useState<Attachment[]>(initialData?.attachments || []);
   const [isUploading, setIsUploading] = useState(false);
@@ -111,7 +109,8 @@ export function ArticleEditor({ initialData, categories, userId, onSave, onCance
 
       if (data.success) {
         const imageUrl = `${API_BASE}${data.attachment.url}`;
-        const htmlImage = `\n<img src="${imageUrl}" alt="${selectedImageFile?.name || 'image'}" class="${alignment}" />\n`;
+        // Insert image HTML directly - TipTap will handle it
+        const htmlImage = `<img src="${imageUrl}" alt="${selectedImageFile?.name || 'image'}" class="${alignment}" />`;
         setFormData(prev => ({
           ...prev,
           content: prev.content + htmlImage,
@@ -126,6 +125,18 @@ export function ArticleEditor({ initialData, categories, userId, onSave, onCance
     } finally {
       setIsUploading(false);
       setSelectedImageFile(null);
+    }
+  };
+
+  const handleImageClick = (src: string) => {
+    // When clicking an image in the editor, allow deletion
+    const confirmDelete = window.confirm('Do you want to delete this image?');
+    if (confirmDelete) {
+      // Remove image from content
+      setFormData(prev => ({
+        ...prev,
+        content: prev.content.replace(new RegExp(`<img[^>]*src="${src.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"[^>]*>`, 'g'), ''),
+      }));
     }
   };
 
@@ -233,40 +244,10 @@ export function ArticleEditor({ initialData, categories, userId, onSave, onCance
         </Select>
       </div>
 
-      {/* Editor Mode Toggle */}
-      <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/50">
-        <div className="flex items-center gap-4">
-          <Button
-            type="button"
-            variant={editorMode === 'simple' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setEditorMode('simple')}
-          >
-            <Type className="h-4 w-4 mr-2" />
-            Simple
-          </Button>
-          <Button
-            type="button"
-            variant={editorMode === 'markdown' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setEditorMode('markdown')}
-          >
-            <Code className="h-4 w-4 mr-2" />
-            Markdown
-          </Button>
-          {editorMode === 'markdown' && (
-            <Button
-              type="button"
-              variant={showPreview ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setShowPreview(!showPreview)}
-            >
-              <Eye className="h-4 w-4 mr-2" />
-              {showPreview ? 'Hide' : 'Show'} Preview
-            </Button>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
+      {/* Content Editor */}
+      <div>
+        <Label htmlFor="content">Content *</Label>
+        <div className="flex items-center gap-2 mb-2">
           <input
             type="file"
             id="image-upload"
@@ -303,15 +284,10 @@ export function ArticleEditor({ initialData, categories, userId, onSave, onCance
             Attach File
           </Button>
         </div>
-      </div>
-
-      {/* Content Editor */}
-      <div>
-        <Label htmlFor="content">Content *</Label>
-        <VisualContentEditor
+        <RichTextEditor
           value={formData.content}
           onChange={(content) => setFormData({ ...formData, content })}
-          showPreview={editorMode === 'markdown' && showPreview}
+          onImageClick={handleImageClick}
         />
       </div>
 
