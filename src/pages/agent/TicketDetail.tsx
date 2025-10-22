@@ -43,6 +43,7 @@ export default function TicketDetail() {
   const [isSending, setIsSending] = useState(false);
   const [replyingToActivity, setReplyingToActivity] = useState<Activity | null>(null);
   const [showStatusOptions, setShowStatusOptions] = useState(false);
+  const [attachmentFiles, setAttachmentFiles] = useState<File[]>([]);
 
   const [isSaving, setIsSaving] = useState(false);
   const [isEditingCC, setIsEditingCC] = useState(false);
@@ -341,6 +342,27 @@ export default function TicketDetail() {
       const data = await response.json();
 
       if (data.success) {
+        const activityId = data.activity.id;
+
+        // Upload attachments if any
+        if (attachmentFiles.length > 0) {
+          for (const file of attachmentFiles) {
+            try {
+              const formData = new FormData();
+              formData.append('file', file);
+              formData.append('user_id', user.id);
+              formData.append('activity_id', activityId);
+
+              await fetch(`${API_BASE}/api/tickets/${id}/attachments`, {
+                method: 'POST',
+                body: formData,
+              });
+            } catch (uploadError) {
+              console.error('Failed to upload attachment:', uploadError);
+            }
+          }
+        }
+
         // Add new activity to the list
         const newActivity = {
           ...data.activity,
@@ -350,6 +372,10 @@ export default function TicketDetail() {
         setReplyContent('');
         setReplyingToActivity(null); // Clear reply context
         setShowStatusOptions(false); // Close status options
+        setAttachmentFiles([]); // Clear attachments
+
+        // Refresh ticket data to get updated attachments
+        fetchTicketData();
 
         // If status change requested, update the ticket status
         if (newStatus && newStatus !== ticket?.status) {
@@ -526,24 +552,58 @@ export default function TicketDetail() {
                   className="resize-none text-sm"
                 />
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" className="h-7 text-xs">
-                      <Paperclip className="h-3.5 w-3.5 mr-1.5" />
-                      Attach
-                    </Button>
-                    <div className="group relative">
-                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                      <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-64 p-3 bg-popover text-popover-foreground text-xs rounded-md shadow-lg border z-10">
-                        <p className="font-medium mb-1">Allowed file types:</p>
-                        <p className="text-muted-foreground">
-                          Images: JPG, PNG, GIF, WebP<br />
-                          Documents: PDF, DOC, DOCX, TXT<br />
-                          Spreadsheets: XLS, XLSX, CSV<br />
-                          Archives: ZIP, RAR<br />
-                          Max size: 10MB per file
-                        </p>
+                  <div className="flex flex-col gap-2 flex-1">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="file"
+                        id="attachment-input"
+                        className="hidden"
+                        multiple
+                        onChange={(e) => {
+                          if (e.target.files) {
+                            setAttachmentFiles([...attachmentFiles, ...Array.from(e.target.files)]);
+                          }
+                        }}
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs"
+                        onClick={() => document.getElementById('attachment-input')?.click()}
+                        type="button"
+                      >
+                        <Paperclip className="h-3.5 w-3.5 mr-1.5" />
+                        Attach
+                      </Button>
+                      <div className="group relative">
+                        <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                        <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-64 p-3 bg-popover text-popover-foreground text-xs rounded-md shadow-lg border z-10">
+                          <p className="font-medium mb-1">Allowed file types:</p>
+                          <p className="text-muted-foreground">
+                            Images: JPG, PNG, GIF, WebP<br />
+                            Documents: PDF, DOC, DOCX, TXT<br />
+                            Spreadsheets: XLS, XLSX, CSV<br />
+                            Archives: ZIP, RAR<br />
+                            Max size: 10MB per file
+                          </p>
+                        </div>
                       </div>
                     </div>
+                    {attachmentFiles.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {attachmentFiles.map((file, index) => (
+                          <div key={index} className="flex items-center gap-1 bg-muted px-2 py-1 rounded text-xs">
+                            <span className="truncate max-w-[150px]">{file.name}</span>
+                            <button
+                              onClick={() => setAttachmentFiles(attachmentFiles.filter((_, i) => i !== index))}
+                              className="text-muted-foreground hover:text-foreground"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   {/* For Internal Notes: Simple Send Button */}
                   {replyType === 'internal' ? (

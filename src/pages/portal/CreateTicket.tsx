@@ -178,6 +178,29 @@ export default function CreateTicket() {
       const data = await response.json();
 
       if (data.success) {
+        const ticketId = data.ticket.id;
+
+        // Upload any file attachments
+        const fileFields = allFields.filter(f => f.type === 'file');
+        for (const field of fileFields) {
+          const file = fieldValues[field.id];
+          if (file instanceof File) {
+            try {
+              const formData = new FormData();
+              formData.append('file', file);
+              formData.append('user_id', user.id);
+
+              await fetch(`${API_BASE}/api/tickets/${ticketId}/attachments`, {
+                method: 'POST',
+                body: formData,
+              });
+            } catch (uploadError) {
+              console.error('Failed to upload attachment:', uploadError);
+              // Don't fail the whole ticket creation if attachment upload fails
+            }
+          }
+        }
+
         // Show success message
         setShowSuccess(true);
 

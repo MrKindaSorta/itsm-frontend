@@ -3,6 +3,8 @@ import { formatRelativeTime, getInitials } from '@/lib/utils';
 import { MessageSquare, AlertCircle, ArrowRight, Reply, Flag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
+
 interface ActivityFeedProps {
   activities: Activity[];
   currentUserId?: string;
@@ -175,12 +177,16 @@ export function ActivityFeed({ activities, currentUserId, onReply, onFlag }: Act
                 {activity.attachments && activity.attachments.length > 0 && (
                   <div className="mt-2 space-y-1">
                     {activity.attachments.map((attachment) => (
-                      <div
+                      <a
                         key={attachment.id}
-                        className="text-xs text-primary hover:underline cursor-pointer"
+                        href={`${API_BASE}${attachment.url}?user_id=${currentUserId}`}
+                        download
+                        className="text-xs text-primary hover:underline cursor-pointer block"
+                        target="_blank"
+                        rel="noopener noreferrer"
                       >
                         📎 {attachment.fileName}
-                      </div>
+                      </a>
                     ))}
                   </div>
                 )}
