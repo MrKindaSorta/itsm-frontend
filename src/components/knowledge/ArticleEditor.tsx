@@ -32,9 +32,10 @@ interface ArticleEditorProps {
   userId: string;
   onSave: () => void;
   onCancel: () => void;
+  onDelete?: (article: any) => void;
 }
 
-export function ArticleEditor({ initialData, categories, userId, onSave, onCancel }: ArticleEditorProps) {
+export function ArticleEditor({ initialData, categories, userId, onSave, onCancel, onDelete }: ArticleEditorProps) {
   const [formData, setFormData] = useState({
     title: initialData?.title || '',
     content: initialData?.content || '',
@@ -461,39 +462,54 @@ export function ArticleEditor({ initialData, categories, userId, onSave, onCance
       </div>
 
       {/* Actions */}
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={isSaving}>
-          Cancel
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => handleSave(false)}
-          disabled={isSaving}
-        >
-          {isSaving ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Saving...
-            </>
-          ) : (
-            'Save Draft'
+      <div className="flex justify-between gap-2">
+        <div>
+          {initialData && onDelete && (
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => onDelete(initialData)}
+              disabled={isSaving}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Article
+            </Button>
           )}
-        </Button>
-        <Button
-          type="button"
-          onClick={() => handleSave(true)}
-          disabled={isSaving}
-        >
-          {isSaving ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Publishing...
-            </>
-          ) : (
-            'Publish'
-          )}
-        </Button>
+        </div>
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isSaving}>
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => handleSave(false)}
+            disabled={isSaving}
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              'Save Draft'
+            )}
+          </Button>
+          <Button
+            type="button"
+            onClick={() => handleSave(true)}
+            disabled={isSaving}
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Publishing...
+              </>
+            ) : (
+              'Publish'
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Image Editor Modal */}

@@ -3,8 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Search, Plus, Edit, TrendingUp, GripVertical, BarChart3 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Search, Plus, Edit, TrendingUp, GripVertical, BarChart3, Trash2 } from 'lucide-react';
 import * as Icons from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -104,6 +104,9 @@ export default function KnowledgeBase() {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingArticle, setEditingArticle] = useState<Article | null>(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [articleToDelete, setArticleToDelete] = useState<Article | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -198,6 +201,38 @@ export default function KnowledgeBase() {
     setIsEditorOpen(false);
     fetchArticles();
     fetchCategories();
+  };
+
+  const openDeleteDialog = (article: Article) => {
+    setArticleToDelete(article);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteArticle = async () => {
+    if (!articleToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/articles/${articleToDelete.id}?user_id=${user?.id}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setDeleteDialogOpen(false);
+        setArticleToDelete(null);
+        fetchArticles();
+        fetchCategories();
+      } else {
+        alert(data.error || 'Failed to delete article');
+      }
+    } catch (error) {
+      console.error('Delete article error:', error);
+      alert('Failed to delete article');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const popularArticles = useMemo(() => {
@@ -424,14 +459,23 @@ export default function KnowledgeBase() {
                               </div>
                             </div>
                           </div>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => openEditor(article)}
-                          >
-                            <Edit className="h-4 w-4 mr-2" />
-                            Edit
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openEditor(article)}
+                            >
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openDeleteDialog(article)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     );
@@ -475,7 +519,36 @@ export default function KnowledgeBase() {
             userId={user?.id || ''}
             onSave={closeEditor}
             onCancel={closeEditor}
+            onDelete={(article) => {
+              setIsEditorOpen(false);
+              openDeleteDialog(article);
+            }}
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Article</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "<strong>{articleToDelete?.title}</strong>"?
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={isDeleting}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteArticle}
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
