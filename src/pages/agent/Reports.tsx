@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SelectRoot, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Download, Calendar } from 'lucide-react';
 import SLAPerformanceReport from '@/components/reports/SLAPerformanceReport';
 import AgentPerformanceReport from '@/components/reports/AgentPerformanceReport';
@@ -161,7 +161,7 @@ export default function Reports() {
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-muted-foreground" />
-              <Select value={dateRange} onValueChange={(value: DateRange) => setDateRange(value)}>
+              <SelectRoot value={dateRange} onValueChange={(value) => setDateRange(value as DateRange)}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue />
                 </SelectTrigger>
@@ -171,7 +171,7 @@ export default function Reports() {
                   <SelectItem value="60">Last 60 days</SelectItem>
                   <SelectItem value="90">Last 90 days</SelectItem>
                 </SelectContent>
-              </Select>
+              </SelectRoot>
             </div>
 
             <div className="ml-auto">

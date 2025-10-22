@@ -16,7 +16,7 @@ import {
   Pie,
   Cell,
 } from 'recharts';
-import { AlertTriangle, CheckCircle2, Clock, TrendingDown } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clock } from 'lucide-react';
 
 interface SLAReportData {
   overall: {
@@ -224,7 +224,7 @@ export default function SLAPerformanceReport({ data, loading }: Props) {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, value, percent }) =>
+                  label={({ name, value, percent }: any) =>
                     `${name}: ${value} (${(percent * 100).toFixed(0)}%)`
                   }
                   outerRadius={80}
