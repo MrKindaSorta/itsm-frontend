@@ -1,13 +1,14 @@
 import { useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import type { UserRole } from '@/types';
 
 interface PermissionMatrix {
   [key: string]: UserRole[];
 }
 
-// Define permissions matrix
-const permissions: PermissionMatrix = {
+// Define default/fallback permissions matrix
+const defaultPermissions: PermissionMatrix = {
   // Ticket permissions
   'ticket:create': ['user', 'agent', 'manager', 'admin'],
   'ticket:view:own': ['user', 'agent', 'manager', 'admin'],
@@ -48,6 +49,12 @@ const permissions: PermissionMatrix = {
 
 export function usePermissions() {
   const { user } = useAuth();
+  const { settings } = useSettings();
+
+  // Use permissions from settings if available, otherwise use defaults
+  const permissions = useMemo(() => {
+    return settings?.permissionMatrix || defaultPermissions;
+  }, [settings]);
 
   const can = useMemo(() => {
     return (permission: string): boolean => {
@@ -56,7 +63,7 @@ export function usePermissions() {
       if (!allowedRoles) return false;
       return allowedRoles.includes(user.role);
     };
-  }, [user]);
+  }, [user, permissions]);
 
   const canEditTicket = useMemo(() => can('ticket:edit'), [can]);
   const canCloseTicket = useMemo(() => can('ticket:close'), [can]);

@@ -3,18 +3,21 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { BrandingProvider } from '@/contexts/BrandingContext';
 import { ViewPreferencesProvider } from '@/contexts/ViewPreferencesContext';
+import { SettingsProvider } from '@/contexts/SettingsContext';
 import { router } from '@/routes';
 
 function App() {
   return (
     <ThemeProvider>
-      <BrandingProvider>
-        <AuthProvider>
-          <ViewPreferencesProvider>
-            <RouterProvider router={router} />
-          </ViewPreferencesProvider>
-        </AuthProvider>
-      </BrandingProvider>
+      <SettingsProvider>
+        <BrandingProvider>
+          <AuthProvider>
+            <ViewPreferencesProvider>
+              <RouterProvider router={router} />
+            </ViewPreferencesProvider>
+          </AuthProvider>
+        </BrandingProvider>
+      </SettingsProvider>
     </ThemeProvider>
   );
 }

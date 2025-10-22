@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, ShieldAlert } from 'lucide-react';
 
 export default function SignUp() {
   const [name, setName] = useState('');
@@ -14,7 +16,41 @@ export default function SignUp() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { signup } = useAuth();
+  const { settings, isLoading: settingsLoading } = useSettings();
   const navigate = useNavigate();
+
+  // Redirect if public signup is disabled
+  useEffect(() => {
+    if (!settingsLoading && settings && !settings.allowPublicSignup) {
+      navigate('/login');
+    }
+  }, [settings, settingsLoading, navigate]);
+
+  const validatePassword = (pwd: string): string | null => {
+    if (!settings) return null;
+
+    if (pwd.length < settings.passwordMinLength) {
+      return `Password must be at least ${settings.passwordMinLength} characters`;
+    }
+
+    if (settings.passwordRequireUppercase && !/[A-Z]/.test(pwd)) {
+      return 'Password must contain at least one uppercase letter';
+    }
+
+    if (settings.passwordRequireLowercase && !/[a-z]/.test(pwd)) {
+      return 'Password must contain at least one lowercase letter';
+    }
+
+    if (settings.passwordRequireNumbers && !/\d/.test(pwd)) {
+      return 'Password must contain at least one number';
+    }
+
+    if (settings.passwordRequireSpecial && !/[!@#$%^&*(),.?":{}|<>]/.test(pwd)) {
+      return 'Password must contain at least one special character';
+    }
+
+    return null;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,8 +61,9 @@ export default function SignUp() {
       return;
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
 
@@ -41,6 +78,39 @@ export default function SignUp() {
       setIsLoading(false);
     }
   };
+
+  // Show loading state while checking settings
+  if (settingsLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  // Show message if public signup is disabled
+  if (settings && !settings.allowPublicSignup) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <div className="flex justify-center mb-4">
+              <ShieldAlert className="h-12 w-12 text-muted-foreground" />
+            </div>
+            <CardTitle className="text-center">Sign Up Disabled</CardTitle>
+            <CardDescription className="text-center">
+              Public account creation is currently disabled. Please contact your administrator for access.
+            </CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Button asChild className="w-full">
+              <Link to="/login">Go to Login</Link>
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -95,8 +165,17 @@ export default function SignUp() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   disabled={isLoading}
-                  minLength={6}
+                  minLength={settings?.passwordMinLength || 6}
                 />
+                {settings && (
+                  <p className="text-xs text-muted-foreground">
+                    {settings.passwordMinLength} chars minimum
+                    {settings.passwordRequireUppercase && ', uppercase'}
+                    {settings.passwordRequireLowercase && ', lowercase'}
+                    {settings.passwordRequireNumbers && ', numbers'}
+                    {settings.passwordRequireSpecial && ', special chars'}
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirm Password</Label>

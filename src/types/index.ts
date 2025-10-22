@@ -245,15 +245,42 @@ export interface Permission {
 
 // Settings
 export interface SystemSettings {
+  id?: number;
+
+  // General Settings
   allowPublicSignup: boolean;
   defaultAssignment: 'round-robin' | 'manual' | 'team-based';
   enableTimeTracking: boolean;
   enableAttachments: boolean;
   enableEmailToTicket: boolean;
+  enableKnowledgeBase: boolean;
+
+  // Email Configuration
+  emailDomain?: string;
+  emailFromAddress?: string;
+  emailFromName: string;
   enableEmailNotifications: boolean;
   enableEmailReplies: boolean;
-  smtpConfig?: SMTPConfig;
-  branding: BrandingConfig;
+
+  // Security Settings
+  passwordMinLength: number;
+  passwordRequireUppercase: boolean;
+  passwordRequireLowercase: boolean;
+  passwordRequireNumbers: boolean;
+  passwordRequireSpecial: boolean;
+  passwordExpiryDays: number;
+  maxLoginAttempts: number;
+  lockoutDurationMinutes: number;
+  sessionTimeoutMinutes: number;
+  enable2FA: boolean;
+  forcePasswordChangeFirstLogin: boolean;
+
+  // Permission Matrix
+  permissionMatrix: Record<string, UserRole[]>;
+
+  // Metadata
+  updatedAt?: string;
+  updatedBy?: number;
 }
 
 export interface SMTPConfig {
@@ -271,6 +298,39 @@ export interface BrandingConfig {
   logo?: string;
   primaryColor: string;
   welcomeMessage?: string;
+}
+
+// Settings form data (for UI state)
+export interface SettingsFormData {
+  general: {
+    allowPublicSignup: boolean;
+    defaultAssignment: 'round-robin' | 'manual' | 'team-based';
+    enableTimeTracking: boolean;
+    enableAttachments: boolean;
+    enableEmailToTicket: boolean;
+    enableKnowledgeBase: boolean;
+  };
+  email: {
+    emailDomain: string;
+    emailFromAddress: string;
+    emailFromName: string;
+    enableEmailNotifications: boolean;
+    enableEmailReplies: boolean;
+  };
+  security: {
+    passwordMinLength: number;
+    passwordRequireUppercase: boolean;
+    passwordRequireLowercase: boolean;
+    passwordRequireNumbers: boolean;
+    passwordRequireSpecial: boolean;
+    passwordExpiryDays: number;
+    maxLoginAttempts: number;
+    lockoutDurationMinutes: number;
+    sessionTimeoutMinutes: number;
+    enable2FA: boolean;
+    forcePasswordChangeFirstLogin: boolean;
+  };
+  permissions: Record<string, UserRole[]>;
 }
 
 // Filter and search
