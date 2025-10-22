@@ -304,7 +304,6 @@ export interface BrandingConfig {
 export interface SettingsFormData {
   general: {
     allowPublicSignup: boolean;
-    defaultAssignment: 'round-robin' | 'manual' | 'team-based';
     enableTimeTracking: boolean;
     enableAttachments: boolean;
     enableEmailToTicket: boolean;
