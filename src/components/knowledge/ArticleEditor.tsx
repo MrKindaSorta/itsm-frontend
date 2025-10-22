@@ -36,12 +36,26 @@ interface ArticleEditorProps {
 }
 
 export function ArticleEditor({ initialData, categories, userId, onSave, onCancel, onDelete }: ArticleEditorProps) {
+  // Parse tags from string or use as array
+  const parseTags = (tags: any): string[] => {
+    if (!tags) return [];
+    if (Array.isArray(tags)) return tags;
+    if (typeof tags === 'string') {
+      try {
+        return JSON.parse(tags);
+      } catch {
+        return tags.split(',').map(t => t.trim()).filter(Boolean);
+      }
+    }
+    return [];
+  };
+
   const [formData, setFormData] = useState({
     title: initialData?.title || '',
     content: initialData?.content || '',
     category_id: initialData?.category_id || '',
     status: initialData?.status || 'draft',
-    tags: initialData?.tags || [],
+    tags: parseTags(initialData?.tags),
     suggested_categories: initialData?.suggested_categories || [],
   });
 
