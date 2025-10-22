@@ -17,6 +17,8 @@ import {
   Lock,
   Flag,
   FolderOpen,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -42,6 +44,7 @@ interface FormFieldRendererProps {
   isDragging?: boolean;
   onSelect: () => void;
   onDelete: () => void;
+  onToggleHidden?: () => void;
   onDragStart: (e: React.DragEvent) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDragLeave: () => void;
@@ -56,6 +59,7 @@ export default function FormFieldRenderer({
   isDragging,
   onSelect,
   onDelete,
+  onToggleHidden,
   onDragStart,
   onDragOver,
   onDragLeave,
@@ -63,6 +67,10 @@ export default function FormFieldRenderer({
   onDrop,
 }: FormFieldRendererProps) {
   const Icon = fieldIcons[field.type];
+  const canBeHidden = field.type === 'priority' || field.type === 'category';
+  const hiddenWarning = field.type === 'priority'
+    ? 'When hidden, all new tickets default to "Medium" priority'
+    : 'When hidden, all new tickets default to "General" category';
 
   const handleDragOver = (e: React.DragEvent) => {
     e.stopPropagation();
@@ -87,7 +95,8 @@ export default function FormFieldRenderer({
         'group relative p-4 rounded-lg border bg-card transition-all cursor-move',
         isSelected && 'border-primary ring-2 ring-primary/20',
         !isSelected && 'border-border hover:border-primary/50',
-        isDragging && 'opacity-50'
+        isDragging && 'opacity-50',
+        field.hidden && 'opacity-60 bg-muted'
       )}
     >
       {/* Drag Handle */}
@@ -116,6 +125,12 @@ export default function FormFieldRenderer({
                 Required
               </Badge>
             )}
+            {field.hidden && (
+              <Badge variant="outline" className="text-xs px-1.5 py-0 border-orange-300 text-orange-700 dark:border-orange-700 dark:text-orange-300">
+                <EyeOff className="h-3 w-3 mr-1" />
+                Hidden
+              </Badge>
+            )}
             <Badge variant="secondary" className="text-xs px-1.5 py-0">
               {field.type}
             </Badge>
@@ -135,10 +150,29 @@ export default function FormFieldRenderer({
               Options: {field.options.join(', ')}
             </div>
           )}
+          {field.hidden && canBeHidden && (
+            <div className="text-xs text-orange-600 dark:text-orange-400 mt-1 font-medium">
+              ⚠️ {hiddenWarning}
+            </div>
+          )}
         </div>
 
         {/* Actions */}
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto">
+          {canBeHidden && onToggleHidden && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleHidden();
+              }}
+              title={field.hidden ? 'Show field' : 'Hide field'}
+            >
+              {field.hidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"

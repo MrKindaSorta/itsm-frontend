@@ -536,8 +536,8 @@ export default function CreateTicket() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Render all fields in order */}
-                {allFields.map((field) => renderField(field))}
+                {/* Render all fields in order, excluding hidden fields */}
+                {allFields.filter(field => !field.hidden).map((field) => renderField(field))}
 
                 <Button type="submit" className="w-full" disabled={showSuccess}>
                   <Send className="h-4 w-4 mr-2" />

@@ -109,6 +109,13 @@ export default function FormCanvas({
     }
   };
 
+  const handleToggleHidden = (fieldId: string) => {
+    const updatedFields = fields.map((f) =>
+      f.id === fieldId ? { ...f, hidden: !f.hidden } : f
+    );
+    onFieldsChange(updatedFields);
+  };
+
   return (
     <Card className="h-full flex flex-col">
       <CardHeader>
@@ -145,6 +152,7 @@ export default function FormCanvas({
                   isDragging={draggingFieldId === field.id}
                   onSelect={() => onFieldSelect(field.id)}
                   onDelete={() => handleDeleteField(field.id)}
+                  onToggleHidden={() => handleToggleHidden(field.id)}
                   onDragStart={(e) => handleDragStart(e, field, index)}
                   onDragOver={(e) => handleDragOver(e, index)}
                   onDragLeave={handleDragLeave}

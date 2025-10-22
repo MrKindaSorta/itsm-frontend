@@ -25,6 +25,7 @@ export interface FormField {
   order: number;
   isSystemField?: boolean; // System fields are default fields that can't be deleted
   deletable?: boolean; // Whether the field can be deleted from the form
+  hidden?: boolean; // Whether the field is hidden from the form (but still exists in config)
   validation?: {
     min?: number;
     max?: number;

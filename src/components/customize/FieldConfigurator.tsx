@@ -67,7 +67,7 @@ export default function FieldConfigurator({
     updateField({ options: currentOptions });
   };
 
-  const showOptions = localField.type === 'dropdown' || localField.type === 'multiselect';
+  const showOptions = localField.type === 'dropdown' || localField.type === 'multiselect' || localField.type === 'priority' || localField.type === 'category';
 
   return (
     <Card className="h-full flex flex-col">

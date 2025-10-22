@@ -169,6 +169,28 @@ export default function FormPreview({ fields, formTitle = 'Create Ticket' }: For
           </div>
         );
 
+      case 'priority':
+      case 'category':
+        return (
+          <div key={field.id} className="space-y-1.5">
+            {labelElement}
+            <Select
+              id={`preview-${field.id}`}
+              defaultValue={field.defaultValue}
+              required={field.required}
+              disabled
+            >
+              <option value="">{field.placeholder || 'Select an option...'}</option>
+              {field.options?.map((option, idx) => (
+                <option key={idx} value={option}>
+                  {option}
+                </option>
+              ))}
+            </Select>
+            {helpTextElement}
+          </div>
+        );
+
       default:
         return null;
     }
@@ -206,7 +228,7 @@ export default function FormPreview({ fields, formTitle = 'Create Ticket' }: For
               </p>
 
               <form className="space-y-4">
-                {fields.map((field) => renderField(field))}
+                {fields.filter(field => !field.hidden).map((field) => renderField(field))}
 
                 <div className="pt-4 border-t border-border">
                   <Button type="submit" disabled className="w-full sm:w-auto">
