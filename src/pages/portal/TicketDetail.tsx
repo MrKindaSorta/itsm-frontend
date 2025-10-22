@@ -20,7 +20,7 @@ import { SLAIndicator } from '@/components/tickets/SLAIndicator';
 import { ActivityFeed } from '@/components/tickets/ActivityFeed';
 import { formatDate, getInitials } from '@/lib/utils';
 import type { Ticket, Activity } from '@/types';
-import { ArrowLeft, Send, Loader2 } from 'lucide-react';
+import { ArrowLeft, Send, Loader2, Paperclip } from 'lucide-react';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
@@ -37,6 +37,7 @@ export default function TicketDetail() {
   const [comment, setComment] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [showReopenDialog, setShowReopenDialog] = useState(false);
+  const [attachmentFiles, setAttachmentFiles] = useState<File[]>([]);
 
   // WebSocket for real-time updates
   const { subscribeToTicket, unsubscribeFromTicket, on } = useWebSocket();
@@ -191,6 +192,27 @@ export default function TicketDetail() {
       const data = await response.json();
 
       if (data.success) {
+        const activityId = data.activity.id;
+
+        // Upload attachments if any
+        if (attachmentFiles.length > 0) {
+          for (const file of attachmentFiles) {
+            try {
+              const formData = new FormData();
+              formData.append('file', file);
+              formData.append('user_id', user!.id);
+              formData.append('activity_id', activityId);
+
+              await fetch(`${API_BASE}/api/tickets/${id}/attachments`, {
+                method: 'POST',
+                body: formData,
+              });
+            } catch (uploadError) {
+              console.error('Failed to upload attachment:', uploadError);
+            }
+          }
+        }
+
         // Add new activity to the list at the beginning (newest first)
         const newActivity = {
           ...data.activity,
@@ -198,6 +220,10 @@ export default function TicketDetail() {
         };
         setActivities([newActivity, ...activities]);
         setComment('');
+        setAttachmentFiles([]);
+
+        // Refresh ticket data to get updated attachments
+        fetchTicketData();
 
         // If reopening, update ticket status to 'open'
         if (reopenTicket) {
@@ -304,7 +330,48 @@ export default function TicketDetail() {
                     rows={3}
                     className="resize-none text-sm"
                   />
-                  <div className="flex justify-end">
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-col gap-2 flex-1">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="file"
+                          id="portal-attachment-input"
+                          className="hidden"
+                          multiple
+                          onChange={(e) => {
+                            if (e.target.files) {
+                              setAttachmentFiles([...attachmentFiles, ...Array.from(e.target.files)]);
+                            }
+                          }}
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs"
+                          onClick={() => document.getElementById('portal-attachment-input')?.click()}
+                          type="button"
+                        >
+                          <Paperclip className="h-3.5 w-3.5 mr-1.5" />
+                          Attach Files
+                        </Button>
+                      </div>
+                      {attachmentFiles.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {attachmentFiles.map((file, index) => (
+                            <div key={index} className="flex items-center gap-1 bg-muted px-2 py-1 rounded text-xs">
+                              <span className="truncate max-w-[150px]">{file.name}</span>
+                              <button
+                                onClick={() => setAttachmentFiles(attachmentFiles.filter((_, i) => i !== index))}
+                                className="text-muted-foreground hover:text-foreground"
+                                type="button"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     <Button
                       type="submit"
                       size="sm"

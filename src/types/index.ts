@@ -136,7 +136,7 @@ export interface Ticket {
 }
 
 // Activity/Comment types
-export type ActivityType = 'comment' | 'internal_note' | 'status_change' | 'assignment' | 'priority_change' | 'cc_change' | 'system';
+export type ActivityType = 'comment' | 'internal_note' | 'status_change' | 'assignment' | 'priority_change' | 'cc_change' | 'system' | 'attachment';
 
 export interface Activity {
   id: string;

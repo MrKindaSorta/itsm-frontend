@@ -1,6 +1,6 @@
 import type { Activity } from '@/types';
 import { formatRelativeTime, getInitials } from '@/lib/utils';
-import { MessageSquare, AlertCircle, ArrowRight, Reply, Flag } from 'lucide-react';
+import { MessageSquare, AlertCircle, ArrowRight, Reply, Flag, Paperclip, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
@@ -67,6 +67,8 @@ export function ActivityFeed({ activities, currentUserId, onReply, onFlag }: Act
         return <MessageSquare className="h-3.5 w-3.5" />;
       case 'internal_note':
         return <AlertCircle className="h-3.5 w-3.5" />;
+      case 'attachment':
+        return <Paperclip className="h-3.5 w-3.5" />;
       case 'status_change':
       case 'assignment':
       case 'priority_change':
@@ -82,9 +84,44 @@ export function ActivityFeed({ activities, currentUserId, onReply, onFlag }: Act
     <div className="space-y-3">
       {activities.map((activity) => {
         const isSystemUpdate = activity.type === 'status_change' || activity.type === 'assignment' || activity.type === 'priority_change' || activity.type === 'cc_change' || activity.type === 'system';
+        const isAttachment = activity.type === 'attachment';
         const isInternalNote = activity.type === 'internal_note';
         const isFlagged = activity.isFlagged || false;
         const isOwnMessage = currentUserId && activity.author.id === currentUserId;
+
+        // Attachment system message - centered with download button
+        if (isAttachment) {
+          const metadata = activity.metadata || {};
+          return (
+            <div key={activity.id} className="flex items-center justify-center py-2">
+              <div className="flex items-center gap-3 px-4 py-2 bg-muted/50 rounded-lg border">
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                  <Paperclip className="h-4 w-4" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm">
+                    <span className="font-medium text-foreground">{activity.author.name}</span>{' '}
+                    <span className="text-muted-foreground">{activity.content}</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {formatRelativeTime(activity.createdAt)}
+                  </p>
+                </div>
+                <a
+                  href={`${API_BASE}/api/attachments/${metadata.attachmentId}/download?user_id=${currentUserId}`}
+                  download
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button variant="outline" size="sm" className="h-8 text-xs">
+                    <Download className="h-3.5 w-3.5 mr-1.5" />
+                    Download
+                  </Button>
+                </a>
+              </div>
+            </div>
+          );
+        }
 
         // System updates - centered
         if (isSystemUpdate) {
