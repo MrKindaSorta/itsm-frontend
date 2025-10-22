@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SelectRoot as Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,7 +10,7 @@ import { Plus, Search, Edit, Trash2, Eye, Settings as SettingsIcon, BarChart3, F
 import * as Icons from 'lucide-react';
 import { CategoryManager } from '@/components/knowledge/CategoryManager';
 import { ArticleEditor } from '@/components/knowledge/ArticleEditor';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -32,6 +32,7 @@ interface Article {
   created_at: string;
   updated_at: string;
   tags?: string;
+  attachments?: any[];
 }
 
 interface Category {
