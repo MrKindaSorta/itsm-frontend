@@ -16,6 +16,7 @@ import {
   Cell,
 } from 'recharts';
 import { Clock, ArrowRightLeft, Hourglass, TrendingUp } from 'lucide-react';
+import { generateColorPalette, getPriorityColor, getCategoryColor } from '@/utils/reportColors';
 
 interface TicketLifecycleData {
   timeInStatus: Array<{
@@ -66,22 +67,6 @@ interface Props {
   loading: boolean;
 }
 
-const STATUS_COLORS: { [key: string]: string } = {
-  new: '#3b82f6',
-  open: '#8b5cf6',
-  in_progress: '#f97316',
-  waiting: '#eab308',
-  resolved: '#22c55e',
-  closed: '#6b7280',
-};
-
-const PRIORITY_COLORS = {
-  urgent: '#ef4444',
-  high: '#f97316',
-  medium: '#eab308',
-  low: '#3b82f6',
-};
-
 function formatTime(minutes: number | null): string {
   if (minutes === null) return 'N/A';
   if (minutes < 1) return '<1m';
@@ -119,6 +104,10 @@ export default function TicketLifecycleReport({ data, loading }: Props) {
       </Alert>
     );
   }
+
+  // Generate dynamic color palettes
+  const statuses = data.timeInStatus.map(item => item.status);
+  const STATUS_COLORS = generateColorPalette(statuses, 'status');
 
   // Calculate percentiles for resolution times
   const resolutionTimes = data.resolutionDistribution.map(t => t.resolution_minutes);
@@ -356,8 +345,8 @@ export default function TicketLifecycleReport({ data, loading }: Props) {
                         <Badge
                           variant="outline"
                           style={{
-                            borderColor: PRIORITY_COLORS[ticket.priority as keyof typeof PRIORITY_COLORS],
-                            color: PRIORITY_COLORS[ticket.priority as keyof typeof PRIORITY_COLORS],
+                            borderColor: getPriorityColor(ticket.priority),
+                            color: getPriorityColor(ticket.priority),
                           }}
                         >
                           {ticket.priority}
@@ -404,8 +393,8 @@ export default function TicketLifecycleReport({ data, loading }: Props) {
                         <Badge
                           variant="outline"
                           style={{
-                            borderColor: PRIORITY_COLORS[ticket.priority as keyof typeof PRIORITY_COLORS],
-                            color: PRIORITY_COLORS[ticket.priority as keyof typeof PRIORITY_COLORS],
+                            borderColor: getPriorityColor(ticket.priority),
+                            color: getPriorityColor(ticket.priority),
                           }}
                         >
                           {ticket.priority}

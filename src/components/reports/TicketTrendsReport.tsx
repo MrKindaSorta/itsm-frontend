@@ -18,6 +18,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { TrendingUp, TrendingDown, Activity, PieChartIcon } from 'lucide-react';
+import { generateColorPalette, getCategoryColor } from '@/utils/reportColors';
 
 interface TicketTrendsData {
   volumeTrend: Array<{
@@ -61,22 +62,6 @@ interface Props {
   loading: boolean;
 }
 
-const STATUS_COLORS: { [key: string]: string } = {
-  new: '#3b82f6',
-  open: '#8b5cf6',
-  in_progress: '#f97316',
-  waiting: '#eab308',
-  resolved: '#22c55e',
-  closed: '#6b7280',
-};
-
-const PRIORITY_COLORS: { [key: string]: string } = {
-  urgent: '#ef4444',
-  high: '#f97316',
-  medium: '#eab308',
-  low: '#3b82f6',
-};
-
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export default function TicketTrendsReport({ data, loading }: Props) {
@@ -99,6 +84,16 @@ export default function TicketTrendsReport({ data, loading }: Props) {
       </Alert>
     );
   }
+
+  // Generate dynamic color palettes
+  const priorities = data.priorityDistribution.map(item => item.priority);
+  const PRIORITY_COLORS = generateColorPalette(priorities, 'priority');
+
+  const statuses = Array.from(new Set(data.statusDistribution.map(item => item.status)));
+  const STATUS_COLORS = generateColorPalette(statuses, 'status');
+
+  const categories = data.topCategories.map(item => item.category);
+  const categoryColors = categories.map(cat => getCategoryColor(cat));
 
   // Merge created and resolved data by date
   const volumeData = data.volumeTrend.map(item => {

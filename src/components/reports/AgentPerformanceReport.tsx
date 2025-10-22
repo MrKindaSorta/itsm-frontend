@@ -18,6 +18,7 @@ import {
   Radar,
 } from 'recharts';
 import { Award, TrendingUp, Users, AlertCircle } from 'lucide-react';
+import { getPriorityColor, generateColorPalette } from '@/utils/reportColors';
 
 interface AgentMetric {
   id: number;
@@ -56,13 +57,6 @@ interface Props {
   loading: boolean;
 }
 
-const PRIORITY_COLORS = {
-  urgent: '#ef4444',
-  high: '#f97316',
-  medium: '#eab308',
-  low: '#3b82f6',
-};
-
 function formatTime(minutes: number | null): string {
   if (minutes === null) return 'N/A';
   if (minutes < 60) return `${Math.round(minutes)}m`;
@@ -90,6 +84,10 @@ export default function AgentPerformanceReport({ data, loading }: Props) {
       </Alert>
     );
   }
+
+  // Generate dynamic priority colors
+  const priorities = Array.from(new Set(data.byPriority.map(item => item.priority)));
+  const PRIORITY_COLORS = generateColorPalette(priorities, 'priority');
 
   // Calculate totals
   const totalResolved = data.agentMetrics.reduce((sum, agent) => sum + agent.resolved_count, 0);

@@ -3,7 +3,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SelectRoot, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Download, Calendar } from 'lucide-react';
+import { Download, Calendar, Filter, X } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import SLAPerformanceReport from '@/components/reports/SLAPerformanceReport';
 import AgentPerformanceReport from '@/components/reports/AgentPerformanceReport';
 import TicketTrendsReport from '@/components/reports/TicketTrendsReport';
@@ -23,6 +24,43 @@ export default function Reports() {
   const [agentData, setAgentData] = useState(null);
   const [trendsData, setTrendsData] = useState(null);
   const [lifecycleData, setLifecycleData] = useState(null);
+
+  // Filter options and state
+  const [availablePriorities, setAvailablePriorities] = useState<string[]>([]);
+  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+  const [selectedPriorities, setSelectedPriorities] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
+
+  // Fetch filter options on mount
+  useEffect(() => {
+    const fetchFilterOptions = async () => {
+      try {
+        const [prioritiesRes, categoriesRes] = await Promise.all([
+          fetch(`${API_BASE}/api/config/priorities`),
+          fetch(`${API_BASE}/api/config/categories`)
+        ]);
+
+        if (prioritiesRes.ok) {
+          const data = await prioritiesRes.json();
+          if (data.success) {
+            setAvailablePriorities(data.priorities);
+          }
+        }
+
+        if (categoriesRes.ok) {
+          const data = await categoriesRes.json();
+          if (data.success) {
+            setAvailableCategories(data.categories);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch filter options:', error);
+      }
+    };
+
+    fetchFilterOptions();
+  }, []);
 
   // Calculate date range
   const getDateRange = (days: string) => {
@@ -58,9 +96,9 @@ export default function Reports() {
         body: JSON.stringify({
           startDate,
           endDate,
-          priority: [],
-          category: [],
-          department: [],
+          priority: selectedPriorities,
+          category: selectedCategories,
+          department: selectedDepartments,
         }),
       });
 
@@ -93,39 +131,84 @@ export default function Reports() {
     }
   };
 
-  // Fetch data when date range or active report changes
+  // Fetch data when date range, filters, or active report changes
   useEffect(() => {
     fetchReportData(activeReport);
-  }, [dateRange, activeReport]);
+  }, [dateRange, activeReport, selectedPriorities, selectedCategories, selectedDepartments]);
+
+  // Helper functions for filter management
+  const togglePriority = (priority: string) => {
+    setSelectedPriorities(prev =>
+      prev.includes(priority)
+        ? prev.filter(p => p !== priority)
+        : [...prev, priority]
+    );
+  };
+
+  const toggleCategory = (category: string) => {
+    setSelectedCategories(prev =>
+      prev.includes(category)
+        ? prev.filter(c => c !== category)
+        : [...prev, category]
+    );
+  };
+
+  const clearFilters = () => {
+    setSelectedPriorities([]);
+    setSelectedCategories([]);
+    setSelectedDepartments([]);
+  };
+
+  const hasActiveFilters = selectedPriorities.length > 0 || selectedCategories.length > 0 || selectedDepartments.length > 0;
+
+  // Generate filter summary for CSV
+  const generateFilterSummary = (): string => {
+    const filters = [];
+    if (selectedPriorities.length > 0) {
+      filters.push(`Priorities: ${selectedPriorities.join(', ')}`);
+    }
+    if (selectedCategories.length > 0) {
+      filters.push(`Categories: ${selectedCategories.join(', ')}`);
+    }
+    if (selectedDepartments.length > 0) {
+      filters.push(`Departments: ${selectedDepartments.join(', ')}`);
+    }
+
+    if (filters.length === 0) {
+      return 'Filters: None (All data)\\n';
+    }
+    return `Filters Applied:\\n${filters.join('\\n')}\\n`;
+  };
 
   // Export to CSV
   const handleExport = () => {
     let csvContent = '';
     let filename = '';
+    const filterSummary = generateFilterSummary();
 
     switch (activeReport) {
       case 'sla':
         if (slaData) {
           filename = `sla-performance-${dateRange}days.csv`;
-          csvContent = generateSLACSV(slaData);
+          csvContent = filterSummary + '\\n' + generateSLACSV(slaData);
         }
         break;
       case 'agent':
         if (agentData) {
           filename = `agent-performance-${dateRange}days.csv`;
-          csvContent = generateAgentCSV(agentData);
+          csvContent = filterSummary + '\\n' + generateAgentCSV(agentData);
         }
         break;
       case 'trends':
         if (trendsData) {
           filename = `ticket-trends-${dateRange}days.csv`;
-          csvContent = generateTrendsCSV(trendsData);
+          csvContent = filterSummary + '\\n' + generateTrendsCSV(trendsData);
         }
         break;
       case 'lifecycle':
         if (lifecycleData) {
           filename = `ticket-lifecycle-${dateRange}days.csv`;
-          csvContent = generateLifecycleCSV(lifecycleData);
+          csvContent = filterSummary + '\\n' + generateLifecycleCSV(lifecycleData);
         }
         break;
     }
@@ -158,27 +241,82 @@ export default function Reports() {
       {/* Filters */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex items-center gap-4 flex-wrap">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <SelectRoot value={dateRange} onValueChange={(value) => setDateRange(value as DateRange)}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="7">Last 7 days</SelectItem>
-                  <SelectItem value="30">Last 30 days</SelectItem>
-                  <SelectItem value="60">Last 60 days</SelectItem>
-                  <SelectItem value="90">Last 90 days</SelectItem>
-                </SelectContent>
-              </SelectRoot>
+          <div className="space-y-4">
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <SelectRoot value={dateRange} onValueChange={(value) => setDateRange(value as DateRange)}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="7">Last 7 days</SelectItem>
+                    <SelectItem value="30">Last 30 days</SelectItem>
+                    <SelectItem value="60">Last 60 days</SelectItem>
+                    <SelectItem value="90">Last 90 days</SelectItem>
+                  </SelectContent>
+                </SelectRoot>
+              </div>
+
+              <div className="ml-auto flex items-center gap-2">
+                {hasActiveFilters && (
+                  <Button onClick={clearFilters} variant="ghost" size="sm">
+                    <X className="h-4 w-4 mr-2" />
+                    Clear Filters
+                  </Button>
+                )}
+                <Button onClick={handleExport} variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export CSV
+                </Button>
+              </div>
             </div>
 
-            <div className="ml-auto">
-              <Button onClick={handleExport} variant="outline" size="sm">
-                <Download className="h-4 w-4 mr-2" />
-                Export CSV
-              </Button>
+            {/* Filter chips */}
+            <div className="flex items-start gap-4 flex-wrap">
+              {/* Priority Filters */}
+              {availablePriorities.length > 0 && (
+                <div className="flex-1 min-w-[200px]">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Filter className="h-3 w-3 text-muted-foreground" />
+                    <span className="text-xs font-medium text-muted-foreground">Priority</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {availablePriorities.map(priority => (
+                      <Badge
+                        key={priority}
+                        variant={selectedPriorities.includes(priority) ? 'default' : 'outline'}
+                        className="cursor-pointer"
+                        onClick={() => togglePriority(priority)}
+                      >
+                        {priority.charAt(0).toUpperCase() + priority.slice(1)}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Category Filters */}
+              {availableCategories.length > 0 && (
+                <div className="flex-1 min-w-[200px]">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Filter className="h-3 w-3 text-muted-foreground" />
+                    <span className="text-xs font-medium text-muted-foreground">Category</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {availableCategories.map(category => (
+                      <Badge
+                        key={category}
+                        variant={selectedCategories.includes(category) ? 'default' : 'outline'}
+                        className="cursor-pointer"
+                        onClick={() => toggleCategory(category)}
+                      >
+                        {category}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </CardContent>

@@ -17,6 +17,7 @@ import {
   Cell,
 } from 'recharts';
 import { AlertTriangle, CheckCircle2, Clock } from 'lucide-react';
+import { getPriorityColor, getSLAColors } from '@/utils/reportColors';
 
 interface SLAReportData {
   overall: {
@@ -67,23 +68,10 @@ interface Props {
   loading: boolean;
 }
 
-const COLORS = {
-  green: '#22c55e',
-  yellow: '#eab308',
-  red: '#ef4444',
-  blue: '#3b82f6',
-};
-
-const PRIORITY_COLORS = {
-  urgent: '#ef4444',
-  high: '#f97316',
-  medium: '#eab308',
-  low: '#3b82f6',
-};
-
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export default function SLAPerformanceReport({ data, loading }: Props) {
+  const COLORS = getSLAColors();
   if (loading) {
     return (
       <div className="space-y-4">
@@ -363,8 +351,8 @@ export default function SLAPerformanceReport({ data, loading }: Props) {
                         <Badge
                           variant="outline"
                           style={{
-                            borderColor: PRIORITY_COLORS[ticket.priority as keyof typeof PRIORITY_COLORS],
-                            color: PRIORITY_COLORS[ticket.priority as keyof typeof PRIORITY_COLORS],
+                            borderColor: getPriorityColor(ticket.priority),
+                            color: getPriorityColor(ticket.priority),
                           }}
                         >
                           {ticket.priority}
