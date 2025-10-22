@@ -613,7 +613,7 @@ export default function CreateTicket() {
                     {kbSuggestions.map((article) => (
                       <a
                         key={article.id}
-                        href="/portal/knowledge-base"
+                        href={`/portal/knowledge-base?article=${article.id}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="block p-3 border rounded-md hover:bg-accent transition-colors group"

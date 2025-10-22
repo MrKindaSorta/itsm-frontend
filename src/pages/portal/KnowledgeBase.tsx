@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -35,6 +36,7 @@ interface Category {
 
 export default function KnowledgeBase() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
@@ -46,6 +48,17 @@ export default function KnowledgeBase() {
     fetchCategories();
     fetchArticles();
   }, []);
+
+  // Auto-open article from URL parameter
+  useEffect(() => {
+    const articleId = searchParams.get('article');
+    if (articleId && !isLoading) {
+      const id = parseInt(articleId, 10);
+      if (!isNaN(id)) {
+        fetchArticleDetail(id);
+      }
+    }
+  }, [searchParams, isLoading]);
 
   const fetchCategories = async () => {
     try {
