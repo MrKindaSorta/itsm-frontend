@@ -299,14 +299,15 @@ export function ArticleEditor({ initialData, categories, userId, onSave, onCance
             className="hidden"
             accept="image/*"
             onChange={handleImageUpload}
-            disabled={isUploading}
+            disabled={isUploading || !initialData}
           />
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={() => document.getElementById('image-upload')?.click()}
-            disabled={isUploading}
+            disabled={isUploading || !initialData}
+            title={!initialData ? 'Save the article as a draft first to add images' : 'Insert image'}
           >
             <Image className="h-4 w-4 mr-2" />
             Insert Image
@@ -316,19 +317,25 @@ export function ArticleEditor({ initialData, categories, userId, onSave, onCance
             id="file-upload"
             className="hidden"
             onChange={handleFileUpload}
-            disabled={isUploading}
+            disabled={isUploading || !initialData}
           />
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={() => document.getElementById('file-upload')?.click()}
-            disabled={isUploading}
+            disabled={isUploading || !initialData}
+            title={!initialData ? 'Save the article as a draft first to attach files' : 'Attach file'}
           >
             <Paperclip className="h-4 w-4 mr-2" />
             Attach File
           </Button>
         </div>
+        {!initialData && (
+          <p className="text-xs text-muted-foreground mb-2">
+            💡 Tip: Save as draft first to enable image and file attachments
+          </p>
+        )}
         <RichTextEditor
           value={formData.content}
           onChange={(content) => setFormData({ ...formData, content })}

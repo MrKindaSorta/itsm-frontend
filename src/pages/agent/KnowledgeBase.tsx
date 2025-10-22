@@ -492,6 +492,9 @@ export default function KnowledgeBase() {
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Manage Categories</DialogTitle>
+            <DialogDescription>
+              Create, edit, and organize knowledge base categories
+            </DialogDescription>
           </DialogHeader>
           <CategoryManager
             userId={user?.id || ''}
@@ -512,6 +515,9 @@ export default function KnowledgeBase() {
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingArticle ? 'Edit Article' : 'Create New Article'}</DialogTitle>
+            <DialogDescription>
+              {editingArticle ? 'Edit article content, category, and settings' : 'Create a new knowledge base article'}
+            </DialogDescription>
           </DialogHeader>
           <ArticleEditor
             initialData={editingArticle}
