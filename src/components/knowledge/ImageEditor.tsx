@@ -1,6 +1,6 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Cropper from 'react-easy-crop';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
@@ -48,15 +48,17 @@ export function ImageEditor({ open, imageFile, onClose, onSave }: ImageEditorPro
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Load image when file changes
-  useState(() => {
+  useEffect(() => {
     if (imageFile && open) {
       const reader = new FileReader();
       reader.onload = () => {
         setImageSrc(reader.result as string);
       };
       reader.readAsDataURL(imageFile);
+    } else {
+      setImageSrc('');
     }
-  });
+  }, [imageFile, open]);
 
   const onCropComplete = useCallback((_croppedArea: any, croppedAreaPixels: CroppedArea) => {
     setCroppedAreaPixels(croppedAreaPixels);
@@ -150,6 +152,9 @@ export function ImageEditor({ open, imageFile, onClose, onSave }: ImageEditorPro
       <DialogContent className="max-w-4xl max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Edit Image</DialogTitle>
+          <DialogDescription>
+            Crop, zoom, rotate, and set alignment for your image before inserting it into the article.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
