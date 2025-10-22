@@ -18,7 +18,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { TrendingUp, TrendingDown, Activity, PieChartIcon } from 'lucide-react';
-import { generateColorPalette, getCategoryColor } from '@/utils/reportColors';
+import { generateColorPalette } from '@/utils/reportColors';
 
 interface TicketTrendsData {
   volumeTrend: Array<{
@@ -91,9 +91,6 @@ export default function TicketTrendsReport({ data, loading }: Props) {
 
   const statuses = Array.from(new Set(data.statusDistribution.map(item => item.status)));
   const STATUS_COLORS = generateColorPalette(statuses, 'status');
-
-  const categories = data.topCategories.map(item => item.category);
-  const categoryColors = categories.map(cat => getCategoryColor(cat));
 
   // Merge created and resolved data by date
   const volumeData = data.volumeTrend.map(item => {

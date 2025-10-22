@@ -16,7 +16,7 @@ import {
   Cell,
 } from 'recharts';
 import { Clock, ArrowRightLeft, Hourglass, TrendingUp } from 'lucide-react';
-import { generateColorPalette, getPriorityColor, getCategoryColor } from '@/utils/reportColors';
+import { generateColorPalette, getPriorityColor } from '@/utils/reportColors';
 
 interface TicketLifecycleData {
   timeInStatus: Array<{

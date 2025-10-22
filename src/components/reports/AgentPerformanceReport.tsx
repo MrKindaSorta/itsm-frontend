@@ -18,7 +18,7 @@ import {
   Radar,
 } from 'recharts';
 import { Award, TrendingUp, Users, AlertCircle } from 'lucide-react';
-import { getPriorityColor, generateColorPalette } from '@/utils/reportColors';
+import { generateColorPalette } from '@/utils/reportColors';
 
 interface AgentMetric {
   id: number;
