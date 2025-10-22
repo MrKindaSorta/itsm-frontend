@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { SelectRoot as Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Image, Paperclip, X, Loader2 } from 'lucide-react';
+import { Image, Paperclip, X, Loader2, Trash2, Download, Eye } from 'lucide-react';
 import { ImageEditor } from './ImageEditor';
 import { RichTextEditor } from './RichTextEditor';
 
@@ -52,6 +52,7 @@ export function ArticleEditor({ initialData, categories, userId, onSave, onCance
   // Image editor state
   const [isImageEditorOpen, setIsImageEditorOpen] = useState(false);
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [editingImageSrc, setEditingImageSrc] = useState<string | null>(null);
 
   // Ticket categories for suggestions
   const ticketCategories = ['Technical Support', 'Account Issues', 'Billing', 'Hardware', 'Software', 'Network', 'Security', 'General Inquiry'];
@@ -109,13 +110,31 @@ export function ArticleEditor({ initialData, categories, userId, onSave, onCance
 
       if (data.success) {
         const imageUrl = `${API_BASE}${data.attachment.url}`;
-        // Insert image HTML directly - TipTap will handle it
         const htmlImage = `<img src="${imageUrl}" alt="${selectedImageFile?.name || 'image'}" class="${alignment}" />`;
-        setFormData(prev => ({
-          ...prev,
-          content: prev.content + htmlImage,
-        }));
-        setAttachments([...attachments, data.attachment]);
+
+        if (editingImageSrc) {
+          // Replace existing image
+          setFormData(prev => ({
+            ...prev,
+            content: prev.content.replace(
+              new RegExp(`<img[^>]*src="${editingImageSrc.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"[^>]*>`, 'g'),
+              htmlImage
+            ),
+          }));
+          // Remove old attachment and add new one
+          const oldFilenameMatch = editingImageSrc.match(/\/([^/]+)$/);
+          if (oldFilenameMatch) {
+            const oldFilename = oldFilenameMatch[1];
+            setAttachments(prev => [...prev.filter(att => !att.url.includes(oldFilename)), data.attachment]);
+          }
+        } else {
+          // Insert new image
+          setFormData(prev => ({
+            ...prev,
+            content: prev.content + htmlImage,
+          }));
+          setAttachments([...attachments, data.attachment]);
+        }
       } else {
         alert('Failed to upload image');
       }
@@ -125,18 +144,37 @@ export function ArticleEditor({ initialData, categories, userId, onSave, onCance
     } finally {
       setIsUploading(false);
       setSelectedImageFile(null);
+      setEditingImageSrc(null);
     }
   };
 
-  const handleImageClick = (src: string) => {
-    // When clicking an image in the editor, allow deletion
-    const confirmDelete = window.confirm('Do you want to delete this image?');
-    if (confirmDelete) {
-      // Remove image from content
-      setFormData(prev => ({
-        ...prev,
-        content: prev.content.replace(new RegExp(`<img[^>]*src="${src.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"[^>]*>`, 'g'), ''),
-      }));
+  const handleImageEdit = async (src: string) => {
+    // When editing an inline image, fetch it and reopen ImageEditor
+    try {
+      const response = await fetch(src);
+      const blob = await response.blob();
+      const file = new File([blob], 'image.jpg', { type: blob.type });
+      setSelectedImageFile(file);
+      setEditingImageSrc(src);
+      setIsImageEditorOpen(true);
+    } catch (error) {
+      console.error('Failed to load image for editing:', error);
+      alert('Failed to load image for editing');
+    }
+  };
+
+  const handleImageDelete = (src: string) => {
+    // Remove image from content
+    setFormData(prev => ({
+      ...prev,
+      content: prev.content.replace(new RegExp(`<img[^>]*src="${src.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"[^>]*>`, 'g'), ''),
+    }));
+
+    // Also remove from attachments list if it's there
+    const filenameMatch = src.match(/\/([^/]+)$/);
+    if (filenameMatch) {
+      const filename = filenameMatch[1];
+      setAttachments(prev => prev.filter(att => !att.url.includes(filename)));
     }
   };
 
@@ -169,6 +207,12 @@ export function ArticleEditor({ initialData, categories, userId, onSave, onCance
       alert('Failed to upload file');
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleDeleteAttachment = (attachmentId: number) => {
+    if (window.confirm('Delete this attachment?')) {
+      setAttachments(prev => prev.filter(att => att.id !== attachmentId));
     }
   };
 
@@ -287,7 +331,8 @@ export function ArticleEditor({ initialData, categories, userId, onSave, onCance
         <RichTextEditor
           value={formData.content}
           onChange={(content) => setFormData({ ...formData, content })}
-          onImageClick={handleImageClick}
+          onImageEdit={handleImageEdit}
+          onImageDelete={handleImageDelete}
         />
       </div>
 
@@ -297,13 +342,37 @@ export function ArticleEditor({ initialData, categories, userId, onSave, onCance
           <Label>Attachments ({attachments.length})</Label>
           <div className="mt-2 space-y-2">
             {attachments.map((att) => (
-              <div key={att.id} className="flex items-center justify-between p-2 border rounded">
+              <div key={att.id} className="flex items-center justify-between p-2 border rounded hover:bg-muted/50">
                 <div className="flex items-center gap-2">
                   <Paperclip className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm">{att.fileName}</span>
                   <span className="text-xs text-muted-foreground">
                     ({(att.fileSize / 1024).toFixed(1)} KB)
                   </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => window.open(`${API_BASE}${att.url}`, '_blank')}
+                    title="View/Download"
+                  >
+                    {att.fileType.startsWith('image/') ? (
+                      <Eye className="h-4 w-4" />
+                    ) : (
+                      <Download className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDeleteAttachment(att.id)}
+                    title="Delete"
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
                 </div>
               </div>
             ))}
