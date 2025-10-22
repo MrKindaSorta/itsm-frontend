@@ -20,21 +20,16 @@ import { getPriorityColor } from '@/lib/utils';
 const FORM_CONFIG_STORAGE_KEY = 'itsm-form-configuration';
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
-// Knowledge base articles
-const knowledgeBaseArticles = [
-  { id: '1', title: 'How to reset your password', category: 'Account & Settings', keywords: ['password', 'reset', 'login', 'forgot', 'change', 'credentials', 'access'] },
-  { id: '2', title: 'Setting up email on mobile devices', category: 'Email & Communication', keywords: ['email', 'mobile', 'phone', 'iphone', 'android', 'setup', 'configure', 'outlook', 'mail'] },
-  { id: '3', title: 'VPN setup and troubleshooting guide', category: 'Network & Connectivity', keywords: ['vpn', 'connection', 'network', 'remote', 'access', 'secure', 'connect', 'disconnect'] },
-  { id: '4', title: 'Printer connection and setup', category: 'Hardware', keywords: ['printer', 'print', 'printing', 'driver', 'connection', 'setup', 'wireless', 'network'] },
-  { id: '5', title: 'Creating and managing tickets', category: 'Getting Started', keywords: ['ticket', 'support', 'request', 'help', 'create', 'submit', 'issue'] },
-  { id: '6', title: 'Understanding ticket priorities', category: 'Getting Started', keywords: ['priority', 'urgent', 'high', 'low', 'critical', 'ticket', 'emergency'] },
-  { id: '7', title: 'Microsoft Teams troubleshooting', category: 'Software', keywords: ['teams', 'microsoft', 'meeting', 'call', 'video', 'audio', 'chat', 'conference'] },
-  { id: '8', title: 'Accessing shared drives', category: 'Access & Permissions', keywords: ['shared', 'drive', 'folder', 'access', 'permission', 'network', 'file', 'storage'] },
-  { id: '9', title: 'Slow computer performance fixes', category: 'Troubleshooting', keywords: ['slow', 'performance', 'computer', 'laptop', 'speed', 'lag', 'freeze', 'hang'] },
-  { id: '10', title: 'Software installation requests', category: 'Software', keywords: ['software', 'install', 'application', 'program', 'download', 'setup', 'app'] },
-  { id: '11', title: 'Two-factor authentication setup', category: 'Account & Settings', keywords: ['2fa', 'two-factor', 'authentication', 'security', 'mfa', 'verification', 'code'] },
-  { id: '12', title: 'Browser issues and cache clearing', category: 'Troubleshooting', keywords: ['browser', 'chrome', 'firefox', 'edge', 'safari', 'cache', 'cookies', 'clear'] },
-];
+interface Article {
+  id: number;
+  title: string;
+  content: string;
+  category_name: string;
+  category_icon: string;
+  category_color: string;
+  tags: string[];
+  views: number;
+}
 
 export default function CreateTicket() {
   const navigate = useNavigate();
@@ -48,6 +43,10 @@ export default function CreateTicket() {
   // Users for CC field
   const [users, setUsers] = useState<User[]>([]);
   const [ccUserIds, setCcUserIds] = useState<string[]>([]);
+
+  // Articles for suggestions
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [isLoadingArticles, setIsLoadingArticles] = useState(false);
 
   // Load form configuration from API (fallback to localStorage)
   useEffect(() => {
@@ -119,6 +118,38 @@ export default function CreateTicket() {
       fetchUsers();
     }
   }, [allFields]);
+
+  // Fetch articles for suggestions when title or description changes
+  useEffect(() => {
+    const title = fieldValues['system-title'] || '';
+    const description = fieldValues['system-description'] || '';
+    const combinedText = `${title} ${description}`.trim();
+
+    if (combinedText.length < 3) {
+      setArticles([]);
+      return;
+    }
+
+    const fetchArticles = async () => {
+      setIsLoadingArticles(true);
+      try {
+        const response = await fetch(`${API_BASE}/api/articles/search-suggestions?query=${encodeURIComponent(combinedText)}`);
+        const data = await response.json();
+        if (data.success) {
+          setArticles(data.articles || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch article suggestions:', error);
+        setArticles([]);
+      } finally {
+        setIsLoadingArticles(false);
+      }
+    };
+
+    // Debounce the API call
+    const timeoutId = setTimeout(fetchArticles, 500);
+    return () => clearTimeout(timeoutId);
+  }, [fieldValues['system-title'], fieldValues['system-description']]);
 
   const fetchUsers = async () => {
     try {
@@ -217,40 +248,56 @@ export default function CreateTicket() {
     }
   };
 
-  // Smart KB article suggestions based on title input
+  // Smart KB article suggestions with tag-based scoring
   const kbSuggestions = useMemo(() => {
     const title = fieldValues['system-title'] || '';
-    if (title.length < 3) return [];
+    const description = fieldValues['system-description'] || '';
+    const combinedText = `${title} ${description}`.trim().toLowerCase();
 
-    const searchTerms = title.toLowerCase().split(' ').filter((term: string) => term.length > 2);
+    if (combinedText.length < 3 || articles.length === 0) return [];
 
-    // Score each article based on keyword matches
-    const scoredArticles = knowledgeBaseArticles.map(article => {
+    // Extract search terms (words longer than 2 characters)
+    const searchTerms = combinedText.split(/\s+/).filter(term => term.length > 2);
+
+    // Score each article based on tag matches and content relevance
+    const scoredArticles = articles.map(article => {
       let score = 0;
 
-      // Check if title contains search terms
-      searchTerms.forEach((term: string) => {
-        if (article.title.toLowerCase().includes(term)) {
-          score += 3; // High weight for title match
+      // Check each search term against article tags and content
+      searchTerms.forEach(term => {
+        // Exact tag match (highest weight)
+        if (article.tags.some(tag => tag.toLowerCase() === term)) {
+          score += 5;
+        }
+        // Partial tag match (high weight)
+        else if (article.tags.some(tag => tag.toLowerCase().includes(term))) {
+          score += 3;
         }
 
-        // Check if keywords contain search terms
-        article.keywords.forEach((keyword: string) => {
-          if (keyword.includes(term)) {
-            score += 1; // Lower weight for keyword match
-          }
-        });
+        // Title match (medium weight)
+        if (article.title.toLowerCase().includes(term)) {
+          score += 2;
+        }
+
+        // Content match (lower weight, check first 500 chars for performance)
+        const contentPreview = article.content.substring(0, 500).toLowerCase();
+        if (contentPreview.includes(term)) {
+          score += 1;
+        }
       });
 
       return { ...article, score };
     });
 
-    // Filter articles with score > 0 and sort by score
+    // Filter articles with score > 0, sort by score (then by views for tie-breaking)
     return scoredArticles
       .filter(article => article.score > 0)
-      .sort((a, b) => b.score - a.score)
+      .sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return b.views - a.views; // Tie-breaker: more popular articles first
+      })
       .slice(0, 5); // Show top 5 matches
-  }, [fieldValues]);
+  }, [articles, fieldValues['system-title'], fieldValues['system-description']]);
 
   // Render field based on type
   const renderField = (field: FormField) => {
@@ -582,7 +629,7 @@ export default function CreateTicket() {
                               {article.title}
                             </p>
                             <Badge variant="outline" className="text-xs mt-1.5">
-                              {article.category}
+                              {article.category_name}
                             </Badge>
                           </div>
                         </div>
