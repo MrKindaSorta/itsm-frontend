@@ -166,6 +166,7 @@ export default function FormCanvas({
     // Detect if dragging from palette using effectAllowed
     // Only update state if it's actually changing to prevent redundant re-renders
     if (e.dataTransfer.effectAllowed === 'copy' && !isDraggingFromPalette) {
+      console.log('[CANVAS] Setting isDraggingFromPalette = true');
       setIsDraggingFromPalette(true);
     }
   };
@@ -285,6 +286,15 @@ export default function FormCanvas({
               const canHaveChildren = (field.conditionalLogic?.nestingLevel || 0) < 2;
               const showConditionalDropZone = isDraggingFromPalette && isConditionalCapable && canHaveChildren;
 
+              if (showConditionalDropZone) {
+                console.log(`[RENDER] Showing conditional drop zone for: ${field.label}`, {
+                  isDraggingFromPalette,
+                  isConditionalCapable,
+                  canHaveChildren,
+                  isTarget: conditionalDropTargetId === field.id
+                });
+              }
+
               return (
                 <div key={field.id}>
                   {/* Drop Zone Before Field */}
@@ -363,8 +373,14 @@ export default function FormCanvas({
                       onDragEnd={handleDragEnd}
                       onDrop={() => {}}
                       onConditionalDrop={(e) => handleChildTargetDrop(e, field)}
-                      onConditionalDragOver={() => setConditionalDropTargetId(field.id)}
-                      onConditionalDragLeave={() => setConditionalDropTargetId(null)}
+                      onConditionalDragOver={() => {
+                        console.log(`[STATE] Setting conditionalDropTargetId = ${field.id} (${field.label})`);
+                        setConditionalDropTargetId(field.id);
+                      }}
+                      onConditionalDragLeave={() => {
+                        console.log(`[STATE] Setting conditionalDropTargetId = null (was ${field.id})`);
+                        setConditionalDropTargetId(null);
+                      }}
                     />
                   </div>
                 </div>

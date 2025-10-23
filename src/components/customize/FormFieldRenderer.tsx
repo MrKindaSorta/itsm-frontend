@@ -207,6 +207,7 @@ export default function FormFieldRenderer({
           onDragOver={(e) => {
             e.preventDefault();
             e.stopPropagation();
+            console.log(`[DROP_ZONE] onDragOver for field: ${field.label}`);
             onConditionalDragOver?.();
           }}
           onDragLeave={(e) => {
@@ -216,14 +217,25 @@ export default function FormFieldRenderer({
             const x = e.clientX;
             const y = e.clientY;
 
+            const isOutside = x < rect.left || x > rect.right || y < rect.top || y > rect.bottom;
+            console.log(`[DROP_ZONE] onDragLeave for field: ${field.label}`, {
+              mouse: { x, y },
+              bounds: { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom },
+              isOutside
+            });
+
             // Check if mouse is outside the drop zone
-            if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+            if (isOutside) {
+              console.log(`[DROP_ZONE] Triggering leave callback for field: ${field.label}`);
               onConditionalDragLeave?.();
+            } else {
+              console.log(`[DROP_ZONE] Ignoring leave - still inside bounds for field: ${field.label}`);
             }
           }}
           onDrop={(e) => {
             e.preventDefault();
             e.stopPropagation();
+            console.log(`[DROP_ZONE] onDrop for field: ${field.label}`);
             onConditionalDrop?.(e);
           }}
           className={cn(
