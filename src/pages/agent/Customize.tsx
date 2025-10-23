@@ -11,11 +11,13 @@ import FieldPalette, { FIELD_TYPES } from '@/components/customize/FieldPalette';
 import FormCanvas from '@/components/customize/FormCanvas';
 import FieldConfigurator from '@/components/customize/FieldConfigurator';
 import FormPreview from '@/components/customize/FormPreview';
+import FormBuilderLayout from '@/components/customize/FormBuilderLayout';
+import FormBuilderHeader from '@/components/customize/FormBuilderHeader';
 import SLAList from '@/components/sla/SLAList';
 import SLAForm from '@/components/sla/SLAForm';
 import BrandingCustomizer from '@/components/branding/BrandingCustomizer';
 import BrandingPreview from '@/components/branding/BrandingPreview';
-import { Save, Eye, EyeOff, RotateCcw, Plus } from 'lucide-react';
+import { EyeOff, Plus, Save, RotateCcw } from 'lucide-react';
 import { mergeWithDefaults } from '@/utils/defaultFormConfig';
 
 const STORAGE_KEY = 'itsm-form-configuration';
@@ -479,82 +481,60 @@ export default function Customize() {
         </TabsList>
 
         {/* Ticket Form Builder Tab */}
-        <TabsContent value="form-builder" className="mt-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Ticket Form Builder</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Drag and drop fields to customize the ticket creation form
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {saveMessage && (
-                    <span className="text-sm text-green-600 mr-2">{saveMessage}</span>
-                  )}
-                  <Button variant="outline" size="sm" onClick={handleResetForm}>
-                    <RotateCcw className="h-4 w-4 mr-2" />
-                    Reset
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowPreview(!showPreview)}
-                  >
-                    {showPreview ? (
-                      <>
-                        <EyeOff className="h-4 w-4 mr-2" />
-                        Hide Preview
-                      </>
-                    ) : (
-                      <>
-                        <Eye className="h-4 w-4 mr-2" />
-                        Show Preview
-                      </>
-                    )}
-                  </Button>
-                  <Button size="sm" onClick={handleSaveConfiguration}>
-                    <Save className="h-4 w-4 mr-2" />
-                    Save Configuration
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {showPreview ? (
-                <FormPreview fields={fields} />
-              ) : (
-                <div className="grid grid-cols-12 gap-4">
-                  {/* Field Palette - Left Sidebar */}
-                  <div className="col-span-3">
-                    <FieldPalette />
+        <TabsContent value="form-builder" className="mt-6 h-[calc(100vh-12rem)]">
+          <Card className="h-full flex flex-col overflow-hidden">
+            {showPreview ? (
+              <>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>Form Preview</CardTitle>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowPreview(false)}
+                    >
+                      <EyeOff className="h-4 w-4 mr-2" />
+                      Hide Preview
+                    </Button>
                   </div>
-
-                  {/* Form Canvas - Center */}
-                  <div className="col-span-6">
-                    <FormCanvas
-                      fields={fields}
-                      selectedFieldId={selectedFieldId}
-                      onFieldsChange={setFields}
-                      onFieldSelect={setSelectedFieldId}
-                      onAddField={handleAddField}
-                      onCreateChildField={handleCreateChildField}
-                    />
-                  </div>
-
-                  {/* Field Configurator - Right Sidebar */}
-                  <div className="col-span-3">
-                    <FieldConfigurator
-                      field={selectedField}
-                      allFields={fields}
-                      onFieldUpdate={handleFieldUpdate}
-                      onClose={() => setSelectedFieldId(null)}
-                    />
-                  </div>
-                </div>
-              )}
-            </CardContent>
+                </CardHeader>
+                <CardContent className="flex-1 overflow-auto">
+                  <FormPreview fields={fields} />
+                </CardContent>
+              </>
+            ) : (
+              <FormBuilderLayout
+                header={
+                  <FormBuilderHeader
+                    formName="Ticket Creation Form"
+                    onFormNameChange={(name) => console.log('Form name changed:', name)}
+                    onSave={handleSaveConfiguration}
+                    onPreview={() => setShowPreview(true)}
+                    onReset={handleResetForm}
+                    saveStatus={saveMessage ? 'saved' : 'unsaved'}
+                  />
+                }
+                palette={<FieldPalette />}
+                canvas={
+                  <FormCanvas
+                    fields={fields}
+                    selectedFieldId={selectedFieldId}
+                    onFieldsChange={setFields}
+                    onFieldSelect={setSelectedFieldId}
+                    onAddField={handleAddField}
+                    onCreateChildField={handleCreateChildField}
+                  />
+                }
+                properties={
+                  <FieldConfigurator
+                    field={selectedField}
+                    allFields={fields}
+                    onFieldUpdate={handleFieldUpdate}
+                    onClose={() => setSelectedFieldId(null)}
+                  />
+                }
+              />
+            )}
           </Card>
         </TabsContent>
 
