@@ -132,19 +132,29 @@ export default function FormCanvas({
 
       onCreateChildField(childField);
 
-      // Auto-enable conditional logic on parent if not already enabled
-      if (!parentField.conditionalLogic?.enabled) {
-        const updatedParent: FormField = {
-          ...parentField,
-          conditionalLogic: {
-            enabled: true,
-            conditions: [],
-            childFields: [childField.id as string],
-            nestingLevel: parentField.conditionalLogic?.nestingLevel || 0,
-          }
-        };
-        onFieldsChange(fields.map(f => f.id === parentField.id ? updatedParent : f));
-      }
+      // Always update parent to include new child in childFields array
+      const updatedParent: FormField = {
+        ...parentField,
+        conditionalLogic: {
+          enabled: true,
+          conditions: parentField.conditionalLogic?.conditions || [],
+          childFields: [
+            ...(parentField.conditionalLogic?.childFields || []),
+            childField.id as string
+          ],
+          nestingLevel: parentField.conditionalLogic?.nestingLevel || 0,
+        }
+      };
+
+      console.log('[FormCanvas] Updating parent with new child:', {
+        parentId: parentField.id,
+        parentLabel: parentField.label,
+        childId: childField.id,
+        childLabel: childField.label,
+        updatedChildFields: updatedParent.conditionalLogic?.childFields
+      });
+
+      onFieldsChange(fields.map(f => f.id === parentField.id ? updatedParent : f));
     }
 
     setIsDraggingFromPalette(false);
