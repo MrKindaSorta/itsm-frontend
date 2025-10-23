@@ -175,14 +175,10 @@ const IconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   FolderOpen,
 };
 
-interface FieldPaletteProps {
-  onFieldTypeSelect: (fieldType: FormFieldType) => void;
-}
-
 // Field types that support conditional logic
 const CONDITIONAL_CAPABLE_TYPES: FormFieldType[] = ['number', 'dropdown', 'checkbox', 'category', 'multiselect'];
 
-export default function FieldPalette({ onFieldTypeSelect }: FieldPaletteProps) {
+export default function FieldPalette() {
   const handleDragStart = (e: React.DragEvent, fieldType: FormFieldType) => {
     e.dataTransfer.effectAllowed = 'copy';
     e.dataTransfer.setData('fieldType', fieldType);
@@ -207,7 +203,6 @@ export default function FieldPalette({ onFieldTypeSelect }: FieldPaletteProps) {
               key={fieldType.type}
               draggable
               onDragStart={(e) => handleDragStart(e, fieldType.type)}
-              onClick={() => onFieldTypeSelect(fieldType.type)}
               className="flex items-start gap-3 p-3 rounded-lg border border-border bg-card hover:bg-accent hover:border-primary cursor-move transition-colors group relative"
             >
               <div className="mt-0.5 p-2 rounded-md bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">

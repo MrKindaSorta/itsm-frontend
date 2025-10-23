@@ -137,7 +137,7 @@ export default function Customize() {
 
   const selectedField = fields.find((f) => f.id === selectedFieldId) || null;
 
-  const handleAddField = (fieldType: FormFieldType) => {
+  const handleAddField = (fieldType: FormFieldType, insertAtIndex?: number) => {
     const fieldTemplate = FIELD_TYPES.find((ft) => ft.type === fieldType);
     if (!fieldTemplate) return;
 
@@ -149,10 +149,30 @@ export default function Customize() {
       required: fieldTemplate.defaultConfig.required || false,
       options: fieldTemplate.defaultConfig.options,
       defaultValue: fieldTemplate.defaultConfig.defaultValue,
-      order: fields.length,
+      order: 0, // Will be set below
     };
 
-    setFields([...fields, newField]);
+    // Insert at specific index or append to end
+    let updatedFields: FormField[];
+    if (insertAtIndex !== undefined) {
+      // Insert at the specified index
+      updatedFields = [
+        ...fields.slice(0, insertAtIndex),
+        newField,
+        ...fields.slice(insertAtIndex),
+      ];
+    } else {
+      // Append to end
+      updatedFields = [...fields, newField];
+    }
+
+    // Recalculate order properties for all fields
+    updatedFields = updatedFields.map((field, idx) => ({
+      ...field,
+      order: idx,
+    }));
+
+    setFields(updatedFields);
     setSelectedFieldId(newField.id);
   };
 
@@ -508,7 +528,7 @@ export default function Customize() {
                 <div className="grid grid-cols-12 gap-4">
                   {/* Field Palette - Left Sidebar */}
                   <div className="col-span-3">
-                    <FieldPalette onFieldTypeSelect={handleAddField} />
+                    <FieldPalette />
                   </div>
 
                   {/* Form Canvas - Center */}

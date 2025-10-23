@@ -12,7 +12,7 @@ interface FormCanvasProps {
   selectedFieldId: string | null;
   onFieldsChange: (fields: FormField[]) => void;
   onFieldSelect: (fieldId: string | null) => void;
-  onAddField: (fieldType: FormFieldType) => void;
+  onAddField: (fieldType: FormFieldType, insertAtIndex?: number) => void;
   onCreateChildField?: (childField: Partial<FormField>, parentFieldId: string) => void;
 }
 
@@ -156,9 +156,9 @@ export default function FormCanvas({
     const dragSource = e.dataTransfer.getData('dragSource');
 
     if (dragSource === 'palette') {
-      // Adding new field from palette (normal drop)
+      // Adding new field from palette at specific position
       const fieldType = e.dataTransfer.getData('fieldType') as FormFieldType;
-      onAddField(fieldType);
+      onAddField(fieldType, dropIndex);
     } else if (dragSource === 'canvas') {
       // Reordering existing field
       const sourceIndex = parseInt(e.dataTransfer.getData('sourceIndex'));
