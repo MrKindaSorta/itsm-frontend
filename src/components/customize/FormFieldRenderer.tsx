@@ -199,9 +199,15 @@ const FormFieldRenderer = React.memo(function FormFieldRenderer({
       {/* Conditional Drop Zone - 30% width, only shown when dragging from palette */}
       {showConditionalDropZone && (
         <div
+          onDragEnter={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            e.dataTransfer.dropEffect = 'copy';
+          }}
           onDragOver={(e) => {
             e.preventDefault();
             e.stopPropagation();
+            e.dataTransfer.dropEffect = 'copy';
           }}
           onDrop={(e) => {
             e.preventDefault();
@@ -210,8 +216,8 @@ const FormFieldRenderer = React.memo(function FormFieldRenderer({
           }}
           className="flex-[3] rounded-lg border-2 border-dashed flex flex-col items-center justify-center gap-2 p-3 bg-purple-50 border-purple-300 hover:bg-purple-100 hover:border-purple-400 dark:bg-purple-950/30 dark:border-purple-700 dark:hover:bg-purple-950/50 dark:hover:border-purple-500 cursor-pointer"
         >
-          <ArrowDown className="h-6 w-6 text-purple-500 dark:text-purple-400" />
-          <span className="text-xs font-medium text-center text-purple-600 dark:text-purple-400">
+          <ArrowDown className="h-6 w-6 text-purple-500 dark:text-purple-400 pointer-events-none" />
+          <span className="text-xs font-medium text-center text-purple-600 dark:text-purple-400 pointer-events-none">
             Drop for conditional field
           </span>
         </div>

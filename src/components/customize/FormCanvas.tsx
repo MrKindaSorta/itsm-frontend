@@ -154,8 +154,9 @@ export default function FormCanvas({
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
 
-    // Use ref to prevent rapid setState calls that cause render loops
-    if (e.dataTransfer.effectAllowed === 'copy' && !isDraggingFromPaletteRef.current) {
+    // Check if dragging from palette by looking at data types
+    const types = Array.from(e.dataTransfer.types);
+    if (types.includes('fieldtype') && !isDraggingFromPaletteRef.current) {
       isDraggingFromPaletteRef.current = true;
       setIsDraggingFromPalette(true);
     }
