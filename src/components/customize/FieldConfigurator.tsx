@@ -13,7 +13,6 @@ interface FieldConfiguratorProps {
   allFields?: FormField[];
   onFieldUpdate: (updatedField: FormField) => void;
   onClose: () => void;
-  onAddChildField?: () => void;
 }
 
 export default function FieldConfigurator({
@@ -21,7 +20,6 @@ export default function FieldConfigurator({
   allFields = [],
   onFieldUpdate,
   onClose,
-  onAddChildField,
 }: FieldConfiguratorProps) {
   const [localField, setLocalField] = useState<FormField | null>(field);
 
@@ -326,7 +324,6 @@ export default function FieldConfigurator({
             onUpdate={(conditionalLogic: ConditionalLogic) =>
               updateField({ conditionalLogic })
             }
-            onAddChildField={() => onAddChildField?.()}
           />
         </div>
       </CardContent>

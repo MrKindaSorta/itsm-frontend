@@ -4,20 +4,18 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { FormField, ConditionRule, ConditionalLogic } from '@/types/formBuilder';
-import { Plus, Zap, ChevronRight } from 'lucide-react';
+import { Zap, ChevronRight } from 'lucide-react';
 
 interface ConditionalLogicEditorProps {
   field: FormField;
   allFields: FormField[];
   onUpdate: (conditionalLogic: ConditionalLogic) => void;
-  onAddChildField: () => void;
 }
 
 export default function ConditionalLogicEditor({
   field,
   allFields,
   onUpdate,
-  onAddChildField,
 }: ConditionalLogicEditorProps) {
   const conditionalLogic = field.conditionalLogic || {
     enabled: false,
@@ -128,27 +126,19 @@ export default function ConditionalLogicEditor({
           <div className="pt-4 border-t border-border">
             <div className="flex items-center justify-between mb-3">
               <Label className="text-sm font-medium">Child Fields</Label>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onAddChildField}
-                disabled={!canAddChildren}
-                className="h-7 gap-1"
-              >
-                <Plus className="h-3 w-3" />
-                Add Child
-              </Button>
+              {!canAddChildren && (
+                <Badge variant="outline" className="text-xs text-orange-600">
+                  Max depth reached
+                </Badge>
+              )}
             </div>
-
-            {!canAddChildren && (
-              <p className="text-xs text-orange-600 mb-2">
-                Maximum nesting depth reached (3 levels)
-              </p>
-            )}
 
             {childFields.length === 0 ? (
               <div className="text-xs text-muted-foreground text-center py-4 border border-dashed rounded-md">
-                No child fields added yet
+                <p className="mb-1">No child fields added yet</p>
+                <p className="text-[10px]">
+                  Drag a field from the palette and hold over this field for 2s to create a child
+                </p>
               </div>
             ) : (
               <div className="space-y-2">

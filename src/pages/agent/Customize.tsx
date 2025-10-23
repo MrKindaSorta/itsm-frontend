@@ -11,7 +11,6 @@ import FieldPalette, { FIELD_TYPES } from '@/components/customize/FieldPalette';
 import FormCanvas from '@/components/customize/FormCanvas';
 import FieldConfigurator from '@/components/customize/FieldConfigurator';
 import FormPreview from '@/components/customize/FormPreview';
-import ChildFieldCreationModal from '@/components/customize/ChildFieldCreationModal';
 import SLAList from '@/components/sla/SLAList';
 import SLAForm from '@/components/sla/SLAForm';
 import BrandingCustomizer from '@/components/branding/BrandingCustomizer';
@@ -28,7 +27,6 @@ export default function Customize() {
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string>('');
-  const [showChildFieldModal, setShowChildFieldModal] = useState(false);
 
   // SLA state
   const [slaRules, setSlaRules] = useState<SLARule[]>([]);
@@ -501,6 +499,7 @@ export default function Customize() {
                       onFieldsChange={setFields}
                       onFieldSelect={setSelectedFieldId}
                       onAddField={handleAddField}
+                      onCreateChildField={handleCreateChildField}
                     />
                   </div>
 
@@ -511,7 +510,6 @@ export default function Customize() {
                       allFields={fields}
                       onFieldUpdate={handleFieldUpdate}
                       onClose={() => setSelectedFieldId(null)}
-                      onAddChildField={() => setShowChildFieldModal(true)}
                     />
                   </div>
                 </div>
@@ -634,16 +632,6 @@ export default function Customize() {
           </Card>
         </TabsContent>
       </Tabs>
-
-      {/* Child Field Creation Modal */}
-      {selectedField && (
-        <ChildFieldCreationModal
-          open={showChildFieldModal}
-          onClose={() => setShowChildFieldModal(false)}
-          parentField={selectedField}
-          onCreateChild={handleCreateChildField}
-        />
-      )}
     </div>
   );
 }

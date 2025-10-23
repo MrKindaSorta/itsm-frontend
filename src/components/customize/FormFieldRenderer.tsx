@@ -47,7 +47,7 @@ interface FormFieldRendererProps {
   onToggleHidden?: () => void;
   onDragStart: (e: React.DragEvent) => void;
   onDragOver: (e: React.DragEvent) => void;
-  onDragLeave: () => void;
+  onDragLeave: (e: React.DragEvent) => void;
   onDragEnd: () => void;
   onDrop: (e: React.DragEvent) => void;
 }
