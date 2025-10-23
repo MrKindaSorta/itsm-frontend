@@ -290,15 +290,6 @@ export default function FormCanvas({
               const canHaveChildren = (field.conditionalLogic?.nestingLevel || 0) < 2;
               const showConditionalDropZone = isDraggingFromPalette && isConditionalCapable && canHaveChildren;
 
-              if (showConditionalDropZone) {
-                console.log(`[RENDER] Showing conditional drop zone for: ${field.label}`, {
-                  isDraggingFromPalette,
-                  isConditionalCapable,
-                  canHaveChildren,
-                  isTarget: conditionalDropTargetId === field.id
-                });
-              }
-
               return (
                 <div key={field.id}>
                   {/* Drop Zone Before Field */}

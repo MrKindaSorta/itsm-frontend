@@ -1,3 +1,4 @@
+import React from 'react';
 import type { FormField } from '@/types/formBuilder';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -58,7 +59,7 @@ interface FormFieldRendererProps {
   onConditionalDragLeave?: () => void;
 }
 
-export default function FormFieldRenderer({
+const FormFieldRenderer = React.memo(function FormFieldRenderer({
   field,
   index: _index,
   isSelected,
@@ -259,4 +260,8 @@ export default function FormFieldRenderer({
       )}
     </div>
   );
-}
+});
+
+FormFieldRenderer.displayName = 'FormFieldRenderer';
+
+export default FormFieldRenderer;
