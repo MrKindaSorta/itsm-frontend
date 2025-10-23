@@ -294,7 +294,6 @@ export default function FormCanvas({
         className="flex-1 overflow-auto"
         onDragOver={handleCanvasDragOver}
         onDrop={handleCanvasDrop}
-        onDragLeave={handleDragEnd}
         onDragEnd={handleDragEnd}
       >
         {fields.length === 0 ? (

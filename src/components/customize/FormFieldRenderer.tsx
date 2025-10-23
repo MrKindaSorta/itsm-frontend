@@ -200,6 +200,9 @@ const FormFieldRenderer = React.memo(function FormFieldRenderer({
       {showConditionalDropZone && (
         <div
           onDragEnter={(e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+            e.stopPropagation();
             const timestamp = new Date().toISOString();
             console.log(`[${timestamp}] 🟣 PURPLE_ZONE onDragEnter - Field: ${field.label}`, {
               target: e.target,
@@ -208,11 +211,11 @@ const FormFieldRenderer = React.memo(function FormFieldRenderer({
               effectAllowed: e.dataTransfer.effectAllowed,
               types: Array.from(e.dataTransfer.types)
             });
-            e.preventDefault();
-            e.stopPropagation();
-            e.dataTransfer.dropEffect = 'copy';
           }}
           onDragOver={(e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+            e.stopPropagation();
             const timestamp = new Date().toISOString();
             console.log(`[${timestamp}] 🟣 PURPLE_ZONE onDragOver - Field: ${field.label}`, {
               target: (e.target as HTMLElement).className,
@@ -220,11 +223,9 @@ const FormFieldRenderer = React.memo(function FormFieldRenderer({
               dropEffect: e.dataTransfer.dropEffect,
               types: Array.from(e.dataTransfer.types)
             });
-            e.preventDefault();
-            e.stopPropagation();
-            e.dataTransfer.dropEffect = 'copy';
           }}
           onDragLeave={(e) => {
+            e.stopPropagation();
             const timestamp = new Date().toISOString();
             console.log(`[${timestamp}] 🟣 PURPLE_ZONE onDragLeave - Field: ${field.label}`, {
               target: (e.target as HTMLElement).className,
