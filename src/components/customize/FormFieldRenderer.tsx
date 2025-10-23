@@ -211,7 +211,15 @@ export default function FormFieldRenderer({
           }}
           onDragLeave={(e) => {
             e.stopPropagation();
-            onConditionalDragLeave?.();
+            // Only trigger leave if actually leaving the drop zone boundaries
+            const rect = e.currentTarget.getBoundingClientRect();
+            const x = e.clientX;
+            const y = e.clientY;
+
+            // Check if mouse is outside the drop zone
+            if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+              onConditionalDragLeave?.();
+            }
           }}
           onDrop={(e) => {
             e.preventDefault();
@@ -221,7 +229,7 @@ export default function FormFieldRenderer({
           className={cn(
             'flex-[3] rounded-lg border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center gap-2 p-3',
             isConditionalDropTarget
-              ? 'bg-purple-100 border-purple-500 dark:bg-purple-950 dark:border-purple-400 scale-105'
+              ? 'bg-purple-100 border-purple-500 dark:bg-purple-950 dark:border-purple-400'
               : 'bg-purple-50 border-purple-300 hover:bg-purple-100 hover:border-purple-400 dark:bg-purple-950/30 dark:border-purple-700 dark:hover:bg-purple-950/50'
           )}
         >
