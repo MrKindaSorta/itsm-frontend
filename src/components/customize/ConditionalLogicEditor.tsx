@@ -26,8 +26,8 @@ export default function ConditionalLogicEditor({
 
   const [isEnabled, setIsEnabled] = useState(conditionalLogic.enabled);
 
-  // Check if this field supports conditional logic (number, dropdown, checkbox)
-  const supportsConditionalLogic = ['number', 'dropdown', 'checkbox'].includes(field.type);
+  // Check if this field supports conditional logic
+  const supportsConditionalLogic = ['number', 'dropdown', 'checkbox', 'category', 'multiselect'].includes(field.type);
 
   // Calculate current nesting level
   const currentLevel = conditionalLogic.nestingLevel || 0;
@@ -51,7 +51,7 @@ export default function ConditionalLogicEditor({
     return (
       <div className="p-4 border border-border rounded-lg bg-muted/30">
         <p className="text-xs text-muted-foreground text-center">
-          Conditional logic is only available for Number, Dropdown, and Checkbox fields
+          Conditional logic is only available for Number, Dropdown, Checkbox, Category, and Multiselect fields
         </p>
       </div>
     );
@@ -107,7 +107,7 @@ export default function ConditionalLogicEditor({
             />
           )}
 
-          {field.type === 'dropdown' && (
+          {(field.type === 'dropdown' || field.type === 'category' || field.type === 'multiselect') && (
             <DropdownConditionEditor
               field={field}
               conditionalLogic={conditionalLogic}

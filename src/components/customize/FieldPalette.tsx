@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import type { PaletteFieldType, FormFieldType } from '@/types/formBuilder';
 import {
   Type,
@@ -12,6 +13,7 @@ import {
   Users,
   Flag,
   FolderOpen,
+  Zap,
 } from 'lucide-react';
 
 // Available field types in the palette
@@ -177,6 +179,9 @@ interface FieldPaletteProps {
   onFieldTypeSelect: (fieldType: FormFieldType) => void;
 }
 
+// Field types that support conditional logic
+const CONDITIONAL_CAPABLE_TYPES: FormFieldType[] = ['number', 'dropdown', 'checkbox', 'category', 'multiselect'];
+
 export default function FieldPalette({ onFieldTypeSelect }: FieldPaletteProps) {
   const handleDragStart = (e: React.DragEvent, fieldType: FormFieldType) => {
     e.dataTransfer.effectAllowed = 'copy';
@@ -195,19 +200,33 @@ export default function FieldPalette({ onFieldTypeSelect }: FieldPaletteProps) {
       <CardContent className="space-y-2">
         {FIELD_TYPES.map((fieldType) => {
           const Icon = IconMap[fieldType.icon];
+          const isConditionalCapable = CONDITIONAL_CAPABLE_TYPES.includes(fieldType.type);
+
           return (
             <div
               key={fieldType.type}
               draggable
               onDragStart={(e) => handleDragStart(e, fieldType.type)}
               onClick={() => onFieldTypeSelect(fieldType.type)}
-              className="flex items-start gap-3 p-3 rounded-lg border border-border bg-card hover:bg-accent hover:border-primary cursor-move transition-colors group"
+              className="flex items-start gap-3 p-3 rounded-lg border border-border bg-card hover:bg-accent hover:border-primary cursor-move transition-colors group relative"
             >
               <div className="mt-0.5 p-2 rounded-md bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                 <Icon className="h-4 w-4" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="font-medium text-sm">{fieldType.label}</div>
+                <div className="flex items-center gap-2">
+                  <div className="font-medium text-sm">{fieldType.label}</div>
+                  {isConditionalCapable && (
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] px-1.5 py-0 h-4 gap-1 bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950 dark:text-orange-300 dark:border-orange-800"
+                      title="Supports conditional logic"
+                    >
+                      <Zap className="h-2.5 w-2.5" />
+                      Conditional
+                    </Badge>
+                  )}
+                </div>
                 <div className="text-xs text-muted-foreground">
                   {fieldType.description}
                 </div>

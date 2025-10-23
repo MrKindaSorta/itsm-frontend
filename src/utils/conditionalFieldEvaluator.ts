@@ -103,14 +103,20 @@ function evaluateNumberCondition(condition: ConditionRule, value: any): boolean 
 }
 
 /**
- * Evaluates dropdown field conditions (option matching)
+ * Evaluates dropdown/category/multiselect field conditions (option matching)
  */
 function evaluateDropdownCondition(condition: ConditionRule, value: any): boolean {
   if (!condition.options || condition.options.length === 0) {
     return false;
   }
 
-  // Check if selected value matches any of the trigger options
+  // Handle multiselect (array of values)
+  if (Array.isArray(value)) {
+    // Check if any selected value matches any of the trigger options
+    return value.some(selectedValue => condition.options!.includes(selectedValue));
+  }
+
+  // Handle single value (dropdown, category)
   return condition.options.includes(value);
 }
 

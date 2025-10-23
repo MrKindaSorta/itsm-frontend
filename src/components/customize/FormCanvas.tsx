@@ -75,6 +75,8 @@ export default function FormCanvas({
           value: 0,
         };
       case 'dropdown':
+      case 'category':
+      case 'multiselect':
         const firstOption = parentField.options?.[0] || 'Option 1';
         return {
           type: 'optionMatch',
@@ -296,7 +298,7 @@ export default function FormCanvas({
             {flattenedFields.map(({ field, level, hasChildren }, index) => {
               const isConditional = field.conditionalLogic?.enabled || false;
               const nestingLevel = field.conditionalLogic?.nestingLevel || 0;
-              const isConditionalCapable = ['number', 'dropdown', 'checkbox'].includes(field.type);
+              const isConditionalCapable = ['number', 'dropdown', 'checkbox', 'category', 'multiselect'].includes(field.type);
               const canHaveChildren = (field.conditionalLogic?.nestingLevel || 0) < 2;
               const shouldShowCircle = isDraggingFromPalette && isConditionalCapable && canHaveChildren;
 
