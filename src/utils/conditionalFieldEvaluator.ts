@@ -133,6 +133,51 @@ export function getVisibleFields(
 }
 
 /**
+ * Gets visible fields in hierarchical order where children appear directly below their parents
+ */
+export function getVisibleFieldsInHierarchicalOrder(
+  allFields: FormField[],
+  fieldValues: Record<string, any>
+): FormField[] {
+  // First get all visible fields
+  const visibleFields = getVisibleFields(allFields, fieldValues);
+
+  // Create a map for quick lookup
+  const fieldMap = new Map<string, FormField>();
+  visibleFields.forEach(field => fieldMap.set(field.id, field));
+
+  // Find root fields (no parent or parent not in visible fields)
+  const rootFields = visibleFields.filter(field => !field.conditionalLogic?.parentFieldId);
+
+  // Sort root fields by their order property
+  rootFields.sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  // Recursively build hierarchical list
+  const result: FormField[] = [];
+
+  const addFieldWithChildren = (field: FormField) => {
+    // Add the field itself
+    result.push(field);
+
+    // Find and add all visible children of this field
+    const children = visibleFields.filter(
+      f => f.conditionalLogic?.parentFieldId === field.id
+    );
+
+    // Sort children by their order property
+    children.sort((a, b) => (a.order || 0) - (b.order || 0));
+
+    // Recursively add each child and its descendants
+    children.forEach(child => addFieldWithChildren(child));
+  };
+
+  // Build the hierarchical list starting from root fields
+  rootFields.forEach(rootField => addFieldWithChildren(rootField));
+
+  return result;
+}
+
+/**
  * Gets fields that should be hidden when a parent field value changes
  * This is used to clear values of hidden fields
  */

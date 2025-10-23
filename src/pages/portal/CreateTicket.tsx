@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import type { FormConfiguration, FormField } from '@/types/formBuilder';
 import type { User, TicketPriority } from '@/types';
 import { getPriorityColor } from '@/lib/utils';
-import { getVisibleFields, getFieldsToHide } from '@/utils/conditionalFieldEvaluator';
+import { getVisibleFieldsInHierarchicalOrder, getFieldsToHide } from '@/utils/conditionalFieldEvaluator';
 
 const FORM_CONFIG_STORAGE_KEY = 'itsm-form-configuration';
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
@@ -245,9 +245,9 @@ export default function CreateTicket() {
     }
   };
 
-  // Calculate visible fields based on conditional logic
+  // Calculate visible fields in hierarchical order (children appear below parents)
   const visibleFields = useMemo(() => {
-    return getVisibleFields(allFields, fieldValues);
+    return getVisibleFieldsInHierarchicalOrder(allFields, fieldValues);
   }, [allFields, fieldValues]);
 
   // Handler for field value changes with conditional logic support
