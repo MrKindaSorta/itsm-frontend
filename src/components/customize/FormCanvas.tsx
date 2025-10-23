@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { FormField, FormFieldType, ConditionRule } from '@/types/formBuilder';
@@ -31,6 +31,9 @@ export default function FormCanvas({
   const [isDraggingFromPalette, setIsDraggingFromPalette] = useState<boolean>(false);
   const [conditionalDropTargetId, setConditionalDropTargetId] = useState<string | null>(null);
 
+  // Use ref to prevent rapid state updates during drag
+  const isDraggingFromPaletteRef = useRef(false);
+
   const handleDragStart = (e: React.DragEvent, field: FormField, index: number) => {
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('fieldId', field.id);
@@ -42,6 +45,7 @@ export default function FormCanvas({
   const handleDragEnd = () => {
     setDraggingFieldId(null);
     setDragOverIndex(null);
+    isDraggingFromPaletteRef.current = false;
     setIsDraggingFromPalette(false);
     setConditionalDropTargetId(null);
   };
@@ -163,10 +167,10 @@ export default function FormCanvas({
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
 
-    // Detect if dragging from palette using effectAllowed
-    // Only update state if it's actually changing to prevent redundant re-renders
-    if (e.dataTransfer.effectAllowed === 'copy' && !isDraggingFromPalette) {
+    // Use ref to prevent rapid setState calls that cause render loops
+    if (e.dataTransfer.effectAllowed === 'copy' && !isDraggingFromPaletteRef.current) {
       console.log('[CANVAS] Setting isDraggingFromPalette = true');
+      isDraggingFromPaletteRef.current = true;
       setIsDraggingFromPalette(true);
     }
   };
