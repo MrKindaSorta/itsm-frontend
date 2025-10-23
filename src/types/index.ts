@@ -304,9 +304,6 @@ export interface BrandingConfig {
 export interface SettingsFormData {
   general: {
     allowPublicSignup: boolean;
-    enableTimeTracking: boolean;
-    enableAttachments: boolean;
-    enableEmailToTicket: boolean;
     enableKnowledgeBase: boolean;
   };
   email: {

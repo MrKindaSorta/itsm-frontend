@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBranding } from '@/contexts/BrandingContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,6 +15,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const { branding } = useBranding();
+  const { settings } = useSettings();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -123,12 +125,14 @@ export default function Login() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <div className="text-sm text-center text-muted-foreground">
-              Don't have an account?{' '}
-              <Link to="/auth/signup" className="text-primary hover:underline font-medium">
-                Sign up
-              </Link>
-            </div>
+            {settings?.allowPublicSignup && (
+              <div className="text-sm text-center text-muted-foreground">
+                Don't have an account?{' '}
+                <Link to="/auth/signup" className="text-primary hover:underline font-medium">
+                  Sign up
+                </Link>
+              </div>
+            )}
             {branding.authSettings?.showDemoAccounts && (
               <div className="text-xs text-center text-muted-foreground border-t pt-4">
                 <p className="mb-2 font-medium">Demo Accounts:</p>
