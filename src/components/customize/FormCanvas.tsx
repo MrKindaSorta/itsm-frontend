@@ -293,6 +293,10 @@ export default function FormCanvas({
                       e.preventDefault();
                       e.stopPropagation();
                       setDragOverIndex(index);
+                      // Detect if dragging from palette
+                      if (e.dataTransfer.effectAllowed === 'copy' && !isDraggingFromPalette) {
+                        setIsDraggingFromPalette(true);
+                      }
                     }}
                     onDrop={(e) => {
                       e.preventDefault();
@@ -403,6 +407,10 @@ export default function FormCanvas({
                 e.preventDefault();
                 e.stopPropagation();
                 setDragOverIndex(fields.length);
+                // Detect if dragging from palette
+                if (e.dataTransfer.effectAllowed === 'copy' && !isDraggingFromPalette) {
+                  setIsDraggingFromPalette(true);
+                }
               }}
               onDrop={(e) => {
                 e.preventDefault();
