@@ -43,6 +43,11 @@ export default function FormCanvas({
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     setDragOverIndex(index);
+
+    // Detect palette drag by checking if text/plain type exists and we're not dragging a canvas field
+    if (e.dataTransfer.types.includes('text/plain') && !draggingFieldId) {
+      setIsDraggingFromPalette(true);
+    }
   };
 
   const handleDragLeave = (_e: React.DragEvent, fieldId?: string) => {
@@ -88,66 +93,68 @@ export default function FormCanvas({
     }
   };
 
-  const handleDrop = (e: React.DragEvent, dropIndex: number, targetField?: FormField) => {
+  // Separate handler for child target drops
+  const handleChildTargetDrop = (e: React.DragEvent, parentField: FormField) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    if (!onCreateChildField) return;
+
+    const fieldType = e.dataTransfer.getData('fieldType') as FormFieldType;
+    const fieldTemplate = FIELD_TYPES.find((ft) => ft.type === fieldType);
+
+    if (fieldTemplate) {
+      const childNestingLevel = (parentField.conditionalLogic?.nestingLevel || 0) + 1;
+
+      // Create child field with default condition
+      const childField: Partial<FormField> = {
+        id: `field-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        type: fieldType,
+        label: fieldTemplate.defaultConfig.label || 'New Field',
+        placeholder: fieldTemplate.defaultConfig.placeholder,
+        required: fieldTemplate.defaultConfig.required || false,
+        options: fieldTemplate.defaultConfig.options,
+        defaultValue: fieldTemplate.defaultConfig.defaultValue,
+        order: fields.length,
+        deletable: true,
+        conditionalLogic: {
+          enabled: true,
+          parentFieldId: parentField.id,
+          conditions: [createDefaultCondition(parentField)],
+          childFields: [],
+          nestingLevel: childNestingLevel,
+        },
+      };
+
+      onCreateChildField(childField);
+
+      // Auto-enable conditional logic on parent if not already enabled
+      if (!parentField.conditionalLogic?.enabled) {
+        const updatedParent: FormField = {
+          ...parentField,
+          conditionalLogic: {
+            enabled: true,
+            conditions: [],
+            childFields: [childField.id as string],
+            nestingLevel: parentField.conditionalLogic?.nestingLevel || 0,
+          }
+        };
+        onFieldsChange(fields.map(f => f.id === parentField.id ? updatedParent : f));
+      }
+    }
+
+    setIsDraggingFromPalette(false);
+    setDragOverChildTarget(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
     e.preventDefault();
     setDragOverIndex(null);
     setDragOverChildTarget(null);
     setIsDraggingFromPalette(false);
+    setDraggingFieldId(null);
 
     const dragSource = e.dataTransfer.getData('dragSource');
-    const droppedOnChildTarget = e.dataTransfer.getData('droppedOnChildTarget') === 'true';
-
-    // Check if this is a child creation drop (dropped on purple circle)
-    if (dragSource === 'palette' && droppedOnChildTarget && targetField && onCreateChildField) {
-      const fieldType = e.dataTransfer.getData('fieldType') as FormFieldType;
-      const fieldTemplate = FIELD_TYPES.find((ft) => ft.type === fieldType);
-
-      if (fieldTemplate) {
-        const parentField = targetField;
-        const childNestingLevel = (parentField.conditionalLogic?.nestingLevel || 0) + 1;
-
-        // Create child field with default condition
-        const childField: Partial<FormField> = {
-          id: `field-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          type: fieldType,
-          label: fieldTemplate.defaultConfig.label || 'New Field',
-          placeholder: fieldTemplate.defaultConfig.placeholder,
-          required: fieldTemplate.defaultConfig.required || false,
-          options: fieldTemplate.defaultConfig.options,
-          defaultValue: fieldTemplate.defaultConfig.defaultValue,
-          order: fields.length,
-          deletable: true,
-          conditionalLogic: {
-            enabled: true,
-            parentFieldId: parentField.id,
-            conditions: [createDefaultCondition(parentField)],
-            childFields: [],
-            nestingLevel: childNestingLevel,
-          },
-        };
-
-        onCreateChildField(childField);
-
-        // Auto-enable conditional logic on parent if not already enabled
-        if (!parentField.conditionalLogic?.enabled) {
-          const updatedParent: FormField = {
-            ...parentField,
-            conditionalLogic: {
-              enabled: true,
-              conditions: [],
-              childFields: [childField.id as string],
-              nestingLevel: parentField.conditionalLogic?.nestingLevel || 0,
-            }
-          };
-          onFieldsChange(fields.map(f => f.id === parentField.id ? updatedParent : f));
-        }
-
-        setDraggingFieldId(null);
-        return;
-      }
-    }
-
-    setDraggingFieldId(null);
 
     if (dragSource === 'palette') {
       // Adding new field from palette (normal drop)
@@ -325,12 +332,7 @@ export default function FormCanvas({
                           e.stopPropagation();
                           setDragOverChildTarget(null);
                         }}
-                        onDrop={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          e.dataTransfer.setData('droppedOnChildTarget', 'true');
-                          handleDrop(e, index, field);
-                        }}
+                        onDrop={(e) => handleChildTargetDrop(e, field)}
                       >
                         <div className={cn(
                           "w-10 h-10 rounded-full border-2 border-white shadow-lg flex items-center justify-center transition-all cursor-pointer",
@@ -380,7 +382,7 @@ export default function FormCanvas({
                       onDragOver={(e) => handleDragOver(e, field, index)}
                       onDragLeave={(e) => handleDragLeave(e, field.id)}
                       onDragEnd={handleDragEnd}
-                      onDrop={(e) => handleDrop(e, index, field)}
+                      onDrop={(e) => handleDrop(e, index)}
                     />
                   </div>
 
