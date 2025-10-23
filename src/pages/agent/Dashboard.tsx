@@ -180,46 +180,46 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {/* Metrics Cards */}
       {error ? (
         <Card className="border-destructive">
-          <CardContent className="pt-6">
+          <CardContent className="pt-4 sm:pt-6">
             <div className="flex items-center gap-2 text-destructive">
               <AlertCircle className="h-5 w-5" />
-              <p>{error}</p>
+              <p className="text-sm">{error}</p>
             </div>
-            <Button onClick={fetchMetrics} variant="outline" className="mt-4">
+            <Button onClick={fetchMetrics} variant="outline" className="mt-3 sm:mt-4" size="sm">
               Retry
             </Button>
           </CardContent>
         </Card>
       ) : isLoadingMetrics ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-2 grid-cols-2 sm:gap-3 md:gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
             <Card key={i}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <div className="h-4 w-24 bg-muted animate-pulse rounded" />
-                <div className="h-4 w-4 bg-muted animate-pulse rounded" />
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
+                <div className="h-3 w-20 sm:h-4 sm:w-24 bg-muted animate-pulse rounded" />
+                <div className="h-3 w-3 sm:h-4 sm:w-4 bg-muted animate-pulse rounded" />
               </CardHeader>
               <CardContent>
-                <div className="h-8 w-16 bg-muted animate-pulse rounded" />
+                <div className="h-6 w-12 sm:h-8 sm:w-16 bg-muted animate-pulse rounded" />
               </CardContent>
             </Card>
           ))}
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-2 grid-cols-2 sm:gap-3 md:gap-4 md:grid-cols-2 lg:grid-cols-4">
           {metricCards.map((metric) => {
             const Icon = metric.icon;
             return (
               <Card key={metric.title}>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-                  <CardTitle className="text-sm font-medium">{metric.title}</CardTitle>
-                  <Icon className={`h-4 w-4 ${metric.color}`} />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0.5 sm:pb-1 p-3 sm:p-6">
+                  <CardTitle className="text-xs sm:text-sm font-medium">{metric.title}</CardTitle>
+                  <Icon className={`h-3 w-3 sm:h-4 sm:w-4 ${metric.color}`} />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-xl font-bold">{metric.value}</div>
+                <CardContent className="px-3 pb-3 pt-1 sm:px-6 sm:pb-6 sm:pt-2">
+                  <div className="text-lg sm:text-xl font-bold">{metric.value}</div>
                 </CardContent>
               </Card>
             );
@@ -228,42 +228,42 @@ export default function Dashboard() {
       )}
 
       {/* Recent Tickets, SLA Warnings, and Agent Logins */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3">
         {/* Recent Tickets */}
         <Card>
-          <CardHeader>
-            <CardTitle>Recent Tickets</CardTitle>
+          <CardHeader className="p-4 sm:p-6 pb-3 sm:pb-6">
+            <CardTitle className="text-base sm:text-lg">Recent Tickets</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
             {isLoadingRecent ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <div className="flex items-center justify-center py-6 sm:py-8">
+                <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin text-muted-foreground" />
               </div>
             ) : recentTickets.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">
+              <p className="text-xs sm:text-sm text-muted-foreground text-center py-6 sm:py-8">
                 No recent tickets found
               </p>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {recentTickets.map((ticket) => (
                   <Link
                     key={ticket.id}
                     to={`/agent/tickets/${ticket.id}`}
-                    className="block p-3 rounded-lg border hover:bg-accent transition-colors"
+                    className="block p-2 sm:p-3 rounded-lg border hover:bg-accent transition-colors"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-mono text-muted-foreground">{ticket.id}</span>
+                        <div className="flex items-center gap-1.5 sm:gap-2 mb-1 flex-wrap">
+                          <span className="text-xs sm:text-sm font-mono text-muted-foreground">{ticket.id}</span>
                           <StatusBadge status={ticket.status} />
                           <PriorityBadge priority={ticket.priority} />
                         </div>
-                        <p className="text-sm font-medium truncate">{ticket.title}</p>
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="text-xs sm:text-sm font-medium truncate">{ticket.title}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5 sm:mt-1">
                           {formatTimeAgo(ticket.updatedAt)}
                         </p>
                       </div>
-                      <ExternalLink className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <ExternalLink className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
                     </div>
                   </Link>
                 ))}
@@ -274,38 +274,38 @@ export default function Dashboard() {
 
         {/* SLA Warnings */}
         <Card>
-          <CardHeader>
-            <CardTitle>SLA Warnings</CardTitle>
+          <CardHeader className="p-4 sm:p-6 pb-3 sm:pb-6">
+            <CardTitle className="text-base sm:text-lg">SLA Warnings</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
             {isLoadingSLA ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <div className="flex items-center justify-center py-6 sm:py-8">
+                <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin text-muted-foreground" />
               </div>
             ) : slaWarnings.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">
+              <p className="text-xs sm:text-sm text-muted-foreground text-center py-6 sm:py-8">
                 No SLA warnings - great job!
               </p>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {slaWarnings.map((ticket) => (
                   <Link
                     key={ticket.id}
                     to={`/agent/tickets/${ticket.id}`}
-                    className="block p-3 rounded-lg border hover:bg-accent transition-colors"
+                    className="block p-2 sm:p-3 rounded-lg border hover:bg-accent transition-colors"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-mono text-muted-foreground">{ticket.id}</span>
+                        <div className="flex items-center gap-1.5 sm:gap-2 mb-1 flex-wrap">
+                          <span className="text-xs sm:text-sm font-mono text-muted-foreground">{ticket.id}</span>
                           <PriorityBadge priority={ticket.priority} />
                         </div>
-                        <p className="text-sm font-medium truncate">{ticket.title}</p>
-                        <div className="mt-2">
+                        <p className="text-xs sm:text-sm font-medium truncate">{ticket.title}</p>
+                        <div className="mt-1.5 sm:mt-2">
                           <SLAIndicator sla={ticket.sla} />
                         </div>
                       </div>
-                      <ExternalLink className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <ExternalLink className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
                     </div>
                   </Link>
                 ))}
@@ -316,33 +316,33 @@ export default function Dashboard() {
 
         {/* Agent Last Login */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <UserCheck className="h-4 w-4" />
+          <CardHeader className="p-4 sm:p-6 pb-3 sm:pb-6">
+            <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-base sm:text-lg">
+              <UserCheck className="h-4 w-4 sm:h-5 sm:w-5" />
               Agent Last Login
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
             {isLoadingAgents ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <div className="flex items-center justify-center py-6 sm:py-8">
+                <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin text-muted-foreground" />
               </div>
             ) : agentLogins.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">
+              <p className="text-xs sm:text-sm text-muted-foreground text-center py-6 sm:py-8">
                 No agent activity found
               </p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-1.5 sm:space-y-2">
                 {agentLogins.map((agent) => (
                   <div key={agent.id} className="flex items-center gap-2 p-2 rounded-lg border">
-                    <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-medium flex-shrink-0 relative">
+                    <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-medium flex-shrink-0 relative">
                       {getInitials(agent.name)}
                       {isOnline(agent.lastLogin) && (
-                        <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 bg-green-500 border-2 border-background rounded-full" />
+                        <div className="absolute -bottom-0.5 -right-0.5 h-2 w-2 sm:h-2.5 sm:w-2.5 bg-green-500 border-2 border-background rounded-full" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{agent.name}</p>
+                      <p className="text-xs sm:text-sm font-medium truncate">{agent.name}</p>
                       <p className="text-xs text-muted-foreground">
                         {agent.lastLogin ? `Last seen: ${formatTimeAgo(new Date(agent.lastLogin))}` : 'Never logged in'}
                       </p>
