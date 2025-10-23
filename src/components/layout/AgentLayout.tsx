@@ -22,6 +22,7 @@ import {
   ChevronRight,
   Home,
   UserCircle,
+  Info,
 } from 'lucide-react';
 
 export default function AgentLayout() {
@@ -96,8 +97,8 @@ export default function AgentLayout() {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 overflow-y-auto p-2">
-            <ul className="space-y-1">
+          <nav className="flex-1 overflow-y-auto p-2 flex flex-col">
+            <ul className="space-y-1 flex-1">
               {navigation.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname.startsWith(item.href);
@@ -123,6 +124,23 @@ export default function AgentLayout() {
                 );
               })}
             </ul>
+
+            {/* About link at bottom of navigation */}
+            <div className="mt-auto pt-2 border-t">
+              <Link
+                to="/agent/about"
+                className={`flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  location.pathname === '/agent/about'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                } ${!sidebarOpen && 'justify-center'}`}
+                title={!sidebarOpen ? 'About' : undefined}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <Info className="h-5 w-5 flex-shrink-0" />
+                {sidebarOpen && <span>About</span>}
+              </Link>
+            </div>
           </nav>
 
           {/* Sidebar Footer */}

@@ -28,6 +28,7 @@ const AgentCustomize = lazy(() => import('@/pages/agent/Customize'));
 const AgentReports = lazy(() => import('@/pages/agent/Reports'));
 const AgentSettings = lazy(() => import('@/pages/agent/Settings'));
 const AgentKnowledgeBase = lazy(() => import('@/pages/agent/KnowledgeBase'));
+const AgentAbout = lazy(() => import('@/pages/agent/About'));
 
 // Loading fallback
 const LoadingFallback = () => (
@@ -225,6 +226,14 @@ export const router = createBrowserRouter([
         element: (
           <Lazy>
             <PortalProfile />
+          </Lazy>
+        ),
+      },
+      {
+        path: 'about',
+        element: (
+          <Lazy>
+            <AgentAbout />
           </Lazy>
         ),
       },
