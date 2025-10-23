@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { FormField, FormFieldType, ConditionRule } from '@/types/formBuilder';
@@ -33,6 +33,45 @@ export default function FormCanvas({
   // Use ref to prevent rapid state updates during drag
   const isDraggingFromPaletteRef = useRef(false);
 
+  // Listen for palette drag events
+  useEffect(() => {
+    const handlePaletteDragStart = () => {
+      isDraggingFromPaletteRef.current = true;
+      setIsDraggingFromPalette(true);
+    };
+
+    const handlePaletteDragEnd = () => {
+      isDraggingFromPaletteRef.current = false;
+      setIsDraggingFromPalette(false);
+      setDragOverIndex(null);
+    };
+
+    window.addEventListener('palette-drag-start', handlePaletteDragStart);
+    window.addEventListener('palette-drag-end', handlePaletteDragEnd);
+
+    return () => {
+      window.removeEventListener('palette-drag-start', handlePaletteDragStart);
+      window.removeEventListener('palette-drag-end', handlePaletteDragEnd);
+    };
+  }, []);
+
+  // Global failsafe: cleanup on ANY dragend event (catches edge cases)
+  useEffect(() => {
+    const globalCleanup = () => {
+      isDraggingFromPaletteRef.current = false;
+      setIsDraggingFromPalette(false);
+      setDragOverIndex(null);
+    };
+
+    document.addEventListener('dragend', globalCleanup);
+    document.addEventListener('drop', globalCleanup);
+
+    return () => {
+      document.removeEventListener('dragend', globalCleanup);
+      document.removeEventListener('drop', globalCleanup);
+    };
+  }, []);
+
   const handleDragStart = (e: React.DragEvent, field: FormField, index: number) => {
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('fieldId', field.id);
@@ -43,9 +82,7 @@ export default function FormCanvas({
 
   const handleDragEnd = () => {
     setDraggingFieldId(null);
-    setDragOverIndex(null);
-    isDraggingFromPaletteRef.current = false;
-    setIsDraggingFromPalette(false);
+    // Note: isDraggingFromPalette cleanup is handled by event listeners and global failsafe
   };
 
   // Helper function to create default condition based on field type
@@ -156,13 +193,7 @@ export default function FormCanvas({
   const handleCanvasDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
-
-    // Check if dragging from palette by looking at data types
-    const types = Array.from(e.dataTransfer.types);
-    if (types.includes('fieldtype') && !isDraggingFromPaletteRef.current) {
-      isDraggingFromPaletteRef.current = true;
-      setIsDraggingFromPalette(true);
-    }
+    // Note: isDraggingFromPalette is now managed by event listeners
   };
 
   const handleCanvasDrop = (e: React.DragEvent) => {
@@ -280,7 +311,7 @@ export default function FormCanvas({
               const showConditionalDropZone = isDraggingFromPalette && isConditionalCapable && canHaveChildren;
 
               return (
-                <div key={field.id}>
+                <div key={`${field.id}-${isDraggingFromPalette}`}>
                   {/* Drop Zone Before Field */}
                   <div
                     onDragOver={(e) => {

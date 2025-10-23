@@ -183,6 +183,16 @@ export default function FieldPalette() {
     e.dataTransfer.effectAllowed = 'copy';
     e.dataTransfer.setData('fieldType', fieldType);
     e.dataTransfer.setData('dragSource', 'palette');
+
+    // Emit custom event so FormCanvas knows immediately
+    window.dispatchEvent(new CustomEvent('palette-drag-start', {
+      detail: { fieldType }
+    }));
+  };
+
+  const handleDragEnd = () => {
+    // Emit custom event so FormCanvas can cleanup
+    window.dispatchEvent(new CustomEvent('palette-drag-end'));
   };
 
   return (
@@ -203,6 +213,7 @@ export default function FieldPalette() {
               key={fieldType.type}
               draggable
               onDragStart={(e) => handleDragStart(e, fieldType.type)}
+              onDragEnd={handleDragEnd}
               className="flex items-start gap-3 p-3 rounded-lg border border-border bg-card hover:bg-accent hover:border-primary cursor-move transition-colors group relative"
             >
               <div className="mt-0.5 p-2 rounded-md bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
