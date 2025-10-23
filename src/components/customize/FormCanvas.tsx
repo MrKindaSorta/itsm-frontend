@@ -31,9 +31,6 @@ export default function FormCanvas({
   const [isDraggingFromPalette, setIsDraggingFromPalette] = useState<boolean>(false);
   const [dragOverChildTarget, setDragOverChildTarget] = useState<string | null>(null);
 
-  // Debug log when dragging state changes
-  console.log('[FormCanvas] isDraggingFromPalette:', isDraggingFromPalette);
-
   const handleDragStart = (e: React.DragEvent, field: FormField, index: number) => {
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('fieldId', field.id);
@@ -48,8 +45,8 @@ export default function FormCanvas({
     setDragOverIndex(index);
 
     // Detect palette drag by checking effectAllowed (palette='copy', canvas='move')
-    if (e.dataTransfer.effectAllowed === 'copy' && !draggingFieldId) {
-      console.log('[FormCanvas] Palette drag detected, setting isDraggingFromPalette=true');
+    // Only update state if it's actually changing to prevent redundant re-renders
+    if (e.dataTransfer.effectAllowed === 'copy' && !draggingFieldId && !isDraggingFromPalette) {
       setIsDraggingFromPalette(true);
     }
   };
@@ -184,8 +181,8 @@ export default function FormCanvas({
     e.dataTransfer.dropEffect = 'copy';
 
     // Detect if dragging from palette using effectAllowed
-    if (e.dataTransfer.effectAllowed === 'copy') {
-      console.log('[FormCanvas] Canvas dragover - palette drag detected');
+    // Only update state if it's actually changing to prevent redundant re-renders
+    if (e.dataTransfer.effectAllowed === 'copy' && !isDraggingFromPalette) {
       setIsDraggingFromPalette(true);
     }
   };
@@ -269,15 +266,6 @@ export default function FormCanvas({
 
     fieldHierarchy.forEach(node => flatten(node));
 
-    // Debug: Log hierarchy structure
-    console.log('[FormCanvas] Field Hierarchy:', fieldHierarchy);
-    console.log('[FormCanvas] Flattened Fields:', result.map(f => ({
-      label: f.field.label,
-      level: f.level,
-      hasChildren: f.hasChildren,
-      parentId: f.field.conditionalLogic?.parentFieldId
-    })));
-
     return result;
   }, [fieldHierarchy]);
 
@@ -311,10 +299,6 @@ export default function FormCanvas({
               const isConditionalCapable = ['number', 'dropdown', 'checkbox'].includes(field.type);
               const canHaveChildren = (field.conditionalLogic?.nestingLevel || 0) < 2;
               const shouldShowCircle = isDraggingFromPalette && isConditionalCapable && canHaveChildren;
-
-              if (shouldShowCircle) {
-                console.log(`[FormCanvas] Should show circle for field: ${field.label}, type: ${field.type}`);
-              }
 
               return (
                 <div key={field.id} className="relative">
