@@ -11,6 +11,7 @@ import FieldPalette, { FIELD_TYPES } from '@/components/customize/FieldPalette';
 import FormCanvas from '@/components/customize/FormCanvas';
 import FieldConfigurator from '@/components/customize/FieldConfigurator';
 import FormPreview from '@/components/customize/FormPreview';
+import ChildFieldCreationModal from '@/components/customize/ChildFieldCreationModal';
 import SLAList from '@/components/sla/SLAList';
 import SLAForm from '@/components/sla/SLAForm';
 import BrandingCustomizer from '@/components/branding/BrandingCustomizer';
@@ -27,6 +28,7 @@ export default function Customize() {
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string>('');
+  const [showChildFieldModal, setShowChildFieldModal] = useState(false);
 
   // SLA state
   const [slaRules, setSlaRules] = useState<SLARule[]>([]);
@@ -158,6 +160,45 @@ export default function Customize() {
 
   const handleFieldUpdate = (updatedField: FormField) => {
     setFields(fields.map((f) => (f.id === updatedField.id ? updatedField : f)));
+  };
+
+  const handleCreateChildField = (childField: Partial<FormField>) => {
+    if (!selectedFieldId) return;
+
+    const parentField = fields.find(f => f.id === selectedFieldId);
+    if (!parentField) return;
+
+    // Add child field to fields array
+    const newChildField: FormField = {
+      ...childField,
+      id: childField.id!,
+      type: childField.type!,
+      label: childField.label!,
+      required: childField.required!,
+      order: fields.length,
+    } as FormField;
+
+    setFields([...fields, newChildField]);
+
+    // Update parent field to include this child in its childFields array
+    const updatedParent: FormField = {
+      ...parentField,
+      conditionalLogic: {
+        ...parentField.conditionalLogic,
+        enabled: parentField.conditionalLogic?.enabled || false,
+        childFields: [
+          ...(parentField.conditionalLogic?.childFields || []),
+          newChildField.id
+        ],
+        conditions: parentField.conditionalLogic?.conditions || [],
+        nestingLevel: parentField.conditionalLogic?.nestingLevel || 0,
+      }
+    };
+
+    setFields(prevFields => prevFields.map(f => f.id === selectedFieldId ? updatedParent : f));
+
+    // Select the newly created child field
+    setSelectedFieldId(newChildField.id);
   };
 
   const handleSaveConfiguration = async () => {
@@ -470,10 +511,7 @@ export default function Customize() {
                       allFields={fields}
                       onFieldUpdate={handleFieldUpdate}
                       onClose={() => setSelectedFieldId(null)}
-                      onAddChildField={() => {
-                        // TODO: Open modal to create child field
-                        alert('Child field creation modal coming soon!');
-                      }}
+                      onAddChildField={() => setShowChildFieldModal(true)}
                     />
                   </div>
                 </div>
@@ -596,6 +634,16 @@ export default function Customize() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Child Field Creation Modal */}
+      {selectedField && (
+        <ChildFieldCreationModal
+          open={showChildFieldModal}
+          onClose={() => setShowChildFieldModal(false)}
+          parentField={selectedField}
+          onCreateChild={handleCreateChildField}
+        />
+      )}
     </div>
   );
 }
