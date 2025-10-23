@@ -13,7 +13,7 @@ interface FormCanvasProps {
   onFieldsChange: (fields: FormField[]) => void;
   onFieldSelect: (fieldId: string | null) => void;
   onAddField: (fieldType: FormFieldType) => void;
-  onCreateChildField?: (childField: Partial<FormField>) => void;
+  onCreateChildField?: (childField: Partial<FormField>, parentFieldId: string) => void;
 }
 
 export default function FormCanvas({
@@ -140,7 +140,7 @@ export default function FormCanvas({
       });
 
       // Let parent component handle all state updates atomically
-      onCreateChildField(childField);
+      onCreateChildField(childField, parentField.id);
     }
 
     setIsDraggingFromPalette(false);

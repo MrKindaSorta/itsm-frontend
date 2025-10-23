@@ -160,11 +160,12 @@ export default function Customize() {
     setFields(fields.map((f) => (f.id === updatedField.id ? updatedField : f)));
   };
 
-  const handleCreateChildField = (childField: Partial<FormField>) => {
-    if (!selectedFieldId) return;
-
-    const parentField = fields.find(f => f.id === selectedFieldId);
-    if (!parentField) return;
+  const handleCreateChildField = (childField: Partial<FormField>, parentFieldId: string) => {
+    const parentField = fields.find(f => f.id === parentFieldId);
+    if (!parentField) {
+      console.error('[handleCreateChildField] Parent field not found:', parentFieldId);
+      return;
+    }
 
     // Create the new child field
     const newChildField: FormField = {
@@ -199,7 +200,7 @@ export default function Customize() {
 
       // Update the parent field to reference the child
       const finalFields = fieldsWithChild.map(f =>
-        f.id === selectedFieldId ? updatedParent : f
+        f.id === parentFieldId ? updatedParent : f
       );
 
       console.log('[handleCreateChildField] Created child field:', {
