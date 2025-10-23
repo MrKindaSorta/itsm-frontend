@@ -118,6 +118,7 @@ export default function FormCanvas({
       onCreateChildField(childField, parentField.id);
     }
 
+    isDraggingFromPaletteRef.current = false;
     setIsDraggingFromPalette(false);
   };
 
