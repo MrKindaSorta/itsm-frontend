@@ -25,7 +25,7 @@ interface CustomSLAField {
   id: string;
   label: string;
   type: string;
-  options: string[];
+  options?: string[]; // Optional for checkbox fields (they use checked/unchecked)
   enabled: boolean;
 }
 
@@ -73,20 +73,24 @@ export default function SLAForm({ rule, onSave, onCancel }: SLAFormProps) {
           setHasPriorityField(fields.some((f: FormField) => f.id === 'system-priority'));
           setHasCategoryField(fields.some((f: FormField) => f.id === 'system-category'));
 
-          // Extract custom dropdown/multiselect fields (excluding system priority/category)
+          // Extract custom dropdown/multiselect/checkbox fields (excluding system priority/category)
           const customSLAFields = fields
-            .filter((f: FormField) =>
-              (f.type === 'dropdown' || f.type === 'multiselect') &&
-              f.id !== 'system-priority' &&
-              f.id !== 'system-category' &&
-              f.options &&
-              f.options.length > 0
-            )
+            .filter((f: FormField) => {
+              // Include checkbox fields
+              if (f.type === 'checkbox') return true;
+
+              // Include dropdown/multiselect with options
+              return (f.type === 'dropdown' || f.type === 'multiselect') &&
+                f.id !== 'system-priority' &&
+                f.id !== 'system-category' &&
+                f.options &&
+                f.options.length > 0;
+            })
             .map((f: FormField) => ({
               id: f.id,
               label: f.label,
               type: f.type,
-              options: f.options || [],
+              options: f.options, // Will be undefined for checkbox
               enabled: !f.hidden,
             }));
 
@@ -106,20 +110,24 @@ export default function SLAForm({ rule, onSave, onCancel }: SLAFormProps) {
             setHasPriorityField(fields.some(f => f.id === 'system-priority'));
             setHasCategoryField(fields.some(f => f.id === 'system-category'));
 
-            // Extract custom dropdown/multiselect fields
+            // Extract custom dropdown/multiselect/checkbox fields
             const customSLAFields = fields
-              .filter(f =>
-                (f.type === 'dropdown' || f.type === 'multiselect') &&
-                f.id !== 'system-priority' &&
-                f.id !== 'system-category' &&
-                f.options &&
-                f.options.length > 0
-              )
+              .filter(f => {
+                // Include checkbox fields
+                if (f.type === 'checkbox') return true;
+
+                // Include dropdown/multiselect with options
+                return (f.type === 'dropdown' || f.type === 'multiselect') &&
+                  f.id !== 'system-priority' &&
+                  f.id !== 'system-category' &&
+                  f.options &&
+                  f.options.length > 0;
+              })
               .map(f => ({
                 id: f.id,
                 label: f.label,
                 type: f.type,
-                options: f.options || [],
+                options: f.options, // Will be undefined for checkbox
                 enabled: !f.hidden,
               }));
 
@@ -443,16 +451,37 @@ export default function SLAForm({ rule, onSave, onCancel }: SLAFormProps) {
                   </div>
                 )}
                 <div className={`flex flex-wrap gap-2 ${!customField.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
-                  {customField.options.map((option) => (
-                    <Badge
-                      key={option}
-                      variant={(customFieldSelections[customField.id] || []).includes(option) ? 'default' : 'outline'}
-                      className="cursor-pointer"
-                      onClick={() => customField.enabled && toggleCustomFieldSelection(customField.id, option)}
-                    >
-                      {option}
-                    </Badge>
-                  ))}
+                  {customField.type === 'checkbox' ? (
+                    // Checkbox fields: show Checked/Unchecked options
+                    <>
+                      <Badge
+                        variant={(customFieldSelections[customField.id] || []).includes('true') ? 'default' : 'outline'}
+                        className="cursor-pointer"
+                        onClick={() => customField.enabled && toggleCustomFieldSelection(customField.id, 'true')}
+                      >
+                        Checked
+                      </Badge>
+                      <Badge
+                        variant={(customFieldSelections[customField.id] || []).includes('false') ? 'default' : 'outline'}
+                        className="cursor-pointer"
+                        onClick={() => customField.enabled && toggleCustomFieldSelection(customField.id, 'false')}
+                      >
+                        Unchecked
+                      </Badge>
+                    </>
+                  ) : (
+                    // Dropdown/Multiselect fields: show their options
+                    customField.options?.map((option) => (
+                      <Badge
+                        key={option}
+                        variant={(customFieldSelections[customField.id] || []).includes(option) ? 'default' : 'outline'}
+                        className="cursor-pointer"
+                        onClick={() => customField.enabled && toggleCustomFieldSelection(customField.id, option)}
+                      >
+                        {option}
+                      </Badge>
+                    ))
+                  )}
                 </div>
               </div>
             ))}
