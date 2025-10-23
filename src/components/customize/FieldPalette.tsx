@@ -180,6 +180,14 @@ const CONDITIONAL_CAPABLE_TYPES: FormFieldType[] = ['number', 'dropdown', 'check
 
 export default function FieldPalette() {
   const handleDragStart = (e: React.DragEvent, fieldType: FormFieldType) => {
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] 🎨 PALETTE dragStart - Field type: ${fieldType}`, {
+      effectAllowed: 'copy',
+      setData: {
+        fieldType,
+        dragSource: 'palette'
+      }
+    });
     e.dataTransfer.effectAllowed = 'copy';
     e.dataTransfer.setData('fieldType', fieldType);
     e.dataTransfer.setData('dragSource', 'palette');

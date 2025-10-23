@@ -42,6 +42,10 @@ export default function FormCanvas({
   };
 
   const handleDragEnd = () => {
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] 🔚 handleDragEnd called`, {
+      wasDraggingFromPalette: isDraggingFromPaletteRef.current
+    });
     setDraggingFieldId(null);
     setDragOverIndex(null);
     isDraggingFromPaletteRef.current = false;
@@ -81,13 +85,29 @@ export default function FormCanvas({
 
   // Separate handler for child target drops
   const handleChildTargetDrop = (e: React.DragEvent, parentField: FormField) => {
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] 🎯 handleChildTargetDrop called`, {
+      parentField: parentField.label,
+      parentId: parentField.id,
+      dataTransferTypes: Array.from(e.dataTransfer.types),
+      fieldType: e.dataTransfer.getData('fieldType'),
+      dragSource: e.dataTransfer.getData('dragSource'),
+      onCreateChildFieldExists: !!onCreateChildField
+    });
+
     e.stopPropagation();
     e.preventDefault();
 
-    if (!onCreateChildField) return;
+    if (!onCreateChildField) {
+      console.error(`[${timestamp}] ❌ onCreateChildField is not defined!`);
+      return;
+    }
 
     const fieldType = e.dataTransfer.getData('fieldType') as FormFieldType;
+    console.log(`[${timestamp}] 🔍 Retrieved fieldType from dataTransfer:`, fieldType);
+
     const fieldTemplate = FIELD_TYPES.find((ft) => ft.type === fieldType);
+    console.log(`[${timestamp}] 🔍 Found fieldTemplate:`, !!fieldTemplate, fieldTemplate?.label);
 
     if (fieldTemplate) {
       const childNestingLevel = (parentField.conditionalLogic?.nestingLevel || 0) + 1;
@@ -112,10 +132,21 @@ export default function FormCanvas({
         },
       };
 
+      console.log(`[${timestamp}] ✅ Calling onCreateChildField`, {
+        childId: childField.id,
+        childLabel: childField.label,
+        childType: childField.type,
+        parentId: parentField.id,
+        nestingLevel: childNestingLevel
+      });
+
       // Let parent component handle all state updates atomically
       onCreateChildField(childField, parentField.id);
+    } else {
+      console.error(`[${timestamp}] ❌ No field template found for type: ${fieldType}`);
     }
 
+    console.log(`[${timestamp}] 🔄 Setting isDraggingFromPalette to false`);
     setIsDraggingFromPalette(false);
   };
 
@@ -157,6 +188,11 @@ export default function FormCanvas({
     // Check if dragging from palette by looking at data types
     const types = Array.from(e.dataTransfer.types);
     if (types.includes('fieldtype') && !isDraggingFromPaletteRef.current) {
+      const timestamp = new Date().toISOString();
+      console.log(`[${timestamp}] 🌐 Canvas detected drag from palette`, {
+        types,
+        effectAllowed: e.dataTransfer.effectAllowed
+      });
       isDraggingFromPaletteRef.current = true;
       setIsDraggingFromPalette(true);
     }
@@ -276,6 +312,18 @@ export default function FormCanvas({
               const isConditionalCapable = ['number', 'dropdown', 'checkbox', 'category', 'multiselect'].includes(field.type);
               const canHaveChildren = (field.conditionalLogic?.nestingLevel || 0) < 2;
               const showConditionalDropZone = isDraggingFromPalette && isConditionalCapable && canHaveChildren;
+
+              // Log when drop zone visibility changes
+              if (showConditionalDropZone) {
+                const timestamp = new Date().toISOString();
+                console.log(`[${timestamp}] 👁️ Rendering purple drop zone for field: ${field.label}`, {
+                  isDraggingFromPalette,
+                  isConditionalCapable,
+                  canHaveChildren,
+                  nestingLevel,
+                  fieldType: field.type
+                });
+              }
 
               return (
                 <div key={field.id}>

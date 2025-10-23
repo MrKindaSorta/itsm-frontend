@@ -200,16 +200,46 @@ const FormFieldRenderer = React.memo(function FormFieldRenderer({
       {showConditionalDropZone && (
         <div
           onDragEnter={(e) => {
+            const timestamp = new Date().toISOString();
+            console.log(`[${timestamp}] 🟣 PURPLE_ZONE onDragEnter - Field: ${field.label}`, {
+              target: e.target,
+              currentTarget: e.currentTarget,
+              dropEffect: e.dataTransfer.dropEffect,
+              effectAllowed: e.dataTransfer.effectAllowed,
+              types: Array.from(e.dataTransfer.types)
+            });
             e.preventDefault();
             e.stopPropagation();
             e.dataTransfer.dropEffect = 'copy';
           }}
           onDragOver={(e) => {
+            const timestamp = new Date().toISOString();
+            console.log(`[${timestamp}] 🟣 PURPLE_ZONE onDragOver - Field: ${field.label}`, {
+              target: (e.target as HTMLElement).className,
+              currentTarget: (e.currentTarget as HTMLElement).className,
+              dropEffect: e.dataTransfer.dropEffect,
+              types: Array.from(e.dataTransfer.types)
+            });
             e.preventDefault();
             e.stopPropagation();
             e.dataTransfer.dropEffect = 'copy';
           }}
+          onDragLeave={(e) => {
+            const timestamp = new Date().toISOString();
+            console.log(`[${timestamp}] 🟣 PURPLE_ZONE onDragLeave - Field: ${field.label}`, {
+              target: (e.target as HTMLElement).className,
+              currentTarget: (e.currentTarget as HTMLElement).className,
+              clientX: e.clientX,
+              clientY: e.clientY
+            });
+          }}
           onDrop={(e) => {
+            const timestamp = new Date().toISOString();
+            console.log(`[${timestamp}] 🟣 PURPLE_ZONE onDrop - Field: ${field.label}`, {
+              types: Array.from(e.dataTransfer.types),
+              fieldType: e.dataTransfer.getData('fieldType'),
+              dragSource: e.dataTransfer.getData('dragSource')
+            });
             e.preventDefault();
             e.stopPropagation();
             onConditionalDrop?.(e);
