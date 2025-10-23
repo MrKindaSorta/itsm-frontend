@@ -6,6 +6,7 @@ export interface SLAConditions {
   location?: string[];
   jobTitle?: string[];
   manager?: string[];
+  customFields?: Record<string, string[]>; // Dynamic fields from form builder (keyed by field ID)
 }
 
 export interface SLATargets {

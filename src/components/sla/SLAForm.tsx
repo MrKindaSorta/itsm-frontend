@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { SLARule } from '@/types/sla';
-import type { FormConfiguration } from '@/types/formBuilder';
+import type { FormConfiguration, FormField } from '@/types/formBuilder';
 import { X, AlertTriangle, Loader2, Info } from 'lucide-react';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
@@ -19,6 +19,15 @@ interface SLAFormProps {
 
 const PRIORITY_OPTIONS = ['Low', 'Medium', 'High', 'Urgent'];
 const CATEGORY_OPTIONS = ['Hardware', 'Software', 'Network', 'Account Access', 'Other'];
+
+// Interface for custom form fields that can be used in SLA conditions
+interface CustomSLAField {
+  id: string;
+  label: string;
+  type: string;
+  options: string[];
+  enabled: boolean;
+}
 
 export default function SLAForm({ rule, onSave, onCancel }: SLAFormProps) {
   const [name, setName] = useState('');
@@ -48,8 +57,10 @@ export default function SLAForm({ rule, onSave, onCancel }: SLAFormProps) {
   const [isManagersLoading, setIsManagersLoading] = useState(true);
   const [hasPriorityField, setHasPriorityField] = useState(true);
   const [hasCategoryField, setHasCategoryField] = useState(true);
+  const [customFields, setCustomFields] = useState<CustomSLAField[]>([]);
+  const [customFieldSelections, setCustomFieldSelections] = useState<Record<string, string[]>>({});
 
-  // Check if priority/category fields are enabled in form configuration
+  // Check if priority/category fields are enabled in form configuration and load custom fields
   useEffect(() => {
     const loadFormConfig = async () => {
       try {
@@ -58,9 +69,28 @@ export default function SLAForm({ rule, onSave, onCancel }: SLAFormProps) {
         const data = await response.json();
 
         if (data.success && data.config.fields) {
-          const fields = data.config.fields;
-          setHasPriorityField(fields.some((f: any) => f.id === 'system-priority'));
-          setHasCategoryField(fields.some((f: any) => f.id === 'system-category'));
+          const fields: FormField[] = data.config.fields;
+          setHasPriorityField(fields.some((f: FormField) => f.id === 'system-priority'));
+          setHasCategoryField(fields.some((f: FormField) => f.id === 'system-category'));
+
+          // Extract custom dropdown/multiselect fields (excluding system priority/category)
+          const customSLAFields = fields
+            .filter((f: FormField) =>
+              (f.type === 'dropdown' || f.type === 'multiselect') &&
+              f.id !== 'system-priority' &&
+              f.id !== 'system-category' &&
+              f.options &&
+              f.options.length > 0
+            )
+            .map((f: FormField) => ({
+              id: f.id,
+              label: f.label,
+              type: f.type,
+              options: f.options || [],
+              enabled: !f.hidden,
+            }));
+
+          setCustomFields(customSLAFields);
         } else {
           throw new Error('No fields in API response');
         }
@@ -75,6 +105,25 @@ export default function SLAForm({ rule, onSave, onCancel }: SLAFormProps) {
             const fields = config.fields || [];
             setHasPriorityField(fields.some(f => f.id === 'system-priority'));
             setHasCategoryField(fields.some(f => f.id === 'system-category'));
+
+            // Extract custom dropdown/multiselect fields
+            const customSLAFields = fields
+              .filter(f =>
+                (f.type === 'dropdown' || f.type === 'multiselect') &&
+                f.id !== 'system-priority' &&
+                f.id !== 'system-category' &&
+                f.options &&
+                f.options.length > 0
+              )
+              .map(f => ({
+                id: f.id,
+                label: f.label,
+                type: f.type,
+                options: f.options || [],
+                enabled: !f.hidden,
+              }));
+
+            setCustomFields(customSLAFields);
           } catch (parseError) {
             console.error('Failed to parse localStorage config:', parseError);
           }
@@ -97,6 +146,7 @@ export default function SLAForm({ rule, onSave, onCancel }: SLAFormProps) {
       setSelectedLocations(rule.conditions.location || []);
       setSelectedJobTitles(rule.conditions.jobTitle || []);
       setSelectedManagers(rule.conditions.manager || []);
+      setCustomFieldSelections(rule.conditions.customFields || {});
       setFirstResponseMinutes(rule.targets.firstResponseMinutes);
       setResolutionMinutes(rule.targets.resolutionMinutes);
       setEscalationEnabled(rule.escalation?.enabled || false);
@@ -198,6 +248,23 @@ export default function SLAForm({ rule, onSave, onCancel }: SLAFormProps) {
     }
   };
 
+  const toggleCustomFieldSelection = (fieldId: string, value: string) => {
+    setCustomFieldSelections(prev => {
+      const current = prev[fieldId] || [];
+      const updated = current.includes(value)
+        ? current.filter(v => v !== value)
+        : [...current, value];
+
+      // Remove field key if no selections
+      if (updated.length === 0) {
+        const { [fieldId]: _, ...rest } = prev;
+        return rest;
+      }
+
+      return { ...prev, [fieldId]: updated };
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -213,6 +280,7 @@ export default function SLAForm({ rule, onSave, onCancel }: SLAFormProps) {
         location: selectedLocations.length > 0 ? selectedLocations : undefined,
         jobTitle: selectedJobTitles.length > 0 ? selectedJobTitles : undefined,
         manager: selectedManagers.length > 0 ? selectedManagers : undefined,
+        customFields: Object.keys(customFieldSelections).length > 0 ? customFieldSelections : undefined,
       },
       targets: {
         firstResponseMinutes,
@@ -357,6 +425,44 @@ export default function SLAForm({ rule, onSave, onCancel }: SLAFormProps) {
                 ))}
               </div>
             </div>
+
+            {/* Custom Dropdown/Multiselect Fields from Form Builder */}
+            {customFields.map((customField) => (
+              <div key={customField.id}>
+                <Label className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
+                  {customField.label}
+                  {!customField.enabled && (
+                    <span className="inline-flex items-center gap-1 text-orange-600" title={`${customField.label} field is disabled in the ticket form`}>
+                      <Info className="h-3 w-3" />
+                    </span>
+                  )}
+                </Label>
+                {!customField.enabled && (
+                  <div className="mb-2 text-xs text-orange-600 bg-orange-50 dark:bg-orange-950 p-2 rounded border border-orange-200 dark:border-orange-800">
+                    ⚠️ {customField.label} field is disabled in the ticket form. Enable it in Form Builder to use this condition.
+                  </div>
+                )}
+                <div className={`flex flex-wrap gap-2 ${!customField.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
+                  {customField.options.map((option) => (
+                    <Badge
+                      key={option}
+                      variant={(customFieldSelections[customField.id] || []).includes(option) ? 'default' : 'outline'}
+                      className="cursor-pointer"
+                      onClick={() => customField.enabled && toggleCustomFieldSelection(customField.id, option)}
+                    >
+                      {option}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            {/* Divider between Ticket Fields and User Profile Fields */}
+            {customFields.length > 0 && (
+              <div className="pt-2 border-t border-border">
+                <Label className="text-xs font-medium text-muted-foreground">User Profile Conditions</Label>
+              </div>
+            )}
 
             <div>
               <Label className="text-xs text-muted-foreground mb-2 block">Department</Label>
