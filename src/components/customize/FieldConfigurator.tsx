@@ -4,19 +4,24 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import type { FormField } from '@/types/formBuilder';
+import type { FormField, ConditionalLogic } from '@/types/formBuilder';
+import ConditionalLogicEditor from './ConditionalLogicEditor';
 import { X, Plus } from 'lucide-react';
 
 interface FieldConfiguratorProps {
   field: FormField | null;
+  allFields?: FormField[];
   onFieldUpdate: (updatedField: FormField) => void;
   onClose: () => void;
+  onAddChildField?: () => void;
 }
 
 export default function FieldConfigurator({
   field,
+  allFields = [],
   onFieldUpdate,
   onClose,
+  onAddChildField,
 }: FieldConfiguratorProps) {
   const [localField, setLocalField] = useState<FormField | null>(field);
 
@@ -311,6 +316,19 @@ export default function FieldConfigurator({
             </div>
           </div>
         )}
+
+        {/* Conditional Logic */}
+        <div className="pt-4 border-t border-border">
+          <Label className="text-sm font-medium mb-3 block">Conditional Logic</Label>
+          <ConditionalLogicEditor
+            field={localField}
+            allFields={allFields}
+            onUpdate={(conditionalLogic: ConditionalLogic) =>
+              updateField({ conditionalLogic })
+            }
+            onAddChildField={() => onAddChildField?.()}
+          />
+        </div>
       </CardContent>
     </Card>
   );

@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import type { FormConfiguration, FormField } from '@/types/formBuilder';
 import type { User, TicketPriority } from '@/types';
 import { getPriorityColor } from '@/lib/utils';
+import { getVisibleFields, getFieldsToHide } from '@/utils/conditionalFieldEvaluator';
 
 const FORM_CONFIG_STORAGE_KEY = 'itsm-form-configuration';
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
@@ -244,6 +245,26 @@ export default function CreateTicket() {
     }
   };
 
+  // Calculate visible fields based on conditional logic
+  const visibleFields = useMemo(() => {
+    return getVisibleFields(allFields, fieldValues);
+  }, [allFields, fieldValues]);
+
+  // Handler for field value changes with conditional logic support
+  const handleFieldValueChange = (fieldId: string, value: any) => {
+    const newFieldValues = { ...fieldValues, [fieldId]: value };
+
+    // Check if any dependent fields should be hidden due to this change
+    const fieldsToHide = getFieldsToHide(allFields, newFieldValues, fieldId);
+
+    // Clear values of hidden fields
+    fieldsToHide.forEach(hiddenFieldId => {
+      delete newFieldValues[hiddenFieldId];
+    });
+
+    setFieldValues(newFieldValues);
+  };
+
   // Smart KB article suggestions with tag-based scoring
   const kbSuggestions = useMemo(() => {
     const title = fieldValues['system-title'] || '';
@@ -332,7 +353,7 @@ export default function CreateTicket() {
               id={field.id}
               placeholder={field.placeholder}
               value={value || ''}
-              onChange={(e) => setFieldValues({ ...fieldValues, [field.id]: e.target.value })}
+              onChange={(e) => handleFieldValueChange(field.id, e.target.value)}
               required={field.required}
               disabled={showSuccess}
               maxLength={field.validation?.maxLength}
@@ -353,7 +374,7 @@ export default function CreateTicket() {
               id={field.id}
               placeholder={field.placeholder}
               value={value || ''}
-              onChange={(e) => setFieldValues({ ...fieldValues, [field.id]: e.target.value })}
+              onChange={(e) => handleFieldValueChange(field.id, e.target.value)}
               required={field.required}
               disabled={showSuccess}
               rows={4}
@@ -375,7 +396,7 @@ export default function CreateTicket() {
               type="number"
               placeholder={field.placeholder}
               value={value || ''}
-              onChange={(e) => setFieldValues({ ...fieldValues, [field.id]: e.target.value })}
+              onChange={(e) => handleFieldValueChange(field.id, e.target.value)}
               required={field.required}
               disabled={showSuccess}
               min={field.validation?.min}
@@ -397,7 +418,7 @@ export default function CreateTicket() {
               id={field.id}
               type="date"
               value={value || ''}
-              onChange={(e) => setFieldValues({ ...fieldValues, [field.id]: e.target.value })}
+              onChange={(e) => handleFieldValueChange(field.id, e.target.value)}
               required={field.required}
               disabled={showSuccess}
             />
@@ -416,7 +437,7 @@ export default function CreateTicket() {
             <Select
               id={field.id}
               value={value || ''}
-              onChange={(e) => setFieldValues({ ...fieldValues, [field.id]: e.target.value })}
+              onChange={(e) => handleFieldValueChange(field.id, e.target.value)}
               required={field.required}
               disabled={showSuccess}
             >
@@ -442,7 +463,7 @@ export default function CreateTicket() {
             <MultiSelect
               options={field.options || []}
               selectedValues={value || []}
-              onChange={(values) => setFieldValues({ ...fieldValues, [field.id]: values })}
+              onChange={(values) => handleFieldValueChange(field.id, values)}
               placeholder={field.placeholder || 'Select options...'}
               disabled={showSuccess}
             />
@@ -458,7 +479,7 @@ export default function CreateTicket() {
             <Checkbox
               id={field.id}
               checked={value || false}
-              onChange={(e) => setFieldValues({ ...fieldValues, [field.id]: e.target.checked })}
+              onChange={(e) => handleFieldValueChange(field.id, e.target.checked)}
               required={field.required}
               disabled={showSuccess}
               label={field.label + (field.required ? ' *' : '')}
@@ -478,7 +499,7 @@ export default function CreateTicket() {
               type="file"
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                setFieldValues({ ...fieldValues, [field.id]: file });
+                handleFieldValueChange(field.id, file);
               }}
               required={field.required}
               disabled={showSuccess}
@@ -515,7 +536,7 @@ export default function CreateTicket() {
                         ? getPriorityColor(normalizedValue) + ' ring-2 ring-offset-2'
                         : 'hover:bg-accent'
                     } ${showSuccess ? 'pointer-events-none opacity-50' : ''}`}
-                    onClick={() => !showSuccess && setFieldValues({ ...fieldValues, [field.id]: option })}
+                    onClick={() => !showSuccess && handleFieldValueChange(field.id, option)}
                   >
                     {option}
                   </Badge>
@@ -537,7 +558,7 @@ export default function CreateTicket() {
             <Select
               id={field.id}
               value={value || field.defaultValue || ''}
-              onChange={(e) => setFieldValues({ ...fieldValues, [field.id]: e.target.value })}
+              onChange={(e) => handleFieldValueChange(field.id, e.target.value)}
               required={field.required}
               disabled={showSuccess}
             >
@@ -579,8 +600,8 @@ export default function CreateTicket() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Render all fields in order, excluding hidden fields */}
-                {allFields.filter(field => !field.hidden).map((field) => renderField(field))}
+                {/* Render visible fields based on conditional logic */}
+                {visibleFields.filter(field => !field.hidden).map((field) => renderField(field))}
 
                 <Button type="submit" className="w-full" disabled={showSuccess}>
                   <Send className="h-4 w-4 mr-2" />

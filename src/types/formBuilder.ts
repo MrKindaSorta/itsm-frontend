@@ -12,6 +12,31 @@ export type FormFieldType =
   | 'priority'
   | 'category';
 
+// Condition type for different field types
+export type ConditionType = 'equals' | 'range' | 'optionMatch' | 'checkboxState';
+
+// Condition operator for number fields
+export type ConditionOperator = 'equals' | 'between' | 'greaterThan' | 'lessThan';
+
+// Single condition rule
+export interface ConditionRule {
+  type: ConditionType;
+  operator?: ConditionOperator; // For number fields
+  value?: any; // Single value for 'equals', boolean for checkbox
+  rangeMin?: number; // For number range
+  rangeMax?: number; // For number range
+  options?: string[]; // For dropdown multi-option match
+}
+
+// Conditional logic configuration
+export interface ConditionalLogic {
+  enabled: boolean;
+  parentFieldId?: string; // Reference to parent field (if this is a child)
+  conditions: ConditionRule[]; // Conditions to show this field
+  childFields?: string[]; // IDs of fields that depend on this field
+  nestingLevel?: number; // Track depth (0 = root, 1 = child, 2 = grandchild)
+}
+
 // Form field configuration
 export interface FormField {
   id: string;
@@ -32,6 +57,7 @@ export interface FormField {
     pattern?: string;
     maxLength?: number;
   };
+  conditionalLogic?: ConditionalLogic; // Conditional field logic
 }
 
 // Palette field definition (template for creating new fields)

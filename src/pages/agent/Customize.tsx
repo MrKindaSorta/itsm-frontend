@@ -467,8 +467,13 @@ export default function Customize() {
                   <div className="col-span-3">
                     <FieldConfigurator
                       field={selectedField}
+                      allFields={fields}
                       onFieldUpdate={handleFieldUpdate}
                       onClose={() => setSelectedFieldId(null)}
+                      onAddChildField={() => {
+                        // TODO: Open modal to create child field
+                        alert('Child field creation modal coming soon!');
+                      }}
                     />
                   </div>
                 </div>

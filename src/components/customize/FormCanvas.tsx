@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import type { FormField, FormFieldType } from '@/types/formBuilder';
 import FormFieldRenderer from './FormFieldRenderer';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Zap, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface FormCanvasProps {
@@ -116,6 +117,52 @@ export default function FormCanvas({
     onFieldsChange(updatedFields);
   };
 
+  // Organize fields into hierarchy (root fields with their children)
+  const fieldHierarchy = useMemo(() => {
+    const rootFields = fields.filter(f => !f.conditionalLogic?.parentFieldId);
+    const childFieldsMap = new Map<string, FormField[]>();
+
+    // Group children by parent
+    fields.forEach(field => {
+      const parentId = field.conditionalLogic?.parentFieldId;
+      if (parentId) {
+        if (!childFieldsMap.has(parentId)) {
+          childFieldsMap.set(parentId, []);
+        }
+        childFieldsMap.get(parentId)!.push(field);
+      }
+    });
+
+    // Build hierarchy with children nested under parents
+    const buildHierarchy = (field: FormField, level: number = 0): any => {
+      const children = childFieldsMap.get(field.id) || [];
+      return {
+        field,
+        level,
+        children: children.map(child => buildHierarchy(child, level + 1))
+      };
+    };
+
+    return rootFields.map(field => buildHierarchy(field));
+  }, [fields]);
+
+  // Flatten hierarchy for rendering while preserving structure info
+  const flattenedFields = useMemo(() => {
+    const result: Array<{ field: FormField; level: number; hasChildren: boolean }> = [];
+
+    const flatten = (node: any) => {
+      result.push({
+        field: node.field,
+        level: node.level,
+        hasChildren: node.children.length > 0
+      });
+      node.children.forEach((child: any) => flatten(child));
+    };
+
+    fieldHierarchy.forEach(node => flatten(node));
+    return result;
+  }, [fieldHierarchy]);
+
   return (
     <Card className="h-full flex flex-col">
       <CardHeader>
@@ -140,30 +187,73 @@ export default function FormCanvas({
           </div>
         ) : (
           <div className="space-y-3">
-            {fields.map((field, index) => (
-              <div key={field.id} className="relative">
-                {dragOverIndex === index && draggingFieldId !== field.id && (
-                  <div className="absolute -top-1.5 left-0 right-0 h-1 bg-primary rounded-full z-10" />
-                )}
-                <FormFieldRenderer
-                  field={field}
-                  index={index}
-                  isSelected={selectedFieldId === field.id}
-                  isDragging={draggingFieldId === field.id}
-                  onSelect={() => onFieldSelect(field.id)}
-                  onDelete={() => handleDeleteField(field.id)}
-                  onToggleHidden={() => handleToggleHidden(field.id)}
-                  onDragStart={(e) => handleDragStart(e, field, index)}
-                  onDragOver={(e) => handleDragOver(e, index)}
-                  onDragLeave={handleDragLeave}
-                  onDragEnd={handleDragEnd}
-                  onDrop={(e) => handleDrop(e, index)}
-                />
-                {dragOverIndex === index + 1 && (
-                  <div className="absolute -bottom-1.5 left-0 right-0 h-1 bg-primary rounded-full z-10" />
-                )}
-              </div>
-            ))}
+            {flattenedFields.map(({ field, level, hasChildren }, index) => {
+              const isConditional = field.conditionalLogic?.enabled || false;
+              const nestingLevel = field.conditionalLogic?.nestingLevel || 0;
+
+              return (
+                <div key={field.id} className="relative">
+                  {dragOverIndex === index && draggingFieldId !== field.id && (
+                    <div className="absolute -top-1.5 left-0 right-0 h-1 bg-primary rounded-full z-10" />
+                  )}
+
+                  {/* Visual nesting indicators */}
+                  <div
+                    className={cn(
+                      "relative",
+                      level > 0 && "ml-8"
+                    )}
+                  >
+                    {/* Connecting line for child fields */}
+                    {level > 0 && (
+                      <div className="absolute -left-8 top-0 bottom-0 w-8 flex items-center">
+                        <div className="w-full h-px bg-border" />
+                        <ChevronRight className="absolute right-0 h-3 w-3 text-muted-foreground" />
+                      </div>
+                    )}
+
+                    {/* Field badges */}
+                    <div className="flex items-center gap-2 mb-1">
+                      {isConditional && (
+                        <Badge variant="outline" className="text-xs gap-1">
+                          <Zap className="h-3 w-3" />
+                          Conditional
+                        </Badge>
+                      )}
+                      {nestingLevel > 0 && (
+                        <Badge variant="secondary" className="text-xs">
+                          Level {nestingLevel}
+                        </Badge>
+                      )}
+                      {hasChildren && (
+                        <Badge variant="default" className="text-xs">
+                          Has {flattenedFields.filter(f => f.field.conditionalLogic?.parentFieldId === field.id).length} child fields
+                        </Badge>
+                      )}
+                    </div>
+
+                    <FormFieldRenderer
+                      field={field}
+                      index={index}
+                      isSelected={selectedFieldId === field.id}
+                      isDragging={draggingFieldId === field.id}
+                      onSelect={() => onFieldSelect(field.id)}
+                      onDelete={() => handleDeleteField(field.id)}
+                      onToggleHidden={() => handleToggleHidden(field.id)}
+                      onDragStart={(e) => handleDragStart(e, field, index)}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDragLeave={handleDragLeave}
+                      onDragEnd={handleDragEnd}
+                      onDrop={(e) => handleDrop(e, index)}
+                    />
+                  </div>
+
+                  {dragOverIndex === index + 1 && (
+                    <div className="absolute -bottom-1.5 left-0 right-0 h-1 bg-primary rounded-full z-10" />
+                  )}
+                </div>
+              );
+            })}
             {/* Drop zone at the end */}
             <div
               onDragOver={(e) => {
