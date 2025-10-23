@@ -1,9 +1,9 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { FormField, FormFieldType, ConditionRule } from '@/types/formBuilder';
 import FormFieldRenderer from './FormFieldRenderer';
-import { PlusCircle, Zap, ChevronRight } from 'lucide-react';
+import { PlusCircle, Zap, ChevronRight, ArrowDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FIELD_TYPES } from './FieldPalette';
 
@@ -27,26 +27,9 @@ export default function FormCanvas({
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [draggingFieldId, setDraggingFieldId] = useState<string | null>(null);
 
-  // Hover timer state for child field creation
-  const [hoveredParentId, setHoveredParentId] = useState<string | null>(null);
-  const [hoverStartTime, setHoverStartTime] = useState<number | null>(null);
-  const [hoverProgress, setHoverProgress] = useState<number>(0);
-
-  // Update progress every 100ms when hovering
-  useEffect(() => {
-    if (!hoverStartTime || !hoveredParentId) {
-      setHoverProgress(0);
-      return;
-    }
-
-    const interval = setInterval(() => {
-      const elapsed = Date.now() - hoverStartTime;
-      const progress = Math.min((elapsed / 2000) * 100, 100);
-      setHoverProgress(progress);
-    }, 100);
-
-    return () => clearInterval(interval);
-  }, [hoverStartTime, hoveredParentId]);
+  // Track when dragging from palette to show drop targets
+  const [isDraggingFromPalette, setIsDraggingFromPalette] = useState<boolean>(false);
+  const [dragOverChildTarget, setDragOverChildTarget] = useState<string | null>(null);
 
   const handleDragStart = (e: React.DragEvent, field: FormField, index: number) => {
     e.dataTransfer.effectAllowed = 'move';
@@ -56,58 +39,24 @@ export default function FormCanvas({
     setDraggingFieldId(field.id);
   };
 
-  const handleDragOver = (e: React.DragEvent, targetField: FormField, index: number) => {
+  const handleDragOver = (e: React.DragEvent, _targetField: FormField, index: number) => {
     e.preventDefault();
-
-    const dragSource = e.dataTransfer.types.includes('text/plain') ? 'palette' : 'canvas';
-
-    // Check if dragging from palette over a conditional field
-    if (dragSource === 'palette') {
-      const isConditionalField = targetField.conditionalLogic?.enabled === true;
-      const nestingLevel = targetField.conditionalLogic?.nestingLevel || 0;
-      const canAddChild = nestingLevel < 2; // Max 3 levels (0, 1, 2)
-
-      if (isConditionalField && canAddChild) {
-        // Valid parent field for child creation
-        if (hoveredParentId !== targetField.id) {
-          // Start new hover
-          setHoveredParentId(targetField.id);
-          setHoverStartTime(Date.now());
-        }
-        // Don't set dragOverIndex for normal drop zone
-        return;
-      }
-    }
-
-    // Normal drag-over behavior for reordering
     e.dataTransfer.dropEffect = 'move';
     setDragOverIndex(index);
-
-    // Reset hover state if not over valid parent
-    if (hoveredParentId) {
-      setHoveredParentId(null);
-      setHoverStartTime(null);
-      setHoverProgress(0);
-    }
   };
 
   const handleDragLeave = (_e: React.DragEvent, fieldId?: string) => {
     setDragOverIndex(null);
-
-    // Reset hover timer if leaving the hovered parent
-    if (fieldId && hoveredParentId === fieldId) {
-      setHoveredParentId(null);
-      setHoverStartTime(null);
-      setHoverProgress(0);
+    if (fieldId && dragOverChildTarget === fieldId) {
+      setDragOverChildTarget(null);
     }
   };
 
   const handleDragEnd = () => {
     setDraggingFieldId(null);
     setDragOverIndex(null);
-    setHoveredParentId(null);
-    setHoverStartTime(null);
-    setHoverProgress(0);
+    setIsDraggingFromPalette(false);
+    setDragOverChildTarget(null);
   };
 
   // Helper function to create default condition based on field type
@@ -142,54 +91,62 @@ export default function FormCanvas({
   const handleDrop = (e: React.DragEvent, dropIndex: number, targetField?: FormField) => {
     e.preventDefault();
     setDragOverIndex(null);
+    setDragOverChildTarget(null);
+    setIsDraggingFromPalette(false);
 
     const dragSource = e.dataTransfer.getData('dragSource');
+    const droppedOnChildTarget = e.dataTransfer.getData('droppedOnChildTarget') === 'true';
 
-    // Check if this is a child creation drop (hover exceeded 2 seconds)
-    if (dragSource === 'palette' && hoveredParentId && hoverProgress >= 100 && targetField && onCreateChildField) {
+    // Check if this is a child creation drop (dropped on purple circle)
+    if (dragSource === 'palette' && droppedOnChildTarget && targetField && onCreateChildField) {
       const fieldType = e.dataTransfer.getData('fieldType') as FormFieldType;
       const fieldTemplate = FIELD_TYPES.find((ft) => ft.type === fieldType);
 
-      if (fieldTemplate && hoveredParentId === targetField.id) {
-        const parentField = fields.find(f => f.id === hoveredParentId);
-        if (parentField) {
-          const childNestingLevel = (parentField.conditionalLogic?.nestingLevel || 0) + 1;
+      if (fieldTemplate) {
+        const parentField = targetField;
+        const childNestingLevel = (parentField.conditionalLogic?.nestingLevel || 0) + 1;
 
-          // Create child field with default condition
-          const childField: Partial<FormField> = {
-            id: `field-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            type: fieldType,
-            label: fieldTemplate.defaultConfig.label || 'New Field',
-            placeholder: fieldTemplate.defaultConfig.placeholder,
-            required: fieldTemplate.defaultConfig.required || false,
-            options: fieldTemplate.defaultConfig.options,
-            defaultValue: fieldTemplate.defaultConfig.defaultValue,
-            order: fields.length,
-            deletable: true,
+        // Create child field with default condition
+        const childField: Partial<FormField> = {
+          id: `field-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          type: fieldType,
+          label: fieldTemplate.defaultConfig.label || 'New Field',
+          placeholder: fieldTemplate.defaultConfig.placeholder,
+          required: fieldTemplate.defaultConfig.required || false,
+          options: fieldTemplate.defaultConfig.options,
+          defaultValue: fieldTemplate.defaultConfig.defaultValue,
+          order: fields.length,
+          deletable: true,
+          conditionalLogic: {
+            enabled: true,
+            parentFieldId: parentField.id,
+            conditions: [createDefaultCondition(parentField)],
+            childFields: [],
+            nestingLevel: childNestingLevel,
+          },
+        };
+
+        onCreateChildField(childField);
+
+        // Auto-enable conditional logic on parent if not already enabled
+        if (!parentField.conditionalLogic?.enabled) {
+          const updatedParent: FormField = {
+            ...parentField,
             conditionalLogic: {
               enabled: true,
-              parentFieldId: parentField.id,
-              conditions: [createDefaultCondition(parentField)],
-              childFields: [],
-              nestingLevel: childNestingLevel,
-            },
+              conditions: [],
+              childFields: [childField.id as string],
+              nestingLevel: parentField.conditionalLogic?.nestingLevel || 0,
+            }
           };
-
-          onCreateChildField(childField);
+          onFieldsChange(fields.map(f => f.id === parentField.id ? updatedParent : f));
         }
 
-        // Reset hover state
-        setHoveredParentId(null);
-        setHoverStartTime(null);
-        setHoverProgress(0);
+        setDraggingFieldId(null);
         return;
       }
     }
 
-    // Reset hover state for normal drops
-    setHoveredParentId(null);
-    setHoverStartTime(null);
-    setHoverProgress(0);
     setDraggingFieldId(null);
 
     if (dragSource === 'palette') {
@@ -218,6 +175,11 @@ export default function FormCanvas({
   const handleCanvasDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
+
+    // Detect if dragging from palette
+    if (e.dataTransfer.types.includes('text/plain')) {
+      setIsDraggingFromPalette(true);
+    }
   };
 
   const handleCanvasDrop = (e: React.DragEvent) => {
@@ -339,8 +301,7 @@ export default function FormCanvas({
                   <div
                     className={cn(
                       "relative",
-                      level > 0 && "ml-8",
-                      hoveredParentId === field.id && "transition-all duration-200"
+                      level > 0 && "ml-8"
                     )}
                   >
                     {/* Connecting line for child fields */}
@@ -351,28 +312,39 @@ export default function FormCanvas({
                       </div>
                     )}
 
-                    {/* Hover Tooltip for Child Creation */}
-                    {hoveredParentId === field.id && hoverProgress > 0 && (
-                      <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 z-20 pointer-events-none">
-                        <div className="bg-primary text-primary-foreground px-3 py-2 rounded-lg shadow-lg text-xs font-medium whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <span>
-                              {hoverProgress < 100
-                                ? `Hold to create child field... (${((2000 - (Date.now() - (hoverStartTime || 0))) / 1000).toFixed(1)}s)`
-                                : 'Release to create child field!'}
-                            </span>
-                          </div>
-                          <div className="w-full h-1 bg-primary-foreground/30 rounded-full mt-1 overflow-hidden">
-                            <div
-                              className="h-full bg-primary-foreground transition-all duration-100"
-                              style={{ width: `${hoverProgress}%` }}
-                            />
-                          </div>
+                    {/* Child Drop Target Circle (Purple) */}
+                    {isDraggingFromPalette && ['number', 'dropdown', 'checkbox'].includes(field.type) && (field.conditionalLogic?.nestingLevel || 0) < 2 && (
+                      <div
+                        className="absolute right-2 top-1/2 -translate-y-1/2 z-20"
+                        onDragOver={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          setDragOverChildTarget(field.id);
+                        }}
+                        onDragLeave={(e) => {
+                          e.stopPropagation();
+                          setDragOverChildTarget(null);
+                        }}
+                        onDrop={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          e.dataTransfer.setData('droppedOnChildTarget', 'true');
+                          handleDrop(e, index, field);
+                        }}
+                      >
+                        <div className={cn(
+                          "w-10 h-10 rounded-full border-2 border-white shadow-lg flex items-center justify-center transition-all cursor-pointer",
+                          dragOverChildTarget === field.id
+                            ? "bg-purple-600 scale-110 animate-pulse"
+                            : "bg-purple-500 hover:bg-purple-600"
+                        )}>
+                          <ArrowDown className="h-5 w-5 text-white" />
                         </div>
-                        {/* Arrow */}
-                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
-                          <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-primary" />
-                        </div>
+                        {dragOverChildTarget === field.id && (
+                          <div className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap bg-purple-600 text-white px-2 py-1 rounded text-xs font-medium">
+                            Drop to add as child
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -396,27 +368,20 @@ export default function FormCanvas({
                       )}
                     </div>
 
-                    {/* Parent field highlight during hover */}
-                    <div
-                      className={cn(
-                        hoveredParentId === field.id && "ring-2 ring-primary ring-offset-2 rounded-lg animate-pulse"
-                      )}
-                    >
-                      <FormFieldRenderer
-                        field={field}
-                        index={index}
-                        isSelected={selectedFieldId === field.id}
-                        isDragging={draggingFieldId === field.id}
-                        onSelect={() => onFieldSelect(field.id)}
-                        onDelete={() => handleDeleteField(field.id)}
-                        onToggleHidden={() => handleToggleHidden(field.id)}
-                        onDragStart={(e) => handleDragStart(e, field, index)}
-                        onDragOver={(e) => handleDragOver(e, field, index)}
-                        onDragLeave={(e) => handleDragLeave(e, field.id)}
-                        onDragEnd={handleDragEnd}
-                        onDrop={(e) => handleDrop(e, index, field)}
-                      />
-                    </div>
+                    <FormFieldRenderer
+                      field={field}
+                      index={index}
+                      isSelected={selectedFieldId === field.id}
+                      isDragging={draggingFieldId === field.id}
+                      onSelect={() => onFieldSelect(field.id)}
+                      onDelete={() => handleDeleteField(field.id)}
+                      onToggleHidden={() => handleToggleHidden(field.id)}
+                      onDragStart={(e) => handleDragStart(e, field, index)}
+                      onDragOver={(e) => handleDragOver(e, field, index)}
+                      onDragLeave={(e) => handleDragLeave(e, field.id)}
+                      onDragEnd={handleDragEnd}
+                      onDrop={(e) => handleDrop(e, index, field)}
+                    />
                   </div>
 
                   {dragOverIndex === index + 1 && (
@@ -434,11 +399,19 @@ export default function FormCanvas({
               onDragLeave={(e) => handleDragLeave(e)}
               onDrop={(e) => handleDrop(e, fields.length)}
               className={cn(
-                'h-16 border-2 border-dashed border-border rounded-lg flex items-center justify-center transition-colors',
-                dragOverIndex === fields.length && 'border-primary bg-primary/5'
+                'h-16 border-2 border-dashed rounded-lg flex items-center justify-center transition-all duration-200',
+                isDraggingFromPalette
+                  ? 'border-blue-500 bg-blue-50 shadow-lg animate-pulse'
+                  : 'border-border',
+                dragOverIndex === fields.length && 'border-blue-600 bg-blue-100'
               )}
             >
-              <p className="text-xs text-muted-foreground">Drop here to add at the end</p>
+              <p className={cn(
+                "text-xs font-medium",
+                isDraggingFromPalette ? "text-blue-600" : "text-muted-foreground"
+              )}>
+                Drop here to add field
+              </p>
             </div>
           </div>
         )}
