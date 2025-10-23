@@ -162,7 +162,7 @@ export default function About() {
                   </tr>
                   <tr>
                     <td className="p-3">ServiceNow</td>
-                    <td className="p-3 text-center text-muted-foreground" colspan="3">Enterprise pricing only (thousands/month)</td>
+                    <td className="p-3 text-center text-muted-foreground" colSpan={3}>Enterprise pricing only (thousands/month)</td>
                   </tr>
                 </tbody>
               </table>
