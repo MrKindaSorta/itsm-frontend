@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { FormField, FormFieldType, ConditionRule } from '@/types/formBuilder';
 import FormFieldRenderer from './FormFieldRenderer';
-import { PlusCircle, Zap, ChevronRight, ArrowDown } from 'lucide-react';
+import { PlusCircle, Zap, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FIELD_TYPES } from './FieldPalette';
 
@@ -29,7 +29,7 @@ export default function FormCanvas({
 
   // Track when dragging from palette to show drop targets
   const [isDraggingFromPalette, setIsDraggingFromPalette] = useState<boolean>(false);
-  const [dragOverChildTarget, setDragOverChildTarget] = useState<string | null>(null);
+  const [conditionalDropTargetId, setConditionalDropTargetId] = useState<string | null>(null);
 
   const handleDragStart = (e: React.DragEvent, field: FormField, index: number) => {
     e.dataTransfer.effectAllowed = 'move';
@@ -43,7 +43,7 @@ export default function FormCanvas({
     setDraggingFieldId(null);
     setDragOverIndex(null);
     setIsDraggingFromPalette(false);
-    setDragOverChildTarget(null);
+    setConditionalDropTargetId(null);
   };
 
   // Helper function to create default condition based on field type
@@ -124,13 +124,13 @@ export default function FormCanvas({
     }
 
     setIsDraggingFromPalette(false);
-    setDragOverChildTarget(null);
+    setConditionalDropTargetId(null);
   };
 
   const handleDrop = (e: React.DragEvent, dropIndex: number) => {
     e.preventDefault();
     setDragOverIndex(null);
-    setDragOverChildTarget(null);
+    setConditionalDropTargetId(null);
     setIsDraggingFromPalette(false);
     setDraggingFieldId(null);
 
@@ -283,7 +283,7 @@ export default function FormCanvas({
               const nestingLevel = field.conditionalLogic?.nestingLevel || 0;
               const isConditionalCapable = ['number', 'dropdown', 'checkbox', 'category', 'multiselect'].includes(field.type);
               const canHaveChildren = (field.conditionalLogic?.nestingLevel || 0) < 2;
-              const shouldShowCircle = isDraggingFromPalette && isConditionalCapable && canHaveChildren;
+              const showConditionalDropZone = isDraggingFromPalette && isConditionalCapable && canHaveChildren;
 
               return (
                 <div key={field.id}>
@@ -332,37 +332,6 @@ export default function FormCanvas({
                       </div>
                     )}
 
-                    {/* Child Drop Target Circle (Purple) */}
-                    {shouldShowCircle && (
-                      <div
-                        className="absolute right-2 top-1/2 -translate-y-1/2 z-10"
-                        onDragOver={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          setDragOverChildTarget(field.id);
-                        }}
-                        onDragLeave={(e) => {
-                          e.stopPropagation();
-                          setDragOverChildTarget(null);
-                        }}
-                        onDrop={(e) => handleChildTargetDrop(e, field)}
-                      >
-                        <div className={cn(
-                          "w-10 h-10 rounded-full border-2 border-white shadow-lg flex items-center justify-center transition-all cursor-pointer",
-                          dragOverChildTarget === field.id
-                            ? "bg-purple-600 scale-110 animate-pulse"
-                            : "bg-purple-500 hover:bg-purple-600"
-                        )}>
-                          <ArrowDown className="h-5 w-5 text-white" />
-                        </div>
-                        {dragOverChildTarget === field.id && (
-                          <div className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap bg-purple-600 text-white px-2 py-1 rounded text-xs font-medium">
-                            Drop to add as child
-                          </div>
-                        )}
-                      </div>
-                    )}
-
                     {/* Field badges */}
                     <div className="flex items-center gap-2 mb-1">
                       {isConditional && (
@@ -388,6 +357,8 @@ export default function FormCanvas({
                       index={index}
                       isSelected={selectedFieldId === field.id}
                       isDragging={draggingFieldId === field.id}
+                      showConditionalDropZone={showConditionalDropZone}
+                      isConditionalDropTarget={conditionalDropTargetId === field.id}
                       onSelect={() => onFieldSelect(field.id)}
                       onDelete={() => handleDeleteField(field.id)}
                       onToggleHidden={() => handleToggleHidden(field.id)}
@@ -396,6 +367,9 @@ export default function FormCanvas({
                       onDragLeave={() => {}}
                       onDragEnd={handleDragEnd}
                       onDrop={() => {}}
+                      onConditionalDrop={(e) => handleChildTargetDrop(e, field)}
+                      onConditionalDragOver={() => setConditionalDropTargetId(field.id)}
+                      onConditionalDragLeave={() => setConditionalDropTargetId(null)}
                     />
                   </div>
                 </div>
