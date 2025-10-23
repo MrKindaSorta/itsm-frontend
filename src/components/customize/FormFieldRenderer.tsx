@@ -84,7 +84,6 @@ export default function FormFieldRenderer({
     : 'When hidden, all new tickets default to "General" category';
 
   const handleDragOver = (e: React.DragEvent) => {
-    e.stopPropagation();
     onDragOver(e);
   };
 
