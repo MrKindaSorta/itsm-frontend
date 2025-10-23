@@ -166,7 +166,7 @@ export default function Customize() {
     const parentField = fields.find(f => f.id === selectedFieldId);
     if (!parentField) return;
 
-    // Add child field to fields array
+    // Create the new child field
     const newChildField: FormField = {
       ...childField,
       id: childField.id!,
@@ -174,9 +174,8 @@ export default function Customize() {
       label: childField.label!,
       required: childField.required!,
       order: fields.length,
+      deletable: true, // Child fields are always deletable
     } as FormField;
-
-    setFields([...fields, newChildField]);
 
     // Update parent field to include this child in its childFields array
     const updatedParent: FormField = {
@@ -193,7 +192,27 @@ export default function Customize() {
       }
     };
 
-    setFields(prevFields => prevFields.map(f => f.id === selectedFieldId ? updatedParent : f));
+    // ATOMIC UPDATE: Add child field AND update parent in a single state update
+    setFields(prevFields => {
+      // Add the new child field
+      const fieldsWithChild = [...prevFields, newChildField];
+
+      // Update the parent field to reference the child
+      const finalFields = fieldsWithChild.map(f =>
+        f.id === selectedFieldId ? updatedParent : f
+      );
+
+      console.log('[handleCreateChildField] Created child field:', {
+        childId: newChildField.id,
+        childLabel: newChildField.label,
+        parentId: updatedParent.id,
+        parentLabel: updatedParent.label,
+        parentChildFields: updatedParent.conditionalLogic?.childFields,
+        totalFields: finalFields.length
+      });
+
+      return finalFields;
+    });
 
     // Select the newly created child field
     setSelectedFieldId(newChildField.id);

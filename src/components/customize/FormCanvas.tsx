@@ -130,31 +130,17 @@ export default function FormCanvas({
         },
       };
 
-      onCreateChildField(childField);
-
-      // Always update parent to include new child in childFields array
-      const updatedParent: FormField = {
-        ...parentField,
-        conditionalLogic: {
-          enabled: true,
-          conditions: parentField.conditionalLogic?.conditions || [],
-          childFields: [
-            ...(parentField.conditionalLogic?.childFields || []),
-            childField.id as string
-          ],
-          nestingLevel: parentField.conditionalLogic?.nestingLevel || 0,
-        }
-      };
-
-      console.log('[FormCanvas] Updating parent with new child:', {
+      console.log('[FormCanvas] Creating child field:', {
         parentId: parentField.id,
         parentLabel: parentField.label,
         childId: childField.id,
         childLabel: childField.label,
-        updatedChildFields: updatedParent.conditionalLogic?.childFields
+        childType: childField.type,
+        nestingLevel: childNestingLevel
       });
 
-      onFieldsChange(fields.map(f => f.id === parentField.id ? updatedParent : f));
+      // Let parent component handle all state updates atomically
+      onCreateChildField(childField);
     }
 
     setIsDraggingFromPalette(false);
