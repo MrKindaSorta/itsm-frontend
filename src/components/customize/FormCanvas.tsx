@@ -114,15 +114,6 @@ export default function FormCanvas({
         },
       };
 
-      console.log('[FormCanvas] Creating child field:', {
-        parentId: parentField.id,
-        parentLabel: parentField.label,
-        childId: childField.id,
-        childLabel: childField.label,
-        childType: childField.type,
-        nestingLevel: childNestingLevel
-      });
-
       // Let parent component handle all state updates atomically
       onCreateChildField(childField, parentField.id);
     }
@@ -169,7 +160,6 @@ export default function FormCanvas({
 
     // Use ref to prevent rapid setState calls that cause render loops
     if (e.dataTransfer.effectAllowed === 'copy' && !isDraggingFromPaletteRef.current) {
-      console.log('[CANVAS] Setting isDraggingFromPalette = true');
       isDraggingFromPaletteRef.current = true;
       setIsDraggingFromPalette(true);
     }
@@ -368,14 +358,8 @@ export default function FormCanvas({
                       onDragEnd={handleDragEnd}
                       onDrop={() => {}}
                       onConditionalDrop={(e) => handleChildTargetDrop(e, field)}
-                      onConditionalDragOver={() => {
-                        console.log(`[STATE] Setting conditionalDropTargetId = ${field.id} (${field.label})`);
-                        setConditionalDropTargetId(field.id);
-                      }}
-                      onConditionalDragLeave={() => {
-                        console.log(`[STATE] Setting conditionalDropTargetId = null (was ${field.id})`);
-                        setConditionalDropTargetId(null);
-                      }}
+                      onConditionalDragOver={() => setConditionalDropTargetId(field.id)}
+                      onConditionalDragLeave={() => setConditionalDropTargetId(null)}
                     />
                   </div>
                 </div>

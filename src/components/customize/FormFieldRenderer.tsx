@@ -94,165 +94,152 @@ const FormFieldRenderer = React.memo(function FormFieldRenderer({
   };
 
   return (
-    <div className="flex gap-1">
-      {/* Main Field Tile - 70% or 100% width */}
-      <div
-        draggable
-        onDragStart={onDragStart}
-        onDragOver={handleDragOver}
-        onDragLeave={onDragLeave}
-        onDragEnd={onDragEnd}
-        onDrop={handleDrop}
-        onClick={onSelect}
-        className={cn(
-          'group relative p-4 rounded-lg border bg-card transition-all cursor-move',
-          showConditionalDropZone ? 'flex-[7]' : 'flex-1',
-          isSelected && 'border-primary ring-2 ring-primary/20',
-          !isSelected && 'border-border hover:border-primary/50',
-          isDragging && 'opacity-50',
-          field.hidden && 'opacity-60 bg-muted'
-        )}
-      >
-        {/* Drag Handle */}
-        <div className="absolute left-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity cursor-move">
-          <GripVertical className="h-4 w-4 text-muted-foreground" />
+    <div
+      draggable
+      onDragStart={onDragStart}
+      onDragOver={handleDragOver}
+      onDragLeave={onDragLeave}
+      onDragEnd={onDragEnd}
+      onDrop={handleDrop}
+      onClick={onSelect}
+      className={cn(
+        'group relative p-4 rounded-lg border bg-card transition-all cursor-move',
+        isSelected && 'border-primary ring-2 ring-primary/20',
+        !isSelected && 'border-border hover:border-primary/50',
+        isDragging && 'opacity-50',
+        field.hidden && 'opacity-60 bg-muted'
+      )}
+    >
+      {/* Drag Handle */}
+      <div className="absolute left-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity cursor-move">
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
+      </div>
+
+      <div className="flex items-start gap-3 pl-4 pointer-events-none">
+        {/* Icon */}
+        <div className="mt-0.5 p-2 rounded-md bg-primary/10 text-primary">
+          <Icon className="h-4 w-4" />
         </div>
 
-        <div className="flex items-start gap-3 pl-4 pointer-events-none">
-          {/* Icon */}
-          <div className="mt-0.5 p-2 rounded-md bg-primary/10 text-primary">
-            <Icon className="h-4 w-4" />
-          </div>
-
-          {/* Field Info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-medium text-sm">{field.label}</span>
-              {field.isSystemField && (
-                <Badge variant="outline" className="text-xs px-1.5 py-0 border-blue-300 text-blue-700 dark:border-blue-700 dark:text-blue-300">
-                  <Lock className="h-3 w-3 mr-1" />
-                  System Field
-                </Badge>
-              )}
-              {field.required && (
-                <Badge variant="destructive" className="text-xs px-1.5 py-0">
-                  Required
-                </Badge>
-              )}
-              {field.hidden && (
-                <Badge variant="outline" className="text-xs px-1.5 py-0 border-orange-300 text-orange-700 dark:border-orange-700 dark:text-orange-300">
-                  <EyeOff className="h-3 w-3 mr-1" />
-                  Hidden
-                </Badge>
-              )}
-              <Badge variant="secondary" className="text-xs px-1.5 py-0">
-                {field.type}
+        {/* Field Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-medium text-sm">{field.label}</span>
+            {field.isSystemField && (
+              <Badge variant="outline" className="text-xs px-1.5 py-0 border-blue-300 text-blue-700 dark:border-blue-700 dark:text-blue-300">
+                <Lock className="h-3 w-3 mr-1" />
+                System Field
               </Badge>
-            </div>
-            {field.hidden && canBeHidden && (
-              <div className="text-xs text-orange-600 dark:text-orange-400 mt-1 font-medium">
-                ⚠️ {hiddenWarning}
-              </div>
             )}
+            {field.required && (
+              <Badge variant="destructive" className="text-xs px-1.5 py-0">
+                Required
+              </Badge>
+            )}
+            {field.hidden && (
+              <Badge variant="outline" className="text-xs px-1.5 py-0 border-orange-300 text-orange-700 dark:border-orange-700 dark:text-orange-300">
+                <EyeOff className="h-3 w-3 mr-1" />
+                Hidden
+              </Badge>
+            )}
+            <Badge variant="secondary" className="text-xs px-1.5 py-0">
+              {field.type}
+            </Badge>
           </div>
+          {field.hidden && canBeHidden && (
+            <div className="text-xs text-orange-600 dark:text-orange-400 mt-1 font-medium">
+              ⚠️ {hiddenWarning}
+            </div>
+          )}
+        </div>
 
-          {/* Actions */}
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto">
-            {canBeHidden && onToggleHidden && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleHidden();
-                }}
-                title={field.hidden ? 'Show field' : 'Hide field'}
-              >
-                {field.hidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-              </Button>
-            )}
+        {/* Actions */}
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto">
+          {canBeHidden && onToggleHidden && (
             <Button
               variant="ghost"
               size="icon"
               className="h-8 w-8"
               onClick={(e) => {
                 e.stopPropagation();
-                onSelect();
+                onToggleHidden();
               }}
-              title="Configure field"
+              title={field.hidden ? 'Show field' : 'Hide field'}
             >
-              <Settings className="h-4 w-4" />
+              {field.hidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
             </Button>
-            {field.deletable !== false && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-destructive hover:text-destructive"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete();
-                }}
-                title="Delete field"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect();
+            }}
+            title="Configure field"
+          >
+            <Settings className="h-4 w-4" />
+          </Button>
+          {field.deletable !== false && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-destructive hover:text-destructive"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              title="Delete field"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* Conditional Drop Zone - 30% width */}
+      {/* Conditional Drop Overlay - Only shows when dragging from palette */}
       {showConditionalDropZone && (
         <div
           onDragOver={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            console.log(`[DROP_ZONE] onDragOver for field: ${field.label}`);
             onConditionalDragOver?.();
           }}
           onDragLeave={(e) => {
             e.stopPropagation();
-            // Only trigger leave if actually leaving the drop zone boundaries
+            // Only trigger leave if actually leaving the overlay boundaries
             const rect = e.currentTarget.getBoundingClientRect();
             const x = e.clientX;
             const y = e.clientY;
 
             const isOutside = x < rect.left || x > rect.right || y < rect.top || y > rect.bottom;
-            console.log(`[DROP_ZONE] onDragLeave for field: ${field.label}`, {
-              mouse: { x, y },
-              bounds: { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom },
-              isOutside
-            });
 
-            // Check if mouse is outside the drop zone
             if (isOutside) {
-              console.log(`[DROP_ZONE] Triggering leave callback for field: ${field.label}`);
               onConditionalDragLeave?.();
-            } else {
-              console.log(`[DROP_ZONE] Ignoring leave - still inside bounds for field: ${field.label}`);
             }
           }}
           onDrop={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            console.log(`[DROP_ZONE] onDrop for field: ${field.label}`);
             onConditionalDrop?.(e);
           }}
           className={cn(
-            'flex-[3] rounded-lg border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center gap-2 p-3',
+            'absolute inset-0 rounded-lg border-2 border-dashed transition-all flex flex-col items-center justify-center gap-2 pointer-events-auto',
             isConditionalDropTarget
-              ? 'bg-purple-100 border-purple-500 dark:bg-purple-950 dark:border-purple-400'
-              : 'bg-purple-50 border-purple-300 hover:bg-purple-100 hover:border-purple-400 dark:bg-purple-950/30 dark:border-purple-700 dark:hover:bg-purple-950/50'
+              ? 'bg-purple-500/20 border-purple-500 backdrop-blur-[2px]'
+              : 'bg-purple-500/10 border-purple-400 backdrop-blur-[1px]'
           )}
         >
           <ArrowDown className={cn(
-            'h-6 w-6 transition-all',
+            'h-8 w-8 transition-all drop-shadow-lg',
             isConditionalDropTarget ? 'text-purple-600 dark:text-purple-300 animate-bounce' : 'text-purple-500 dark:text-purple-400'
           )} />
           <span className={cn(
-            'text-xs font-medium text-center transition-all',
-            isConditionalDropTarget ? 'text-purple-700 dark:text-purple-200' : 'text-purple-600 dark:text-purple-400'
+            'text-sm font-semibold text-center transition-all drop-shadow-lg px-3 py-1 rounded-md',
+            isConditionalDropTarget
+              ? 'text-purple-900 dark:text-purple-100 bg-white/80 dark:bg-black/60'
+              : 'text-purple-700 dark:text-purple-300 bg-white/60 dark:bg-black/40'
           )}>
             Drop for conditional field
           </span>
