@@ -54,6 +54,7 @@ interface FormFieldRendererProps {
   onDragEnd: () => void;
   onDrop: (e: React.DragEvent) => void;
   onConditionalDrop?: (e: React.DragEvent) => void;
+  onConditionalDragEnter?: () => void;
 }
 
 const FormFieldRenderer = React.memo(function FormFieldRenderer({
@@ -71,6 +72,7 @@ const FormFieldRenderer = React.memo(function FormFieldRenderer({
   onDragEnd,
   onDrop,
   onConditionalDrop,
+  onConditionalDragEnter,
 }: FormFieldRendererProps) {
   const Icon = fieldIcons[field.type];
   const canBeHidden = field.type === 'priority' || field.type === 'category';
@@ -203,6 +205,8 @@ const FormFieldRenderer = React.memo(function FormFieldRenderer({
             e.preventDefault();
             e.dataTransfer.dropEffect = 'copy';
             e.stopPropagation();
+            // Clear any highlighted drop zones when entering conditional zone
+            onConditionalDragEnter?.();
           }}
           onDragOver={(e) => {
             e.preventDefault();

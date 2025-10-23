@@ -85,6 +85,11 @@ export default function FormCanvas({
     // Note: isDraggingFromPalette cleanup is handled by event listeners and global failsafe
   };
 
+  const handleConditionalDragEnter = () => {
+    // Clear drop zone highlights when entering conditional drop zone
+    setDragOverIndex(null);
+  };
+
   // Helper function to create default condition based on field type
   const createDefaultCondition = (parentField: FormField): ConditionRule => {
     switch (parentField.type) {
@@ -387,6 +392,7 @@ export default function FormCanvas({
                       onDragEnd={handleDragEnd}
                       onDrop={() => {}}
                       onConditionalDrop={(e) => handleChildTargetDrop(e, field)}
+                      onConditionalDragEnter={handleConditionalDragEnter}
                     />
                   </div>
                 </div>
