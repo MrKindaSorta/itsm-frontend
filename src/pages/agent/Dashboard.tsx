@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Ticket, AlertTriangle, CheckCircle2, Clock, Loader2, ExternalLink, AlertCircle } from 'lucide-react';
+import { Ticket, AlertTriangle, CheckCircle2, Clock, Loader2, ExternalLink, AlertCircle, UserCheck } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { StatusBadge } from '@/components/tickets/StatusBadge';
 import { PriorityBadge } from '@/components/tickets/PriorityBadge';
 import { SLAIndicator } from '@/components/tickets/SLAIndicator';
 import { Link } from 'react-router-dom';
+import { getInitials } from '@/lib/utils';
 import type { Ticket as TicketType } from '@/types';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
@@ -19,14 +20,24 @@ interface DashboardMetrics {
   slaWarnings: number;
 }
 
+interface AgentLogin {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  lastLogin: string | null;
+}
+
 export default function Dashboard() {
   const { user } = useAuth();
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [recentTickets, setRecentTickets] = useState<TicketType[]>([]);
   const [slaWarnings, setSlaWarnings] = useState<TicketType[]>([]);
+  const [agentLogins, setAgentLogins] = useState<AgentLogin[]>([]);
   const [isLoadingMetrics, setIsLoadingMetrics] = useState(true);
   const [isLoadingRecent, setIsLoadingRecent] = useState(true);
   const [isLoadingSLA, setIsLoadingSLA] = useState(true);
+  const [isLoadingAgents, setIsLoadingAgents] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Fetch dashboard metrics
@@ -42,6 +53,11 @@ export default function Dashboard() {
   // Fetch SLA warnings
   useEffect(() => {
     fetchSLAWarnings();
+  }, []);
+
+  // Fetch agent logins
+  useEffect(() => {
+    fetchAgentLogins();
   }, []);
 
   const fetchMetrics = async () => {
@@ -125,6 +141,22 @@ export default function Dashboard() {
     }
   };
 
+  const fetchAgentLogins = async () => {
+    setIsLoadingAgents(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/dashboard/agent-logins`);
+      const data = await response.json();
+
+      if (data.success) {
+        setAgentLogins(data.agents);
+      }
+    } catch (err) {
+      console.error('Error fetching agent logins:', err);
+    } finally {
+      setIsLoadingAgents(false);
+    }
+  };
+
   const formatTimeAgo = (date: Date) => {
     const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
 
@@ -141,12 +173,14 @@ export default function Dashboard() {
     { title: 'Resolved Today', value: metrics.resolvedToday.toString(), icon: CheckCircle2, color: 'text-green-600' },
   ] : [];
 
-  return (
-    <div className="space-y-8">
-      <p className="text-muted-foreground">
-        Welcome back! Here's an overview of your ticket metrics.
-      </p>
+  const isOnline = (lastLogin: string | null) => {
+    if (!lastLogin) return false;
+    const fiveMinutes = 5 * 60 * 1000;
+    return new Date().getTime() - new Date(lastLogin).getTime() < fiveMinutes;
+  };
 
+  return (
+    <div className="space-y-4">
       {/* Metrics Cards */}
       {error ? (
         <Card className="border-destructive">
@@ -180,12 +214,12 @@ export default function Dashboard() {
             const Icon = metric.icon;
             return (
               <Card key={metric.title}>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
                   <CardTitle className="text-sm font-medium">{metric.title}</CardTitle>
                   <Icon className={`h-4 w-4 ${metric.color}`} />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{metric.value}</div>
+                  <div className="text-xl font-bold">{metric.value}</div>
                 </CardContent>
               </Card>
             );
@@ -193,8 +227,8 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Recent Tickets and SLA Warnings */}
-      <div className="grid gap-4 md:grid-cols-2">
+      {/* Recent Tickets, SLA Warnings, and Agent Logins */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {/* Recent Tickets */}
         <Card>
           <CardHeader>
@@ -274,6 +308,46 @@ export default function Dashboard() {
                       <ExternalLink className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                     </div>
                   </Link>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Agent Last Login */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UserCheck className="h-4 w-4" />
+              Agent Last Login
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoadingAgents ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : agentLogins.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                No agent activity found
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {agentLogins.map((agent) => (
+                  <div key={agent.id} className="flex items-center gap-2 p-2 rounded-lg border">
+                    <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-medium flex-shrink-0 relative">
+                      {getInitials(agent.name)}
+                      {isOnline(agent.lastLogin) && (
+                        <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 bg-green-500 border-2 border-background rounded-full" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{agent.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {agent.lastLogin ? `Last seen: ${formatTimeAgo(new Date(agent.lastLogin))}` : 'Never logged in'}
+                      </p>
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
