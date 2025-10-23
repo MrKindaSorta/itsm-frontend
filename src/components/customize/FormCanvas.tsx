@@ -272,6 +272,16 @@ export default function FormCanvas({
     };
 
     fieldHierarchy.forEach(node => flatten(node));
+
+    // Debug: Log hierarchy structure
+    console.log('[FormCanvas] Field Hierarchy:', fieldHierarchy);
+    console.log('[FormCanvas] Flattened Fields:', result.map(f => ({
+      label: f.field.label,
+      level: f.level,
+      hasChildren: f.hasChildren,
+      parentId: f.field.conditionalLogic?.parentFieldId
+    })));
+
     return result;
   }, [fieldHierarchy]);
 
@@ -319,15 +329,22 @@ export default function FormCanvas({
                   {/* Visual nesting indicators */}
                   <div
                     className={cn(
-                      "relative",
-                      level > 0 && "ml-8"
+                      "relative rounded-lg transition-all",
+                      level > 0 && "ml-12 pl-4 bg-muted/30 border-l-4 border-primary/40",
+                      level === 1 && "border-l-blue-500/50",
+                      level === 2 && "border-l-purple-500/50"
                     )}
                   >
                     {/* Connecting line for child fields */}
                     {level > 0 && (
-                      <div className="absolute -left-8 top-0 bottom-0 w-8 flex items-center">
-                        <div className="w-full h-px bg-border" />
-                        <ChevronRight className="absolute right-0 h-3 w-3 text-muted-foreground" />
+                      <div className="absolute -left-12 top-0 bottom-0 w-12 flex items-center">
+                        <div className="w-full h-0.5 bg-primary/30" />
+                        <ChevronRight className={cn(
+                          "absolute right-0 h-4 w-4",
+                          level === 1 && "text-blue-500",
+                          level === 2 && "text-purple-500",
+                          level === 0 && "text-muted-foreground"
+                        )} />
                       </div>
                     )}
 
