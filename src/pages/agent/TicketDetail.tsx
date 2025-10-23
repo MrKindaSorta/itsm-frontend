@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWebSocket } from '@/hooks/useWebSocket';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { SelectRoot as Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { StatusBadge } from '@/components/tickets/StatusBadge';
 import { PriorityBadge } from '@/components/tickets/PriorityBadge';
 import { SLAIndicator } from '@/components/tickets/SLAIndicator';
@@ -16,13 +18,14 @@ import { formatDate, getInitials } from '@/lib/utils';
 import type { Ticket, Activity, User } from '@/types';
 import {
   ArrowLeft,
-  Save,
+  Trash2,
   Send,
   Paperclip,
   HelpCircle,
   Loader2,
   Users as UsersIcon,
   ChevronDown,
+  AlertTriangle,
 } from 'lucide-react';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
@@ -31,6 +34,7 @@ export default function TicketDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { can } = usePermissions();
 
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -49,6 +53,8 @@ export default function TicketDetail() {
   const [isSaving, setIsSaving] = useState(false);
   const [isEditingCC, setIsEditingCC] = useState(false);
   const [tempCCUserIds, setTempCCUserIds] = useState<string[]>([]);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // WebSocket for real-time updates
   const { connected, subscribeToTicket, unsubscribeFromTicket, on } = useWebSocket();
@@ -464,8 +470,87 @@ export default function TicketDetail() {
     setTempCCUserIds([]);
   };
 
+  // Handler for deleting ticket
+  const handleDeleteTicket = async () => {
+    if (!id) return;
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/tickets/${id}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Navigate back to tickets list
+        navigate('/agent/tickets');
+      } else {
+        alert('Failed to delete ticket: ' + (data.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error deleting ticket:', error);
+      alert('Failed to connect to server');
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteModal(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* Delete Confirmation Modal */}
+      <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
+        <DialogContent>
+          <DialogHeader>
+            <div className="flex items-center gap-2">
+              <div className="h-10 w-10 rounded-full bg-destructive/10 flex items-center justify-center">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+              </div>
+              <DialogTitle>Delete Ticket?</DialogTitle>
+            </div>
+            <DialogDescription className="pt-3">
+              This will permanently delete ticket <span className="font-semibold text-foreground">{ticket?.id}</span> and
+              all associated data including:
+              <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
+                <li>All comments and internal notes</li>
+                <li>All attachments</li>
+                <li>Activity history</li>
+              </ul>
+              <p className="mt-3 font-semibold text-destructive">
+                This action cannot be undone.
+              </p>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteModal(false)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteTicket}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Ticket
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -485,12 +570,19 @@ export default function TicketDetail() {
             <p className="text-xs text-muted-foreground">Created {formatDate(ticket.createdAt)}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
-            <Save className="h-3.5 w-3.5 mr-1.5" />
-            Save Changes
-          </Button>
-        </div>
+        {can('ticket:delete') && (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setShowDeleteModal(true)}
+              disabled={isDeleting}
+            >
+              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+              Delete Ticket
+            </Button>
+          </div>
+        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
