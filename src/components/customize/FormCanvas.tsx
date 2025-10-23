@@ -39,25 +39,6 @@ export default function FormCanvas({
     setDraggingFieldId(field.id);
   };
 
-  const handleDragOver = (e: React.DragEvent, _targetField: FormField, index: number) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    setDragOverIndex(index);
-
-    // Detect palette drag by checking effectAllowed (palette='copy', canvas='move')
-    // Only update state if it's actually changing to prevent redundant re-renders
-    if (e.dataTransfer.effectAllowed === 'copy' && !draggingFieldId && !isDraggingFromPalette) {
-      setIsDraggingFromPalette(true);
-    }
-  };
-
-  const handleDragLeave = (_e: React.DragEvent, fieldId?: string) => {
-    setDragOverIndex(null);
-    if (fieldId && dragOverChildTarget === fieldId) {
-      setDragOverChildTarget(null);
-    }
-  };
-
   const handleDragEnd = () => {
     setDraggingFieldId(null);
     setDragOverIndex(null);
@@ -296,7 +277,7 @@ export default function FormCanvas({
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-1">
             {flattenedFields.map(({ field, level, hasChildren }, index) => {
               const isConditional = field.conditionalLogic?.enabled || false;
               const nestingLevel = field.conditionalLogic?.nestingLevel || 0;
@@ -305,21 +286,33 @@ export default function FormCanvas({
               const shouldShowCircle = isDraggingFromPalette && isConditionalCapable && canHaveChildren;
 
               return (
-                <div key={field.id} className="relative">
-                  {dragOverIndex === index && draggingFieldId !== field.id && (
-                    <div className="absolute -top-1.5 left-0 right-0 h-1 bg-primary rounded-full z-10" />
-                  )}
+                <div key={field.id}>
+                  {/* Drop Zone Before Field */}
+                  <div
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setDragOverIndex(index);
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleDrop(e, index);
+                    }}
+                    className={cn(
+                      "h-8 transition-all duration-150",
+                      (isDraggingFromPalette || draggingFieldId) && "hover:bg-primary/10 rounded",
+                      dragOverIndex === index && "bg-primary/20 border-2 border-primary border-dashed rounded h-12"
+                    )}
+                  />
 
                   {/* Visual nesting indicators */}
                   <div
                     className={cn(
-                      "relative rounded-lg transition-all duration-200",
+                      "relative rounded-lg",
                       level > 0 && "ml-12 pl-4 bg-muted/30 border-l-4 border-primary/40",
                       level === 1 && "border-l-blue-500/50",
-                      level === 2 && "border-l-purple-500/50",
-                      // Add visual gap when dragging over this field
-                      dragOverIndex === index && "mt-16",
-                      dragOverIndex === index + 1 && "mb-16"
+                      level === 2 && "border-l-purple-500/50"
                     )}
                   >
                     {/* Connecting line for child fields */}
@@ -395,41 +388,36 @@ export default function FormCanvas({
                       onDelete={() => handleDeleteField(field.id)}
                       onToggleHidden={() => handleToggleHidden(field.id)}
                       onDragStart={(e) => handleDragStart(e, field, index)}
-                      onDragOver={(e) => handleDragOver(e, field, index)}
-                      onDragLeave={(e) => handleDragLeave(e, field.id)}
+                      onDragOver={() => {}}
+                      onDragLeave={() => {}}
                       onDragEnd={handleDragEnd}
-                      onDrop={(e) => handleDrop(e, index)}
+                      onDrop={() => {}}
                     />
                   </div>
-
-                  {dragOverIndex === index + 1 && (
-                    <div className="absolute -bottom-1.5 left-0 right-0 h-1 bg-primary rounded-full z-10" />
-                  )}
                 </div>
               );
             })}
-            {/* Drop zone at the end */}
+            {/* Drop Zone After Last Field */}
             <div
               onDragOver={(e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 setDragOverIndex(fields.length);
               }}
-              onDragLeave={(e) => handleDragLeave(e)}
-              onDrop={(e) => handleDrop(e, fields.length)}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleDrop(e, fields.length);
+              }}
               className={cn(
-                'h-16 border-2 border-dashed rounded-lg flex items-center justify-center transition-all duration-200',
-                isDraggingFromPalette
-                  ? 'border-blue-500 bg-blue-50 shadow-lg animate-pulse'
-                  : 'border-border',
-                dragOverIndex === fields.length && 'border-blue-600 bg-blue-100'
+                "h-12 transition-all duration-150 border-2 border-dashed rounded flex items-center justify-center",
+                (isDraggingFromPalette || draggingFieldId) ? "border-muted-foreground/30" : "border-transparent",
+                dragOverIndex === fields.length && "bg-primary/20 border-primary h-16"
               )}
             >
-              <p className={cn(
-                "text-xs font-medium",
-                isDraggingFromPalette ? "text-blue-600" : "text-muted-foreground"
-              )}>
-                Drop here to add field
-              </p>
+              {dragOverIndex === fields.length && (
+                <p className="text-xs font-medium text-primary">Drop here</p>
+              )}
             </div>
           </div>
         )}
