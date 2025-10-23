@@ -135,21 +135,6 @@ export default function FormFieldRenderer({
               {field.type}
             </Badge>
           </div>
-          {field.placeholder && (
-            <div className="text-xs text-muted-foreground mt-1">
-              Placeholder: {field.placeholder}
-            </div>
-          )}
-          {field.helpText && (
-            <div className="text-xs text-muted-foreground mt-1">
-              Help: {field.helpText}
-            </div>
-          )}
-          {field.options && field.options.length > 0 && (
-            <div className="text-xs text-muted-foreground mt-1">
-              Options: {field.options.join(', ')}
-            </div>
-          )}
           {field.hidden && canBeHidden && (
             <div className="text-xs text-orange-600 dark:text-orange-400 mt-1 font-medium">
               ⚠️ {hiddenWarning}

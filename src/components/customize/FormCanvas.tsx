@@ -285,12 +285,14 @@ export default function FormCanvas({
         className="flex-1 overflow-auto"
         onDragOver={handleCanvasDragOver}
         onDrop={handleCanvasDrop}
+        onDragLeave={handleDragEnd}
+        onDragEnd={handleDragEnd}
       >
         {fields.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full min-h-[300px] border-2 border-dashed border-border rounded-lg">
             <PlusCircle className="h-12 w-12 text-muted-foreground mb-4" />
             <p className="text-sm text-muted-foreground text-center max-w-xs">
-              Drop field types here or click on a field in the palette to add it to your form
+              Drag and drop field types here to build your form
             </p>
           </div>
         ) : (
@@ -311,10 +313,13 @@ export default function FormCanvas({
                   {/* Visual nesting indicators */}
                   <div
                     className={cn(
-                      "relative rounded-lg transition-all",
+                      "relative rounded-lg transition-all duration-200",
                       level > 0 && "ml-12 pl-4 bg-muted/30 border-l-4 border-primary/40",
                       level === 1 && "border-l-blue-500/50",
-                      level === 2 && "border-l-purple-500/50"
+                      level === 2 && "border-l-purple-500/50",
+                      // Add visual gap when dragging over this field
+                      dragOverIndex === index && "mt-16",
+                      dragOverIndex === index + 1 && "mb-16"
                     )}
                   >
                     {/* Connecting line for child fields */}
@@ -333,7 +338,7 @@ export default function FormCanvas({
                     {/* Child Drop Target Circle (Purple) */}
                     {shouldShowCircle && (
                       <div
-                        className="absolute right-2 top-1/2 -translate-y-1/2 z-20"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 z-10"
                         onDragOver={(e) => {
                           e.stopPropagation();
                           e.preventDefault();
