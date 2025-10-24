@@ -10,7 +10,7 @@ export default function About() {
         <CardHeader>
           <CardTitle className="text-3xl">About Forge ITSM</CardTitle>
           <CardDescription className="text-base">
-            Built by someone who understands your pain
+            Built by Someone Who Understands Your Pain
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -22,15 +22,7 @@ export default function About() {
             </div>
             <div className="flex-1 space-y-4">
               <p className="text-base leading-relaxed">
-                Hi there! I'm a solo developer who created Forge ITSM as a passion project. This platform helps me
-                support my family while solving a problem I've been frustrated with for years. Thank you for trusting
-                me with your business—it truly means the world.
-              </p>
-              <p className="text-base leading-relaxed text-muted-foreground">
-                After spending over 10 years working in IT, I've watched teams struggle with the same dilemma:
-                enterprise ITSM platforms cost thousands per month and are loaded with features most small teams
-                never use, while the free and budget options are so feature-lacking they force you to cobble
-                together multiple tools just to get basic ticketing done.
+                Hi! I'm Joshua, a solo developer with 10+ years in IT. Forge ITSM started as a passion project to fix the frustration of bloated enterprise tools and underpowered free ones. It supports my family while helping teams like yours streamline ticketing. Thanks for trusting us—it means everything.
               </p>
             </div>
           </div>
@@ -340,10 +332,9 @@ export default function About() {
                 </div>
               </div>
               <div className="space-y-1">
-                <h3 className="font-semibold">Honest Pricing</h3>
+                <h3 className="font-semibold">Honest Approach</h3>
                 <p className="text-sm text-muted-foreground">
-                  No hidden fees, no per-agent gouging, no forced annual contracts. Pay for what you need,
-                  nothing more.
+                  No upsells, no bloat—just a complete ticketing system. Everything you need: SLA tracking, automations, custom portals, knowledge base, asset management.
                 </p>
               </div>
             </div>
@@ -355,24 +346,9 @@ export default function About() {
                 </div>
               </div>
               <div className="space-y-1">
-                <h3 className="font-semibold">Built for Small Teams</h3>
+                <h3 className="font-semibold">For Small Teams</h3>
                 <p className="text-sm text-muted-foreground">
-                  Designed for teams of 10-200 users who need power without complexity. No enterprise bloat.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-4">
-              <div className="flex-shrink-0">
-                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Code className="h-5 w-5 text-primary" />
-                </div>
-              </div>
-              <div className="space-y-1">
-                <h3 className="font-semibold">Modern Tech Stack</h3>
-                <p className="text-sm text-muted-foreground">
-                  Built on Cloudflare's edge network for blazing-fast performance worldwide, with zero
-                  server maintenance.
+                  Designed for small to medium teams who need a capable tool. Simple setup (5 minutes), intuitive UI, no training required.
                 </p>
               </div>
             </div>
@@ -384,10 +360,23 @@ export default function About() {
                 </div>
               </div>
               <div className="space-y-1">
-                <h3 className="font-semibold">Secure by Design</h3>
+                <h3 className="font-semibold">Modern & Secure</h3>
                 <p className="text-sm text-muted-foreground">
-                  Role-based permissions, secure authentication, and regular security updates. Your data
-                  is protected.
+                  Powered by Cloudflare: global edge network for speed, encryption, 99.9% uptime, GDPR-compliant (not HIPAA—avoid PHI). Auto-backups with 30-day restores.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <div className="flex-shrink-0">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Code className="h-5 w-5 text-primary" />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-semibold">Built With Care</h3>
+                <p className="text-sm text-muted-foreground">
+                  Every feature draws from real IT trenches: inline edits, smart routing, sticky filters. I'm all ears for your feedback—bugs, ideas, anything. Let's improve together.
                 </p>
               </div>
             </div>
@@ -398,23 +387,14 @@ export default function About() {
       {/* Built With Section */}
       <Card>
         <CardHeader>
-          <CardTitle>Built With Care</CardTitle>
+          <CardTitle>Thanks for Choosing Forge</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-base leading-relaxed">
-            This isn't just another SaaS product churned out by a faceless corporation. Every line of code,
-            every feature decision, every design choice comes from someone who's actually used (and been
-            frustrated by) these tools in the real world.
-          </p>
-          <p className="text-base leading-relaxed text-muted-foreground">
-            I'm constantly improving Forge ITSM based on feedback from users like you. Have an idea? Found a bug?
-            Want a feature? I'm listening. Your input directly shapes the future of this platform.
+          <p className="text-base leading-relaxed text-center">
+            Thanks for choosing Forge.
           </p>
           <div className="pt-4 border-t">
-            <p className="text-sm text-muted-foreground text-center sm:text-left">
-              Thank you for choosing Forge ITSM. Let's build something great together.
-            </p>
-            <p className="text-sm font-medium text-center sm:text-left mt-2">
+            <p className="text-sm font-medium text-center">
               — Joshua, Founder & Developer
             </p>
           </div>
