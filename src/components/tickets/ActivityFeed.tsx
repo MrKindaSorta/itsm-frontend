@@ -134,7 +134,7 @@ export function ActivityFeed({ activities, currentUserId, onReply, onFlag }: Act
                     </p>
                   </div>
                   <a
-                    href={`${API_BASE}/api/attachments/${metadata.attachmentId}/download?user_id=${currentUserId}`}
+                    href={`/api/attachments/${metadata.attachmentId}/download?user_id=${currentUserId}`}
                     download
                     target="_blank"
                     rel="noopener noreferrer"
@@ -199,7 +199,7 @@ export function ActivityFeed({ activities, currentUserId, onReply, onFlag }: Act
                           </div>
                         </div>
                         <a
-                          href={`${API_BASE}/api/attachments/${attachment.attachmentId}/download?user_id=${currentUserId}`}
+                          href={`/api/attachments/${attachment.attachmentId}/download?user_id=${currentUserId}`}
                           download
                           target="_blank"
                           rel="noopener noreferrer"
