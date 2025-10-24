@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { BrandingConfiguration } from '@/types/branding';
 import { BRANDING_PRESETS } from '@/types/branding';
+import ImageCropModal from './ImageCropModal';
 import {
   Palette,
   Type,
@@ -26,6 +27,11 @@ export default function BrandingCustomizer({ branding, onUpdate, previewTheme, o
   const [activeSection, setActiveSection] = useState<'colors' | 'logos' | 'content' | 'settings'>(
     'colors'
   );
+
+  // Image crop modal state
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [currentUploadType, setCurrentUploadType] = useState<'logo' | 'logoSmall' | 'favicon'>('logo');
 
   const updateBranding = (updates: Partial<BrandingConfiguration>) => {
     onUpdate({
@@ -63,18 +69,24 @@ export default function BrandingCustomizer({ branding, onUpdate, previewTheme, o
     }
   };
 
-  const handleLogoUpload = async (type: 'logo' | 'logoSmall' | 'favicon', file: File) => {
+  const handleLogoUpload = async (type: 'logo' | 'logoSmall' | 'favicon', blob: Blob, filename: string) => {
     try {
       // Create FormData for file upload
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', blob, filename);
 
       // Get API base URL from window location (tenant-specific)
       const apiBase = `${window.location.protocol}//itsm-backend.joshua-r-klimek.workers.dev`;
 
+      // Get auth token from localStorage
+      const token = localStorage.getItem('token');
+
       // Upload to backend
       const response = await fetch(`${apiBase}/api/upload/branding/${type}`, {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
         body: formData,
         // Don't set Content-Type header - browser will set it with boundary
       });
@@ -91,6 +103,7 @@ export default function BrandingCustomizer({ branding, onUpdate, previewTheme, o
             r2Key: data.asset.r2Key,
           },
         });
+        setCropModalOpen(false);
       } else {
         alert(`Upload failed: ${data.error}`);
       }
@@ -101,6 +114,9 @@ export default function BrandingCustomizer({ branding, onUpdate, previewTheme, o
   };
 
   const triggerFileUpload = (type: 'logo' | 'logoSmall' | 'favicon') => {
+    // Validate file size first (2MB max)
+    const MAX_SIZE = 2 * 1024 * 1024;
+
     // Create hidden file input
     const input = document.createElement('input');
     input.type = 'file';
@@ -108,10 +124,23 @@ export default function BrandingCustomizer({ branding, onUpdate, previewTheme, o
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
-        handleLogoUpload(type, file);
+        // Check file size
+        if (file.size > MAX_SIZE) {
+          alert(`File size exceeds 2MB limit (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+          return;
+        }
+
+        // Open crop modal
+        setSelectedFile(file);
+        setCurrentUploadType(type);
+        setCropModalOpen(true);
       }
     };
     input.click();
+  };
+
+  const handleCropConfirm = (croppedBlob: Blob, filename: string) => {
+    handleLogoUpload(currentUploadType, croppedBlob, filename);
   };
 
   const removeLogo = (type: 'logo' | 'logoSmall' | 'favicon') => {
@@ -589,6 +618,15 @@ export default function BrandingCustomizer({ branding, onUpdate, previewTheme, o
           </CardContent>
         </Card>
       )}
+
+      {/* Image Crop Modal */}
+      <ImageCropModal
+        open={cropModalOpen}
+        onClose={() => setCropModalOpen(false)}
+        onConfirm={handleCropConfirm}
+        file={selectedFile}
+        type={currentUploadType}
+      />
     </div>
   );
 }
