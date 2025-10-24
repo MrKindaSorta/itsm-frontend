@@ -63,16 +63,55 @@ export default function BrandingCustomizer({ branding, onUpdate, previewTheme, o
     }
   };
 
-  const handleLogoUpload = (type: 'logo' | 'logoSmall' | 'favicon') => {
-    // Mock file upload - in production this would use a real file input
-    const mockUrl = `https://via.placeholder.com/150/` + branding.colors.light.primary.replace('#', '') + `/FFFFFF?text=Logo`;
-    updateBranding({
-      [type]: {
-        url: mockUrl,
-        fileName: 'logo.png',
-        fileSize: 15000,
-      },
-    });
+  const handleLogoUpload = async (type: 'logo' | 'logoSmall' | 'favicon', file: File) => {
+    try {
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('file', file);
+
+      // Get API base URL from window location (tenant-specific)
+      const apiBase = `${window.location.protocol}//itsm-backend.joshua-r-klimek.workers.dev`;
+
+      // Upload to backend
+      const response = await fetch(`${apiBase}/api/upload/branding/${type}`, {
+        method: 'POST',
+        body: formData,
+        // Don't set Content-Type header - browser will set it with boundary
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update branding with the uploaded asset
+        updateBranding({
+          [type]: {
+            url: data.asset.url,
+            fileName: data.asset.fileName,
+            fileSize: data.asset.fileSize,
+            r2Key: data.asset.r2Key,
+          },
+        });
+      } else {
+        alert(`Upload failed: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      alert('Failed to upload file. Please try again.');
+    }
+  };
+
+  const triggerFileUpload = (type: 'logo' | 'logoSmall' | 'favicon') => {
+    // Create hidden file input
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = type === 'favicon' ? '.png,.ico' : '.png,.svg,.jpg,.jpeg';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        handleLogoUpload(type, file);
+      }
+    };
+    input.click();
   };
 
   const removeLogo = (type: 'logo' | 'logoSmall' | 'favicon') => {
@@ -279,13 +318,13 @@ export default function BrandingCustomizer({ branding, onUpdate, previewTheme, o
               ) : (
                 <Button
                   variant="outline"
-                  onClick={() => handleLogoUpload('logo')}
+                  onClick={() => triggerFileUpload('logo')}
                   className="w-full h-32 border-dashed"
                 >
                   <div className="flex flex-col items-center gap-2">
                     <Upload className="h-6 w-6 text-muted-foreground" />
                     <span className="text-sm">Click to upload logo</span>
-                    <span className="text-xs text-muted-foreground">PNG, SVG up to 2MB</span>
+                    <span className="text-xs text-muted-foreground">PNG, SVG, JPG up to 2MB</span>
                   </div>
                 </Button>
               )}
@@ -324,7 +363,7 @@ export default function BrandingCustomizer({ branding, onUpdate, previewTheme, o
               ) : (
                 <Button
                   variant="outline"
-                  onClick={() => handleLogoUpload('logoSmall')}
+                  onClick={() => triggerFileUpload('logoSmall')}
                   className="w-full h-24 border-dashed"
                 >
                   <div className="flex flex-col items-center gap-2">
@@ -368,7 +407,7 @@ export default function BrandingCustomizer({ branding, onUpdate, previewTheme, o
               ) : (
                 <Button
                   variant="outline"
-                  onClick={() => handleLogoUpload('favicon')}
+                  onClick={() => triggerFileUpload('favicon')}
                   className="w-full h-20 border-dashed"
                 >
                   <div className="flex flex-col items-center gap-2">
