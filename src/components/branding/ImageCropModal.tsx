@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import ReactCrop, { Crop, PixelCrop } from 'react-image-crop';
+import ReactCrop, { type Crop, type PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ZoomIn, ZoomOut, RotateCw } from 'lucide-react';
+import { ZoomIn, RotateCw } from 'lucide-react';
 
 interface ImageCropModalProps {
   open: boolean;
