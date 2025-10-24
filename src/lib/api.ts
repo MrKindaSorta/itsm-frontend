@@ -3,7 +3,7 @@
  * For tenant subdomains (e.g., acme.forge-itsm.com), use the same domain
  * For development, use the Worker URL
  */
-function getApiBaseUrl(): string {
+export function getApiBaseUrl(): string {
   // In browser
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;

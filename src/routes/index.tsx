@@ -26,6 +26,7 @@ const AgentTicketDetail = lazy(() => import('@/pages/agent/TicketDetail'));
 const AgentUsers = lazy(() => import('@/pages/agent/Users'));
 const AgentCustomize = lazy(() => import('@/pages/agent/Customize'));
 const AgentReports = lazy(() => import('@/pages/agent/Reports'));
+const AgentBilling = lazy(() => import('@/pages/agent/Billing'));
 const AgentSettings = lazy(() => import('@/pages/agent/Settings'));
 const AgentKnowledgeBase = lazy(() => import('@/pages/agent/KnowledgeBase'));
 const AgentAbout = lazy(() => import('@/pages/agent/About'));
@@ -202,6 +203,14 @@ export const router = createBrowserRouter([
         element: (
           <Lazy>
             <AgentReports />
+          </Lazy>
+        ),
+      },
+      {
+        path: 'billing',
+        element: (
+          <Lazy>
+            <AgentBilling />
           </Lazy>
         ),
       },

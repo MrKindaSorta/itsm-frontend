@@ -23,6 +23,7 @@ import {
   Home,
   UserCircle,
   Info,
+  CreditCard,
 } from 'lucide-react';
 
 export default function AgentLayout() {
@@ -41,6 +42,7 @@ export default function AgentLayout() {
     { name: 'Reports', href: '/agent/reports', icon: BarChart3, mobileVisible: false },
     { name: 'Knowledge Base', href: '/agent/knowledge-base', icon: FileText, mobileVisible: false },
     { name: 'Profile', href: '/agent/profile', icon: UserCircle, mobileVisible: true },
+    { name: 'Billing', href: '/agent/billing', icon: CreditCard, mobileVisible: false },
     { name: 'Settings', href: '/agent/settings', icon: Settings, mobileVisible: true },
   ];
 
