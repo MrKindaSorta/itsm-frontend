@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
-import { Loader2, Save, TestTube, ShieldCheck, Mail, Settings2, Lock, Users, HelpCircle } from 'lucide-react';
+import { Loader2, Save, ShieldCheck, Mail, Settings2, Lock, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { SettingsFormData, UserRole } from '@/types';
 
@@ -103,35 +103,6 @@ export default function Settings() {
     }
   };
 
-  const handleTestEmail = async () => {
-    if (!user?.email) return;
-
-    try {
-      const response = await fetch('https://itsm-backend.joshua-r-klimek.workers.dev/api/settings/test-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ testEmail: user.email }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        toast({
-          title: 'Test Email',
-          description: data.message || 'Test email sent successfully.',
-        });
-      } else {
-        throw new Error(data.error);
-      }
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to send test email.',
-        variant: 'destructive',
-      });
-    }
-  };
-
   // Helper to get permission description
   const getPermissionInfo = (permission: string) => {
     const descriptions: Record<string, { label: string; description: string }> = {
@@ -219,21 +190,6 @@ export default function Settings() {
                   }
                 />
               </div>
-
-              <Separator />
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Knowledge Base</Label>
-                  <p className="text-sm text-muted-foreground">Enable knowledge base articles and search functionality</p>
-                </div>
-                <Switch
-                  checked={formData.general.enableKnowledgeBase}
-                  onCheckedChange={(checked) =>
-                    setFormData({ ...formData, general: { ...formData.general, enableKnowledgeBase: checked } })
-                  }
-                />
-              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -250,109 +206,14 @@ export default function Settings() {
                 Configure email settings using Cloudflare Email Routing and Workers
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="rounded-lg bg-muted/50 p-4 space-y-2">
-                <div className="flex items-start gap-2">
-                  <HelpCircle className="h-5 w-5 text-muted-foreground mt-0.5" />
-                  <div className="space-y-1 text-sm">
-                    <p className="font-medium">Cloudflare Email Setup Instructions:</p>
-                    <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
-                      <li>Add your domain to Cloudflare and configure DNS</li>
-                      <li>Enable <span className="font-mono">Email Routing</span> in Cloudflare Dashboard</li>
-                      <li>Add a catch-all route pointing to your Worker endpoint</li>
-                      <li>Configure SendGrid or Mailgun for outbound emails via Worker</li>
-                      <li>Set your verified sender address below</li>
-                    </ol>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="emailDomain">Email Domain</Label>
-                  <Input
-                    id="emailDomain"
-                    placeholder="support.yourcompany.com"
-                    value={formData.email.emailDomain}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: { ...formData.email, emailDomain: e.target.value } })
-                    }
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Domain configured in Cloudflare Email Routing
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="emailFromAddress">From Email Address</Label>
-                  <Input
-                    id="emailFromAddress"
-                    type="email"
-                    placeholder="support@yourcompany.com"
-                    value={formData.email.emailFromAddress}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: { ...formData.email, emailFromAddress: e.target.value } })
-                    }
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Verified sender for outgoing emails
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="emailFromName">From Name</Label>
-                <Input
-                  id="emailFromName"
-                  placeholder="Support Team"
-                  value={formData.email.emailFromName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: { ...formData.email, emailFromName: e.target.value } })
-                  }
-                />
-                <p className="text-xs text-muted-foreground">
-                  Display name shown in recipient's inbox
+            <CardContent className="flex items-center justify-center py-12">
+              <div className="text-center space-y-3">
+                <Mail className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
+                <h3 className="text-lg font-semibold">Email Integration Coming Soon</h3>
+                <p className="text-sm text-muted-foreground max-w-md">
+                  Email notifications, email-to-ticket, and reply-by-email functionality will be available in a future update.
                 </p>
               </div>
-
-              <Separator />
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Email Notifications</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Send automatic ticket update emails
-                    </p>
-                  </div>
-                  <Switch
-                    checked={formData.email.enableEmailNotifications}
-                    onCheckedChange={(checked) =>
-                      setFormData({ ...formData, email: { ...formData.email, enableEmailNotifications: checked } })
-                    }
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Email Replies</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Users can reply to tickets via email
-                    </p>
-                  </div>
-                  <Switch
-                    checked={formData.email.enableEmailReplies}
-                    onCheckedChange={(checked) =>
-                      setFormData({ ...formData, email: { ...formData.email, enableEmailReplies: checked } })
-                    }
-                  />
-                </div>
-              </div>
-
-              <Button onClick={handleTestEmail} variant="outline" className="w-full">
-                <TestTube className="mr-2 h-4 w-4" />
-                Send Test Email to {user?.email}
-              </Button>
             </CardContent>
           </Card>
         </TabsContent>
