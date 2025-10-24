@@ -1,35 +1,36 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
-import { lazy, Suspense } from 'react';
+import { Suspense } from 'react';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import lazyWithRetry from '@/utils/lazyWithRetry';
 
 // Layouts
-const PortalLayout = lazy(() => import('@/components/layout/PortalLayout'));
-const AgentLayout = lazy(() => import('@/components/layout/AgentLayout'));
+const PortalLayout = lazyWithRetry(() => import('@/components/layout/PortalLayout'));
+const AgentLayout = lazyWithRetry(() => import('@/components/layout/AgentLayout'));
 
 // Auth pages
-const Login = lazy(() => import('@/pages/auth/Login'));
-const SignUp = lazy(() => import('@/pages/auth/SignUp'));
-const ForgotPassword = lazy(() => import('@/pages/auth/ForgotPassword'));
-const ChangePasswordFirstLogin = lazy(() => import('@/pages/auth/ChangePasswordFirstLogin'));
+const Login = lazyWithRetry(() => import('@/pages/auth/Login'));
+const SignUp = lazyWithRetry(() => import('@/pages/auth/SignUp'));
+const ForgotPassword = lazyWithRetry(() => import('@/pages/auth/ForgotPassword'));
+const ChangePasswordFirstLogin = lazyWithRetry(() => import('@/pages/auth/ChangePasswordFirstLogin'));
 
 // Portal pages
-const PortalCreateTicket = lazy(() => import('@/pages/portal/CreateTicket'));
-const PortalMyTickets = lazy(() => import('@/pages/portal/MyTickets'));
-const PortalTicketDetail = lazy(() => import('@/pages/portal/TicketDetail'));
-const PortalProfile = lazy(() => import('@/pages/portal/Profile'));
-const PortalKnowledgeBase = lazy(() => import('@/pages/portal/KnowledgeBase'));
+const PortalCreateTicket = lazyWithRetry(() => import('@/pages/portal/CreateTicket'));
+const PortalMyTickets = lazyWithRetry(() => import('@/pages/portal/MyTickets'));
+const PortalTicketDetail = lazyWithRetry(() => import('@/pages/portal/TicketDetail'));
+const PortalProfile = lazyWithRetry(() => import('@/pages/portal/Profile'));
+const PortalKnowledgeBase = lazyWithRetry(() => import('@/pages/portal/KnowledgeBase'));
 
 // Agent pages
-const AgentDashboard = lazy(() => import('@/pages/agent/Dashboard'));
-const AgentTickets = lazy(() => import('@/pages/agent/Tickets'));
-const AgentTicketDetail = lazy(() => import('@/pages/agent/TicketDetail'));
-const AgentUsers = lazy(() => import('@/pages/agent/Users'));
-const AgentCustomize = lazy(() => import('@/pages/agent/Customize'));
-const AgentReports = lazy(() => import('@/pages/agent/Reports'));
-const AgentBilling = lazy(() => import('@/pages/agent/Billing'));
-const AgentSettings = lazy(() => import('@/pages/agent/Settings'));
-const AgentKnowledgeBase = lazy(() => import('@/pages/agent/KnowledgeBase'));
-const AgentAbout = lazy(() => import('@/pages/agent/About'));
+const AgentDashboard = lazyWithRetry(() => import('@/pages/agent/Dashboard'));
+const AgentTickets = lazyWithRetry(() => import('@/pages/agent/Tickets'));
+const AgentTicketDetail = lazyWithRetry(() => import('@/pages/agent/TicketDetail'));
+const AgentUsers = lazyWithRetry(() => import('@/pages/agent/Users'));
+const AgentCustomize = lazyWithRetry(() => import('@/pages/agent/Customize'));
+const AgentReports = lazyWithRetry(() => import('@/pages/agent/Reports'));
+const AgentBilling = lazyWithRetry(() => import('@/pages/agent/Billing'));
+const AgentSettings = lazyWithRetry(() => import('@/pages/agent/Settings'));
+const AgentKnowledgeBase = lazyWithRetry(() => import('@/pages/agent/KnowledgeBase'));
+const AgentAbout = lazyWithRetry(() => import('@/pages/agent/About'));
 
 // Loading fallback
 const LoadingFallback = () => (

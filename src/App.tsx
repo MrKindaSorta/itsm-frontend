@@ -4,6 +4,7 @@ import { ThemeProvider } from '@/contexts/ThemeContext';
 import { BrandingProvider } from '@/contexts/BrandingContext';
 import { ViewPreferencesProvider } from '@/contexts/ViewPreferencesContext';
 import { SettingsProvider } from '@/contexts/SettingsContext';
+import { UpdateNotification } from '@/components/UpdateNotification';
 import { router } from '@/routes';
 
 function App() {
@@ -14,6 +15,7 @@ function App() {
           <AuthProvider>
             <ViewPreferencesProvider>
               <RouterProvider router={router} />
+              <UpdateNotification />
             </ViewPreferencesProvider>
           </AuthProvider>
         </BrandingProvider>
