@@ -24,16 +24,16 @@ interface AgentUsageData {
 
 interface AgentUsageWidgetProps {
   variant?: 'compact' | 'full';
-  showUpgradeLink?: boolean;
   className?: string;
   onUsageUpdate?: (data: AgentUsageData) => void;
+  refreshTrigger?: number;
 }
 
 export function AgentUsageWidget({
   variant = 'full',
-  showUpgradeLink = true,
   className = '',
-  onUsageUpdate
+  onUsageUpdate,
+  refreshTrigger
 }: AgentUsageWidgetProps) {
   const [usageData, setUsageData] = useState<AgentUsageData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -42,7 +42,7 @@ export function AgentUsageWidget({
 
   useEffect(() => {
     fetchUsageData();
-  }, []);
+  }, [refreshTrigger]);
 
   const fetchUsageData = async () => {
     try {
@@ -120,7 +120,7 @@ export function AgentUsageWidget({
     return (
       <div
         className={`flex items-center gap-3 px-4 py-2 rounded-lg border bg-card ${className} cursor-pointer hover:bg-muted/50 transition-colors`}
-        onClick={() => navigate('/billing')}
+        onClick={() => navigate('/agent/billing')}
       >
         {getStatusIcon()}
         <Users className="h-4 w-4 text-muted-foreground" />
@@ -239,21 +239,11 @@ export function AgentUsageWidget({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => navigate('/users')}
-            className="flex-1"
+            onClick={() => navigate('/agent/users')}
+            className="w-full"
           >
             Manage Users
           </Button>
-          {showUpgradeLink && usageData.percentage >= 80 && (
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => navigate('/billing')}
-              className="flex-1"
-            >
-              {usageData.percentage >= 100 ? 'Upgrade Plan' : 'View Billing'}
-            </Button>
-          )}
         </div>
       </CardContent>
     </Card>

@@ -202,13 +202,13 @@ export default function Billing() {
 
       {/* Agent Usage Widget - Full width on mobile, part of grid on desktop */}
       <div className="md:hidden">
-        <AgentUsageWidget variant="full" showUpgradeLink={true} />
+        <AgentUsageWidget variant="full" />
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
         {/* Agent Usage Card - Desktop only */}
         <div className="hidden md:block">
-          <AgentUsageWidget variant="full" showUpgradeLink={true} />
+          <AgentUsageWidget variant="full" />
         </div>
 
         {/* Current Plan Card */}

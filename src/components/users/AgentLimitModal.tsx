@@ -36,12 +36,12 @@ export function AgentLimitModal({
 
   const handleUpgrade = () => {
     onOpenChange(false);
-    navigate('/billing');
+    navigate('/agent/billing');
   };
 
   const handleViewBilling = () => {
     onOpenChange(false);
-    navigate('/billing');
+    navigate('/agent/billing');
   };
 
   const percentage = Math.round((currentCount / limit) * 100);

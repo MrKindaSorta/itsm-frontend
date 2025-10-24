@@ -33,6 +33,9 @@ export default function Users() {
   const [sortColumn, setSortColumn] = useState<UserSortColumn | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
 
+  // Agent usage refresh trigger
+  const [usageRefreshKey, setUsageRefreshKey] = useState(0);
+
   // Fetch users from API
   useEffect(() => {
     fetchUsers();
@@ -130,8 +133,9 @@ export default function Users() {
       const data = await response.json();
 
       if (data.success) {
-        // Refresh users list
+        // Refresh users list and agent usage widget
         fetchUsers();
+        setUsageRefreshKey(prev => prev + 1);
       } else {
         alert(data.error || 'Failed to toggle user status');
       }
@@ -156,9 +160,10 @@ export default function Users() {
       const data = await response.json();
 
       if (data.success) {
-        // Refresh both lists
+        // Refresh both lists and agent usage widget
         fetchUsers();
         fetchDeletedUsers();
+        setUsageRefreshKey(prev => prev + 1);
       } else {
         alert(data.error || 'Failed to delete user');
       }
@@ -180,9 +185,10 @@ export default function Users() {
       const data = await response.json();
 
       if (data.success) {
-        // Refresh both lists
+        // Refresh both lists and agent usage widget
         fetchUsers();
         fetchDeletedUsers();
+        setUsageRefreshKey(prev => prev + 1);
       } else {
         alert(data.error || 'Failed to restore user');
       }
@@ -419,13 +425,19 @@ export default function Users() {
       <UserCreateModal
         open={isCreateModalOpen}
         onOpenChange={setIsCreateModalOpen}
-        onSuccess={fetchUsers}
+        onSuccess={() => {
+          fetchUsers();
+          setUsageRefreshKey(prev => prev + 1);
+        }}
       />
 
       <UserEditModal
         open={isEditModalOpen}
         onOpenChange={setIsEditModalOpen}
-        onSuccess={fetchUsers}
+        onSuccess={() => {
+          fetchUsers();
+          setUsageRefreshKey(prev => prev + 1);
+        }}
         user={selectedUser}
       />
 
@@ -464,7 +476,7 @@ export default function Users() {
 
               {/* Agent Usage Widget - Only show for staff users */}
               {(currentUser?.role === 'admin' || currentUser?.role === 'manager') && (
-                <AgentUsageWidget variant="compact" />
+                <AgentUsageWidget variant="compact" refreshTrigger={usageRefreshKey} />
               )}
             </div>
           </div>
