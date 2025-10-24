@@ -10,6 +10,7 @@ import { TeamCombobox } from '@/components/ui/team-combobox';
 import { LocationCombobox } from '@/components/ui/location-combobox';
 import { JobTitleCombobox } from '@/components/ui/job-title-combobox';
 import { ManagerCombobox } from '@/components/ui/manager-combobox';
+import { AgentLimitModal } from './AgentLimitModal';
 import { Loader2, Eye, EyeOff, ChevronRight, ChevronLeft } from 'lucide-react';
 import { isValidEmail } from '@/lib/utils';
 
@@ -26,6 +27,8 @@ export function UserCreateModal({ open, onOpenChange, onSuccess }: UserCreateMod
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const [showLimitModal, setShowLimitModal] = useState(false);
+  const [limitData, setLimitData] = useState<{ currentCount: number; limit: number; plan: string } | null>(null);
 
   const [formData, setFormData] = useState({
     // Basic Info (Step 1 - Required)
@@ -146,7 +149,19 @@ export function UserCreateModal({ open, onOpenChange, onSuccess }: UserCreateMod
         onOpenChange(false);
         onSuccess();
       } else {
-        setError(data.error || 'Failed to create user');
+        // Check for agent limit error (403 with specific error code)
+        if (response.status === 403 && data.errorCode === 'AGENT_LIMIT_REACHED') {
+          // Close the create modal and show the limit modal
+          onOpenChange(false);
+          setLimitData({
+            currentCount: data.currentCount || 0,
+            limit: data.limit || 0,
+            plan: data.plan || 'professional'
+          });
+          setShowLimitModal(true);
+        } else {
+          setError(data.error || 'Failed to create user');
+        }
       }
     } catch (err) {
       console.error('Create user error:', err);
@@ -157,13 +172,14 @@ export function UserCreateModal({ open, onOpenChange, onSuccess }: UserCreateMod
   };
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => {
-      if (!isOpen) {
-        setCurrentStep(1);
-        setError(null);
-      }
-      onOpenChange(isOpen);
-    }}>
+    <>
+      <Dialog open={open} onOpenChange={(isOpen) => {
+        if (!isOpen) {
+          setCurrentStep(1);
+          setError(null);
+        }
+        onOpenChange(isOpen);
+      }}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create New User {currentStep === 1 ? '- Basic Information' : '- Additional Information'}</DialogTitle>
@@ -447,5 +463,17 @@ export function UserCreateModal({ open, onOpenChange, onSuccess }: UserCreateMod
         </form>
       </DialogContent>
     </Dialog>
+
+    {/* Agent Limit Modal */}
+    {limitData && (
+      <AgentLimitModal
+        open={showLimitModal}
+        onOpenChange={setShowLimitModal}
+        currentCount={limitData.currentCount}
+        limit={limitData.limit}
+        plan={limitData.plan}
+      />
+    )}
+  </>
   );
 }

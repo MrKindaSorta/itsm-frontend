@@ -8,6 +8,7 @@ import { UserPlus, Search, Loader2, Trash2, RotateCcw } from 'lucide-react';
 import { UserTable } from '@/components/users/UserTable';
 import { UserCreateModal } from '@/components/users/UserCreateModal';
 import { UserEditModal } from '@/components/users/UserEditModal';
+import { AgentUsageWidget } from '@/components/billing/AgentUsageWidget';
 import { useAuth } from '@/contexts/AuthContext';
 import { sortUsers, type UserSortColumn, type SortDirection } from '@/lib/utils';
 import type { User } from '@/types';
@@ -440,23 +441,31 @@ export default function Users() {
             </div>
 
             {/* Actions - Mobile: Stack, Desktop: Horizontal */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              {/* Search - Full width on mobile */}
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search users..."
-                  className="pl-10 w-full"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+            <div className="flex flex-col gap-3">
+              {/* Top row: Search and Add User button */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                {/* Search - Full width on mobile */}
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search users..."
+                    className="pl-10 w-full"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+
+                {/* Add User button */}
+                <Button size="sm" onClick={() => setIsCreateModalOpen(true)}>
+                  <UserPlus className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Add User</span>
+                </Button>
               </div>
 
-              {/* Add User button */}
-              <Button size="sm" onClick={() => setIsCreateModalOpen(true)}>
-                <UserPlus className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Add User</span>
-              </Button>
+              {/* Agent Usage Widget - Only show for staff users */}
+              {(currentUser?.role === 'admin' || currentUser?.role === 'manager') && (
+                <AgentUsageWidget variant="compact" />
+              )}
             </div>
           </div>
         </CardHeader>

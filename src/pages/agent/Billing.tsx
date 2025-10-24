@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { AgentUsageWidget } from '@/components/billing/AgentUsageWidget';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, CreditCard, Download, ExternalLink, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -199,7 +200,17 @@ export default function Billing() {
 
       <Separator />
 
-      <div className="grid gap-6 md:grid-cols-2">
+      {/* Agent Usage Widget - Full width on mobile, part of grid on desktop */}
+      <div className="md:hidden">
+        <AgentUsageWidget variant="full" showUpgradeLink={true} />
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-3">
+        {/* Agent Usage Card - Desktop only */}
+        <div className="hidden md:block">
+          <AgentUsageWidget variant="full" showUpgradeLink={true} />
+        </div>
+
         {/* Current Plan Card */}
         <Card>
           <CardHeader>
