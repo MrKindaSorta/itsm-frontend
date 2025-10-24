@@ -1,8 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { SystemSettings } from '@/types';
 
-const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
-
 interface SettingsContextType {
   settings: SystemSettings | null;
   isLoading: boolean;
@@ -66,7 +64,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   const refreshSettings = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/settings`);
+      const response = await fetch(`/api/settings`);
       const data = await response.json();
 
       if (data.success && data.settings) {
@@ -86,7 +84,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   const updateSettings = async (updates: Partial<SystemSettings>) => {
     try {
-      const response = await fetch(`${API_BASE}/api/settings`, {
+      const response = await fetch(`/api/settings`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),

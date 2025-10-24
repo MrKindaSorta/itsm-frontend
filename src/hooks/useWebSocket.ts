@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
-const WS_URL = 'wss://itsm-backend.joshua-r-klimek.workers.dev/api/ws';
+// Use current subdomain for WebSocket connection
+const WS_URL = `wss://${window.location.host}/api/ws`;
 const RECONNECT_DELAY = 3000;
 const PING_INTERVAL = 30000;
 

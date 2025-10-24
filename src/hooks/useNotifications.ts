@@ -3,7 +3,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useWebSocket } from './useWebSocket';
 import type { Notification } from '@/types';
 
-const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 const REFRESH_INTERVAL = 30000; // 30 seconds
 
 export function useNotifications() {
@@ -27,7 +26,7 @@ export function useNotifications() {
     setError(null);
 
     try {
-      const response = await fetch(`${API_BASE}/api/notifications?userId=${user.id}&limit=50`);
+      const response = await fetch(`/api/notifications?userId=${user.id}&limit=50`);
       const data = await response.json();
 
       if (data.success) {
@@ -55,7 +54,7 @@ export function useNotifications() {
     if (!user) return;
 
     try {
-      const response = await fetch(`${API_BASE}/api/notifications/unread-count?userId=${user.id}`);
+      const response = await fetch(`/api/notifications/unread-count?userId=${user.id}`);
       const data = await response.json();
 
       if (data.success) {
@@ -71,7 +70,7 @@ export function useNotifications() {
    */
   const markAsRead = useCallback(async (notificationId: string) => {
     try {
-      const response = await fetch(`${API_BASE}/api/notifications/${notificationId}/read`, {
+      const response = await fetch(`/api/notifications/${notificationId}/read`, {
         method: 'PUT',
       });
       const data = await response.json();
@@ -97,7 +96,7 @@ export function useNotifications() {
     if (!user) return;
 
     try {
-      const response = await fetch(`${API_BASE}/api/notifications/mark-all-read`, {
+      const response = await fetch(`/api/notifications/mark-all-read`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

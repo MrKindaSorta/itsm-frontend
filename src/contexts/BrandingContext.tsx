@@ -5,7 +5,6 @@ import { DEFAULT_BRANDING } from '@/types/branding';
 import { useTheme } from '@/contexts/ThemeContext';
 
 const BRANDING_STORAGE_KEY = 'itsm-branding-configuration';
-const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
 interface BrandingContextType {
   branding: BrandingConfiguration;
@@ -54,7 +53,7 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
 
     try {
       // Try loading from API first
-      const response = await fetch(`${API_BASE}/api/config/branding`);
+      const response = await fetch(`/api/config/branding`);
       const data = await response.json();
 
       if (data.success && data.config) {

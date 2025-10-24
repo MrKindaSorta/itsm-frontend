@@ -3,8 +3,6 @@ import { useAuth } from './AuthContext';
 import type { ViewPreferences, ColumnConfig } from '@/types';
 import { DEFAULT_TICKET_COLUMNS } from '@/lib/utils';
 
-const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
-
 interface ViewPreferencesContextType {
   preferences: ViewPreferences | null;
   ticketColumns: ColumnConfig[];
@@ -37,7 +35,7 @@ export function ViewPreferencesProvider({ children }: { children: ReactNode }) {
 
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_BASE}/api/users/${user.id}/view-preferences`);
+      const response = await fetch(`/api/users/${user.id}/view-preferences`);
       const data = await response.json();
 
       if (data.success && data.preferences) {
@@ -73,7 +71,7 @@ export function ViewPreferencesProvider({ children }: { children: ReactNode }) {
     };
 
     try {
-      const response = await fetch(`${API_BASE}/api/users/${user.id}/view-preferences`, {
+      const response = await fetch(`/api/users/${user.id}/view-preferences`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -105,7 +103,7 @@ export function ViewPreferencesProvider({ children }: { children: ReactNode }) {
     };
 
     try {
-      const response = await fetch(`${API_BASE}/api/users/${user.id}/view-preferences`, {
+      const response = await fetch(`/api/users/${user.id}/view-preferences`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
