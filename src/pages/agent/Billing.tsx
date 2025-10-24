@@ -90,11 +90,26 @@ export default function Billing() {
       } else {
         throw new Error(data.error || 'Failed to create portal session');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating portal session:', error);
+
+      // Provide helpful error messages
+      let errorTitle = 'Error';
+      let errorDescription = 'Failed to open billing portal. Please try again.';
+
+      if (error.message?.includes('configuration') || error.message?.includes('portal settings')) {
+        errorTitle = 'Portal Setup Required';
+        errorDescription = 'The billing portal is being configured. Please contact support or try again shortly.';
+      } else if (error.message?.includes('not found')) {
+        errorTitle = 'Account Not Found';
+        errorDescription = 'Your billing account could not be found. Please contact support.';
+      } else if (error.message) {
+        errorDescription = error.message;
+      }
+
       toast({
-        title: 'Error',
-        description: 'Failed to open billing portal. Please try again.',
+        title: errorTitle,
+        description: errorDescription,
         variant: 'destructive',
       });
       setIsCreatingSession(false);
