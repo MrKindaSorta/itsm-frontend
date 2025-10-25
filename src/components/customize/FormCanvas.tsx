@@ -177,9 +177,11 @@ export default function FormCanvas({
       const fieldType = e.dataTransfer.getData('fieldType') as FormFieldType;
       onAddField(fieldType, dropIndex);
     } else if (dragSource === 'canvas') {
-      // Reordering existing field
-      const sourceIndex = parseInt(e.dataTransfer.getData('sourceIndex'));
-      if (sourceIndex === dropIndex) return;
+      // Reordering existing field - use field ID to find actual position
+      const draggedFieldId = e.dataTransfer.getData('fieldId');
+      const sourceIndex = fields.findIndex(f => f.id === draggedFieldId);
+
+      if (sourceIndex === -1 || sourceIndex === dropIndex) return;
 
       const newFields = [...fields];
       const [movedField] = newFields.splice(sourceIndex, 1);
