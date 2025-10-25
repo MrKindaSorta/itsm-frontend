@@ -487,6 +487,19 @@ export default function KnowledgeBase() {
                 <div className="text-center py-12">
                   <p className="text-muted-foreground">Loading articles...</p>
                 </div>
+              ) : categories.length === 0 ? (
+                <div className="text-center py-12 space-y-4">
+                  <div className="max-w-md mx-auto">
+                    <h3 className="text-lg font-semibold mb-2">Get Started with Knowledge Base</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Create your first category to organize articles. Once created, you can add articles within that category.
+                    </p>
+                    <Button onClick={() => setIsCategoryManagerOpen(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Category
+                    </Button>
+                  </div>
+                </div>
               ) : filteredArticles.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-muted-foreground">
