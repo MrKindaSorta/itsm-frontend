@@ -165,23 +165,41 @@ export default function FormCanvas({
   };
 
   const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    console.log('[handleDrop] Drop event fired', { dropIndex });
     e.preventDefault();
     setDragOverIndex(null);
     setIsDraggingFromPalette(false);
     setDraggingFieldId(null);
 
     const dragSource = e.dataTransfer.getData('dragSource');
+    console.log('[handleDrop] Drag source:', dragSource);
 
     if (dragSource === 'palette') {
       // Adding new field from palette at specific position
       const fieldType = e.dataTransfer.getData('fieldType') as FormFieldType;
+      console.log('[handleDrop] Adding from palette:', fieldType, 'at index:', dropIndex);
       onAddField(fieldType, dropIndex);
     } else if (dragSource === 'canvas') {
       // Reordering existing field - use field ID to find actual position
       const draggedFieldId = e.dataTransfer.getData('fieldId');
       const sourceIndex = fields.findIndex(f => f.id === draggedFieldId);
 
-      if (sourceIndex === -1 || sourceIndex === dropIndex) return;
+      console.log('[handleDrop] Reordering within canvas:', {
+        draggedFieldId,
+        sourceIndex,
+        dropIndex,
+        fieldsLength: fields.length
+      });
+
+      if (sourceIndex === -1) {
+        console.error('[handleDrop] Source field not found!', draggedFieldId);
+        return;
+      }
+
+      if (sourceIndex === dropIndex) {
+        console.log('[handleDrop] Source and drop are same, skipping');
+        return;
+      }
 
       const newFields = [...fields];
       const [movedField] = newFields.splice(sourceIndex, 1);
@@ -193,7 +211,10 @@ export default function FormCanvas({
         order: idx,
       }));
 
+      console.log('[handleDrop] Calling onFieldsChange with reordered fields');
       onFieldsChange(updatedFields);
+    } else {
+      console.warn('[handleDrop] Unknown drag source:', dragSource);
     }
   };
 
