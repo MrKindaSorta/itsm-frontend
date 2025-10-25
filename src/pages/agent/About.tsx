@@ -21,7 +21,7 @@ export default function About() {
             </div>
             <div className="flex-1">
               <p className="text-base leading-relaxed">
-                Hi! I'm Joshua, a solo developer with 10+ years in IT. Forge ITSM started as a passion project to fix the frustration of bloated enterprise tools and underpowered free ones. It supports my family while helping teams like yours streamline ticketing. Thanks for trusting us—it means everything.
+                Hey there! I'm Joshua, founder of Forge Underground, a veteran-owned and operated company behind Forge ITSM. With 10+ years in IT, I built this to cut through the noise of overpriced, complex ticketing systems and underpowered free tools. It's designed for teams who need a fast, intuitive way to manage tickets without the hassle. Your trust fuels our mission to keep IT simple and effective. Thanks for choosing us. — Joshua, Founder
               </p>
             </div>
           </div>
@@ -44,7 +44,7 @@ export default function About() {
               <div className="space-y-1">
                 <h3 className="font-semibold">Honest Approach</h3>
                 <p className="text-sm text-muted-foreground">
-                  No upsells, no bloat—just a complete ticketing system. Everything you need: SLA tracking, automations, custom portals, knowledge base, asset management.
+                  No upsells, no bloat—just a complete ticketing system. Everything you need: SLA tracking, custom portals, knowledge base, etc.
                 </p>
               </div>
             </div>
