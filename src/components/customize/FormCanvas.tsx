@@ -328,7 +328,10 @@ export default function FormCanvas({
                     onDrop={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      handleDrop(e, index);
+                      // Map flattened index to actual fields array index
+                      const targetField = flattenedFields[index]?.field;
+                      const actualDropIndex = targetField ? fields.findIndex(f => f.id === targetField.id) : index;
+                      handleDrop(e, actualDropIndex);
                     }}
                     className={cn(
                       "h-8 transition-all duration-150",
