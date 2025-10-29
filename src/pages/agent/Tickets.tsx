@@ -10,6 +10,7 @@ import { StatusTabs } from '@/components/tickets/StatusTabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useViewPreferences } from '@/contexts/ViewPreferencesContext';
 import { useWebSocket } from '@/hooks/useWebSocket';
+import { useTicketCache } from '@/contexts/TicketCacheContext';
 import { sortTickets, type SortColumn, type SortDirection } from '@/lib/utils';
 import type { Ticket, TicketStatus } from '@/types';
 
@@ -19,6 +20,7 @@ export default function Tickets() {
   const { user } = useAuth();
   const { isLoading: isPreferencesLoading } = useViewPreferences();
   const { subscribeToGlobal, unsubscribeFromGlobal, on } = useWebSocket();
+  const ticketCache = useTicketCache();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTickets, setActiveTickets] = useState<Ticket[]>([]);
   const [closedTickets, setClosedTickets] = useState<Ticket[]>([]);
@@ -63,6 +65,8 @@ export default function Tickets() {
           resolutionDue: message.data.sla.resolutionDue ? new Date(message.data.sla.resolutionDue) : new Date(),
         } : null,
       };
+      // Cache the new ticket
+      ticketCache.setTicket(newTicket.id, newTicket);
       // New tickets are always active (not closed), so add to activeTickets
       setActiveTickets(prev => [newTicket, ...prev]);
     });
@@ -140,6 +144,11 @@ export default function Tickets() {
           } : null,
         }));
 
+        // Cache all tickets for instant detail page loading
+        transformedTickets.forEach((ticket: Ticket) => {
+          ticketCache.setTicket(ticket.id, ticket);
+        });
+
         // Update the appropriate array based on what we fetched
         if (statusFilter === 'closed') {
           setClosedTickets(transformedTickets);
@@ -187,16 +196,21 @@ export default function Tickets() {
 
       if (data.success) {
         // Update ticket in local state (both arrays in case it moved between them)
-        const updateTicket = (ticket: Ticket) =>
-          ticket.id === ticketId
-            ? {
-                ...ticket,
-                status: data.ticket.status,
-                priority: data.ticket.priority,
-                assignee: data.ticket.assignee,
-                updatedAt: new Date(data.ticket.updatedAt),
-              }
-            : ticket;
+        const updateTicket = (ticket: Ticket) => {
+          if (ticket.id === ticketId) {
+            const updatedTicket = {
+              ...ticket,
+              status: data.ticket.status,
+              priority: data.ticket.priority,
+              assignee: data.ticket.assignee,
+              updatedAt: new Date(data.ticket.updatedAt),
+            };
+            // Update cache
+            ticketCache.setTicket(ticketId, updatedTicket);
+            return updatedTicket;
+          }
+          return ticket;
+        };
 
         setActiveTickets(prevTickets => prevTickets.map(updateTicket));
         setClosedTickets(prevTickets => prevTickets.map(updateTicket));

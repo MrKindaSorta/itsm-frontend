@@ -28,7 +28,7 @@ export function TicketCards({ tickets }: TicketCardsProps) {
       {tickets.map((ticket) => (
         <div
           key={ticket.id}
-          onClick={() => navigate(`/agent/tickets/${ticket.id}`)}
+          onClick={() => navigate(`/agent/tickets/${ticket.id}`, { state: { ticket } })}
           className="p-4 border rounded-lg bg-card hover:bg-accent/50 transition-colors cursor-pointer"
         >
           {/* Header: ID + SLA */}

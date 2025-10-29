@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useTicketCache } from '@/contexts/TicketCacheContext';
+import { usersCache } from '@/lib/usersCache';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -33,10 +35,15 @@ const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 export default function TicketDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const { can } = usePermissions();
+  const ticketCache = useTicketCache();
 
-  const [ticket, setTicket] = useState<Ticket | null>(null);
+  // Try to get ticket from navigation state or cache first
+  const [ticket, setTicket] = useState<Ticket | null>(
+    location.state?.ticket || (id ? ticketCache.getTicket(id) : null) || null
+  );
   const [activities, setActivities] = useState<Activity[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -77,12 +84,15 @@ export default function TicketDetail() {
         // Update ticket state with new data
         setTicket(prev => {
           if (!prev) return prev;
-          return {
+          const updatedTicket = {
             ...prev,
             status: message.data.status ?? prev.status,
             priority: message.data.priority ?? prev.priority,
             assignee: message.data.assignee ?? prev.assignee,
           };
+          // Update cache with latest data
+          if (id) ticketCache.setTicket(id, updatedTicket);
+          return updatedTicket;
         });
       }
     });
@@ -98,7 +108,10 @@ export default function TicketDetail() {
         setActivities(prev => {
           const exists = prev.some(act => act.id === newActivity.id);
           if (exists) return prev;
-          return [newActivity, ...prev];
+          const updatedActivities = [newActivity, ...prev];
+          // Update cache with new activity
+          if (id) ticketCache.setActivities(id, updatedActivities);
+          return updatedActivities;
         });
       }
     });
@@ -127,12 +140,50 @@ export default function TicketDetail() {
     };
   }, [id, on]);
 
-  // Fetch ticket, activities, and users
+  // Fetch ticket, activities, and users (optimized with cache)
   useEffect(() => {
-    if (id) {
-      fetchTicketData();
-      fetchUsers();
-    }
+    if (!id) return;
+
+    const loadData = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        // Check if we already have ticket data (from state or cache)
+        const hasTicket = ticket !== null;
+
+        // Fetch users from cache first, then API if needed
+        const cachedUsers = usersCache.get();
+        if (cachedUsers) {
+          setUsers(cachedUsers);
+        } else {
+          await fetchUsers();
+        }
+
+        // Fetch activities from cache or API
+        const cachedActivities = ticketCache.getActivities(id);
+        if (cachedActivities) {
+          setActivities(cachedActivities);
+        }
+
+        // Only fetch ticket if we don't have it
+        if (!hasTicket) {
+          await fetchTicketData();
+        } else {
+          // If we have ticket but no activities, fetch activities only
+          if (!cachedActivities) {
+            await fetchActivities();
+          }
+          setIsLoading(false);
+        }
+      } catch (err) {
+        console.error('Error loading ticket data:', err);
+        setError('Failed to load ticket data');
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
   }, [id]);
 
   const fetchTicketData = async () => {
@@ -159,18 +210,10 @@ export default function TicketDetail() {
           } : null,
         };
         setTicket(transformedTicket);
+        ticketCache.setTicket(id!, transformedTicket); // Cache the ticket
 
         // Fetch activities
-        const activitiesResponse = await fetch(`${API_BASE}/api/tickets/${id}/activities`);
-        const activitiesData = await activitiesResponse.json();
-
-        if (activitiesData.success) {
-          const transformedActivities = activitiesData.activities.map((act: any) => ({
-            ...act,
-            createdAt: new Date(act.createdAt),
-          }));
-          setActivities(transformedActivities.reverse()); // Newest first
-        }
+        await fetchActivities();
       } else {
         setError(ticketData.error || 'Failed to fetch ticket');
       }
@@ -182,12 +225,35 @@ export default function TicketDetail() {
     }
   };
 
+  const fetchActivities = async () => {
+    if (!id) return;
+
+    try {
+      const activitiesResponse = await fetch(`${API_BASE}/api/tickets/${id}/activities`);
+      const activitiesData = await activitiesResponse.json();
+
+      if (activitiesData.success) {
+        const transformedActivities = activitiesData.activities.map((act: any) => ({
+          ...act,
+          createdAt: new Date(act.createdAt),
+        }));
+        const orderedActivities = transformedActivities.reverse(); // Newest first
+        setActivities(orderedActivities);
+        ticketCache.setActivities(id, orderedActivities); // Cache the activities
+      }
+    } catch (err) {
+      console.error('Error fetching activities:', err);
+    }
+  };
+
   const fetchUsers = async () => {
     try {
       const response = await fetch(`${API_BASE}/api/users`);
       const data = await response.json();
       if (data.success) {
-        setUsers(data.users || []);
+        const fetchedUsers = data.users || [];
+        setUsers(fetchedUsers);
+        usersCache.set(fetchedUsers); // Cache users for 5 minutes
       }
     } catch (error) {
       console.error('Failed to fetch users:', error);
@@ -259,17 +325,19 @@ export default function TicketDetail() {
       const data = await response.json();
 
       if (data.success) {
-        // Update ticket state
-        setTicket({
+        // Update ticket state optimistically
+        const updatedTicket = {
           ...ticket,
           status: data.ticket.status,
           priority: data.ticket.priority,
           assignee: data.ticket.assignee,
           updatedAt: new Date(data.ticket.updatedAt),
-        });
+        };
+        setTicket(updatedTicket);
+        ticketCache.setTicket(id!, updatedTicket); // Update cache
 
-        // Refresh activities to show the update
-        fetchTicketData();
+        // WebSocket will handle real-time sync and activity updates
+        // No need to refresh - the activity will arrive via WebSocket
       } else {
         alert('Failed to update ticket: ' + (data.error || 'Unknown error'));
       }
@@ -373,19 +441,21 @@ export default function TicketDetail() {
           }
         }
 
-        // Add new activity to the list
+        // Add new activity to the list optimistically
         const newActivity = {
           ...data.activity,
           createdAt: new Date(data.activity.createdAt),
         };
         setActivities([newActivity, ...activities]);
+        ticketCache.addActivity(id!, newActivity); // Update cache
+
         setReplyContent('');
         setReplyingToActivity(null); // Clear reply context
         setShowStatusOptions(false); // Close status options
         setAttachmentFiles([]); // Clear attachments
 
-        // Refresh ticket data to get updated attachments
-        fetchTicketData();
+        // No need to refresh - attachments are already in the activity
+        // WebSocket will sync with other users
 
         // If status change requested, update the ticket status
         if (newStatus && newStatus !== ticket?.status) {

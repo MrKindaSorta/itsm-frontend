@@ -23,8 +23,11 @@ export function TicketTable({ tickets, sortColumn, sortDirection, onSort, onTick
   const navigate = useNavigate();
   const { ticketColumns } = useViewPreferences();
 
-  const handleRowClick = (ticketId: string) => {
-    navigate(`/agent/tickets/${ticketId}`);
+  const handleRowClick = (ticket: Ticket) => {
+    // Pass ticket data via navigation state for instant loading
+    navigate(`/agent/tickets/${ticket.id}`, {
+      state: { ticket }
+    });
   };
 
   // Handlers for inline editing
@@ -220,7 +223,7 @@ export function TicketTable({ tickets, sortColumn, sortDirection, onSort, onTick
               tickets.map((ticket) => (
                 <tr
                   key={ticket.id}
-                  onClick={() => handleRowClick(ticket.id)}
+                  onClick={() => handleRowClick(ticket)}
                   className="border-b hover:bg-muted/30 cursor-pointer transition-colors"
                 >
                   {visibleColumns.map((column) => (
