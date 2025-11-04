@@ -443,7 +443,7 @@ export default function Billing() {
       </Card>
 
       {/* Add Agent Seats Modal - Only rendered for Business plan */}
-      {agentUsageData && agentUsageData.canAddSeats && (
+      {agentUsageData && agentUsageData.canAddSeats && billingInfo && (
         <AddAgentSeatsModal
           open={isAddSeatsModalOpen}
           onOpenChange={setIsAddSeatsModalOpen}
@@ -451,6 +451,7 @@ export default function Billing() {
           baseLimit={agentUsageData.baseLimit}
           currentUsage={agentUsageData.currentCount}
           pricePerSeat={agentUsageData.extraSeatPrice}
+          basePlanPrice={billingInfo.planPrice}
           onSuccess={fetchBillingData}
         />
       )}

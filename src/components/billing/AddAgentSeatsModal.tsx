@@ -8,11 +8,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Plus, Minus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getApiBaseUrl } from '@/lib/api';
 
@@ -23,6 +20,7 @@ interface AddAgentSeatsModalProps {
   baseLimit: number;
   currentUsage: number;
   pricePerSeat: number;
+  basePlanPrice: number;
   onSuccess: () => void;
 }
 
@@ -33,6 +31,7 @@ export function AddAgentSeatsModal({
   baseLimit,
   currentUsage,
   pricePerSeat,
+  basePlanPrice,
   onSuccess,
 }: AddAgentSeatsModalProps) {
   const [quantity, setQuantity] = useState(currentExtraSeats);
@@ -48,13 +47,16 @@ export function AddAgentSeatsModal({
     }
   }, [open, currentExtraSeats]);
 
-  const handleQuantityChange = (value: string) => {
-    const num = parseInt(value) || 0;
-    setQuantity(Math.max(0, Math.min(50, num)));
+  const handleIncrement = () => {
+    if (quantity < 50) {
+      setQuantity(quantity + 1);
+    }
   };
 
-  const handleSliderChange = (value: number[]) => {
-    setQuantity(value[0]);
+  const handleDecrement = () => {
+    if (quantity > 0) {
+      setQuantity(quantity - 1);
+    }
   };
 
   const handleConfirm = async () => {
@@ -102,13 +104,13 @@ export function AddAgentSeatsModal({
     }
   };
 
-  const monthlyPrice = quantity * pricePerSeat;
+  const extraSeatsCost = quantity * pricePerSeat;
+  const totalMonthlyPrice = basePlanPrice + extraSeatsCost;
   const hasChanges = quantity !== currentExtraSeats;
-  const newLimit = baseLimit + quantity;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Manage Agent Seats</DialogTitle>
           <DialogDescription>
@@ -116,17 +118,17 @@ export function AddAgentSeatsModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-5">
           {/* Current Status */}
-          <div className="bg-muted rounded-lg p-4 space-y-2">
+          <div className="bg-muted rounded-lg p-3 space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Base Plan:</span>
               <span className="font-medium">{baseLimit} agents included</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Extra Seats:</span>
+              <span className="text-muted-foreground">Additional Seats Purchased:</span>
               <span className="font-medium">
-                {currentExtraSeats} seat{currentExtraSeats !== 1 ? 's' : ''} purchased
+                {currentExtraSeats} seat{currentExtraSeats !== 1 ? 's' : ''}
               </span>
             </div>
             <Separator />
@@ -138,76 +140,83 @@ export function AddAgentSeatsModal({
             </div>
           </div>
 
-          {/* Seat Selector */}
-          <div className="space-y-3">
-            <Label htmlFor="quantity">Extra Agent Seats</Label>
+          {/* Seat Selector with Plus/Minus Buttons */}
+          <div className="flex flex-col items-center gap-3 py-2">
             <div className="flex items-center gap-4">
-              <Slider
-                value={[quantity]}
-                onValueChange={handleSliderChange}
-                min={0}
-                max={50}
-                step={1}
-                className="flex-1"
-              />
-              <Input
-                id="quantity"
-                type="number"
-                value={quantity}
-                onChange={(e) => handleQuantityChange(e.target.value)}
-                className="w-20"
-                min={0}
-                max={50}
-              />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleDecrement}
+                disabled={quantity === 0}
+                className="h-10 w-10"
+              >
+                <Minus className="h-5 w-5" />
+              </Button>
+
+              <div className="text-center min-w-[100px]">
+                <div className="text-4xl font-bold">{quantity}</div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  Additional Agent Seats
+                </div>
+              </div>
+
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleIncrement}
+                disabled={quantity === 50}
+                className="h-10 w-10"
+              >
+                <Plus className="h-5 w-5" />
+              </Button>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Select 0-50 additional agent seats beyond your base plan
+            <p className="text-xs text-muted-foreground text-center">
+              Add up to 50 additional seats (0-50 range)
             </p>
           </div>
 
-          {/* Pricing Preview */}
-          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-blue-900 dark:text-blue-100">
-                {quantity} seat{quantity !== 1 ? 's' : ''} × ${pricePerSeat.toFixed(2)}/month
-              </span>
-              <span className="text-lg font-semibold text-blue-900 dark:text-blue-100">
-                ${monthlyPrice.toFixed(2)}/month
-              </span>
+          {/* Pricing Breakdown */}
+          <div className="bg-muted rounded-lg p-4 space-y-3">
+            {/* Base Plan Price */}
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Business Plan (Base)</span>
+              <span className="font-medium">${basePlanPrice.toFixed(2)}/month</span>
             </div>
 
-            {hasChanges && (
-              <>
-                <Separator className="bg-blue-200 dark:bg-blue-800" />
-                <div className="text-sm text-blue-700 dark:text-blue-300">
-                  {quantity > currentExtraSeats && (
-                    <p>
-                      Adding {quantity - currentExtraSeats} seat{quantity - currentExtraSeats !== 1 ? 's' : ''} will be prorated for the remaining billing period.
-                    </p>
-                  )}
-                  {quantity < currentExtraSeats && (
-                    <p>
-                      Removing {currentExtraSeats - quantity} seat{currentExtraSeats - quantity !== 1 ? 's' : ''} will credit your account for the remaining billing period.
-                    </p>
-                  )}
-                  {quantity === currentExtraSeats && (
-                    <p>No changes to your current subscription.</p>
-                  )}
-                </div>
-              </>
-            )}
+            {/* Additional Seats Calculation */}
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">
+                {quantity} Additional Seat{quantity !== 1 ? 's' : ''} × ${pricePerSeat.toFixed(2)}
+              </span>
+              <span className="font-medium">${extraSeatsCost.toFixed(2)}/month</span>
+            </div>
 
-            {quantity !== currentExtraSeats && (
-              <div className="pt-2">
-                <div className="flex items-center justify-between text-sm font-semibold">
-                  <span className="text-blue-900 dark:text-blue-100">New Limit:</span>
-                  <span className="text-blue-900 dark:text-blue-100">
-                    {newLimit} agents
-                  </span>
-                </div>
-              </div>
-            )}
+            <Separator />
+
+            {/* New Total */}
+            <div className="flex justify-between items-center">
+              <span className="font-semibold text-base">New Monthly Total</span>
+              <span className="font-bold text-xl">${totalMonthlyPrice.toFixed(2)}/mo</span>
+            </div>
           </div>
+
+          {/* Proration Notice */}
+          {hasChanges && (
+            <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+              <p className="text-sm text-blue-700 dark:text-blue-300">
+                {quantity > currentExtraSeats && (
+                  <>
+                    Adding {quantity - currentExtraSeats} seat{quantity - currentExtraSeats !== 1 ? 's' : ''} will be prorated for the remaining billing period.
+                  </>
+                )}
+                {quantity < currentExtraSeats && (
+                  <>
+                    Removing {currentExtraSeats - quantity} seat{currentExtraSeats - quantity !== 1 ? 's' : ''} will credit your account for the remaining billing period.
+                  </>
+                )}
+              </p>
+            </div>
+          )}
 
           {/* Error Display */}
           {error && (
