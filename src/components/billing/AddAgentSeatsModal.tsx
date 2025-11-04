@@ -79,7 +79,6 @@ export function AddAgentSeatsModal({
 
       // Show success message
       const action = quantity > currentExtraSeats ? 'added' : quantity < currentExtraSeats ? 'removed' : 'updated';
-      const seatWord = Math.abs(quantity - currentExtraSeats) === 1 ? 'seat' : 'seats';
 
       toast({
         title: 'Success!',
