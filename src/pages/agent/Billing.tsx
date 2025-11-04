@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { AgentUsageWidget } from '@/components/billing/AgentUsageWidget';
+import { AddAgentSeatsModal } from '@/components/billing/AddAgentSeatsModal';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, CreditCard, Download, ExternalLink, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Loader2, CreditCard, Download, ExternalLink, AlertCircle, CheckCircle2, UserPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getApiBaseUrl } from '@/lib/api';
 
@@ -29,6 +30,16 @@ interface Invoice {
   description: string;
 }
 
+interface AgentUsageData {
+  currentCount: number;
+  limit: number;
+  baseLimit: number;
+  extraSeats: number;
+  extraSeatPrice: number;
+  plan: string;
+  canAddSeats: boolean;
+}
+
 export default function Billing() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -36,6 +47,8 @@ export default function Billing() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreatingSession, setIsCreatingSession] = useState(false);
+  const [isAddSeatsModalOpen, setIsAddSeatsModalOpen] = useState(false);
+  const [agentUsageData, setAgentUsageData] = useState<AgentUsageData | null>(null);
 
   useEffect(() => {
     fetchBillingData();
@@ -60,6 +73,14 @@ export default function Billing() {
 
       if (invoicesData.success) {
         setInvoices(invoicesData.invoices);
+      }
+
+      // Fetch agent usage data (for extra seats info)
+      const usageResponse = await fetch(`${API_BASE}/api/billing/agent-usage`);
+      const usageData = await usageResponse.json();
+
+      if (usageData.success) {
+        setAgentUsageData(usageData);
       }
     } catch (error) {
       console.error('Error fetching billing data:', error);
@@ -263,27 +284,69 @@ export default function Billing() {
 
                 <Separator />
 
-                <Button
-                  onClick={handleManageSubscription}
-                  disabled={isCreatingSession}
-                  className="w-full"
-                >
-                  {isCreatingSession ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Opening portal...
-                    </>
-                  ) : (
-                    <>
-                      Manage Subscription
-                      <ExternalLink className="ml-2 h-4 w-4" />
-                    </>
-                  )}
-                </Button>
+                {/* Business plan gets special "Manage Agent Seats" button */}
+                {billingInfo.plan === 'business' && agentUsageData ? (
+                  <>
+                    <Button
+                      onClick={() => setIsAddSeatsModalOpen(true)}
+                      className="w-full"
+                    >
+                      <UserPlus className="mr-2 h-4 w-4" />
+                      Manage Agent Seats
+                    </Button>
+                    <p className="text-xs text-muted-foreground text-center">
+                      Add or remove extra agent seats ($9.99/seat/month)
+                    </p>
 
-                <p className="text-xs text-muted-foreground text-center">
-                  Update payment method, change plan, or cancel subscription
-                </p>
+                    <Separator />
+
+                    <Button
+                      onClick={handleManageSubscription}
+                      disabled={isCreatingSession}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      {isCreatingSession ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Opening portal...
+                        </>
+                      ) : (
+                        <>
+                          Customer Portal
+                          <ExternalLink className="ml-2 h-4 w-4" />
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-xs text-muted-foreground text-center">
+                      Update payment method or cancel subscription
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      onClick={handleManageSubscription}
+                      disabled={isCreatingSession}
+                      className="w-full"
+                    >
+                      {isCreatingSession ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Opening portal...
+                        </>
+                      ) : (
+                        <>
+                          Manage Subscription
+                          <ExternalLink className="ml-2 h-4 w-4" />
+                        </>
+                      )}
+                    </Button>
+
+                    <p className="text-xs text-muted-foreground text-center">
+                      Update payment method, change plan, or cancel subscription
+                    </p>
+                  </>
+                )}
               </>
             ) : (
               <p className="text-sm text-muted-foreground">No billing information available</p>
@@ -378,6 +441,19 @@ export default function Billing() {
           )}
         </CardContent>
       </Card>
+
+      {/* Add Agent Seats Modal - Only rendered for Business plan */}
+      {agentUsageData && agentUsageData.canAddSeats && (
+        <AddAgentSeatsModal
+          open={isAddSeatsModalOpen}
+          onOpenChange={setIsAddSeatsModalOpen}
+          currentExtraSeats={agentUsageData.extraSeats}
+          baseLimit={agentUsageData.baseLimit}
+          currentUsage={agentUsageData.currentCount}
+          pricePerSeat={agentUsageData.extraSeatPrice}
+          onSuccess={fetchBillingData}
+        />
+      )}
     </div>
   );
 }
