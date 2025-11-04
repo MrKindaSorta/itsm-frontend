@@ -413,6 +413,9 @@ export default function Settings() {
               </div>
               <CardDescription>
                 Configure role-based access control. Changes affect all users with selected roles immediately.
+                <span className="block mt-2 text-amber-600 dark:text-amber-500 font-medium">
+                  ⚠️ User role permissions are locked to prevent billing bypass. Users with agent-level needs should have an agent role.
+                </span>
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -443,7 +446,11 @@ export default function Settings() {
                               <div className="flex justify-center">
                                 <Switch
                                   checked={roles.includes(role)}
+                                  disabled={role === 'user'}
                                   onCheckedChange={(checked) => {
+                                    // Prevent changes to user role permissions
+                                    if (role === 'user') return;
+
                                     const newRoles = checked
                                       ? [...roles, role]
                                       : roles.filter((r) => r !== role);
