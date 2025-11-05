@@ -13,6 +13,7 @@ import { ManagerCombobox } from '@/components/ui/manager-combobox';
 import { AgentLimitModal } from './AgentLimitModal';
 import { Loader2, Eye, EyeOff, ChevronRight, ChevronLeft } from 'lucide-react';
 import { isValidEmail } from '@/lib/utils';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
@@ -119,7 +120,7 @@ export function UserCreateModal({ open, onOpenChange, onSuccess }: UserCreateMod
         manager: formData.manager || null,
       };
 
-      const response = await fetch(`${API_BASE}/api/users`, {
+      const response = await fetchWithAuth(`${API_BASE}/api/users`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

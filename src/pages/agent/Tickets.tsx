@@ -12,6 +12,7 @@ import { useViewPreferences } from '@/contexts/ViewPreferencesContext';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { useTicketCache } from '@/contexts/TicketCacheContext';
 import { sortTickets, type SortColumn, type SortDirection } from '@/lib/utils';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 import type { Ticket, TicketStatus } from '@/types';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
@@ -95,7 +96,7 @@ export default function Tickets() {
       const url = new URL(`${API_BASE}/api/tickets`);
       url.searchParams.set('status', 'closed');
 
-      const response = await fetch(url.toString());
+      const response = await fetchWithAuth(url.toString());
       const data = await response.json();
 
       if (data.success) {
@@ -125,7 +126,7 @@ export default function Tickets() {
         url.searchParams.set('search', searchQuery);
       }
 
-      const response = await fetch(url.toString());
+      const response = await fetchWithAuth(url.toString());
       const data = await response.json();
 
       if (data.success) {
@@ -184,7 +185,7 @@ export default function Tickets() {
         payload.assignee_id = value === null ? null : Number(value);
       }
 
-      const response = await fetch(`${API_BASE}/api/tickets/${ticketId}`, {
+      const response = await fetchWithAuth(`${API_BASE}/api/tickets/${ticketId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

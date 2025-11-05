@@ -9,6 +9,7 @@ import SLAPerformanceReport from '@/components/reports/SLAPerformanceReport';
 import AgentPerformanceReport from '@/components/reports/AgentPerformanceReport';
 import TicketTrendsReport from '@/components/reports/TicketTrendsReport';
 import TicketLifecycleReport from '@/components/reports/TicketLifecycleReport';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
@@ -37,8 +38,8 @@ export default function Reports() {
     const fetchFilterOptions = async () => {
       try {
         const [prioritiesRes, categoriesRes] = await Promise.all([
-          fetch(`${API_BASE}/api/config/priorities`),
-          fetch(`${API_BASE}/api/config/categories`)
+          fetchWithAuth(`${API_BASE}/api/config/priorities`),
+          fetchWithAuth(`${API_BASE}/api/config/categories`)
         ]);
 
         if (prioritiesRes.ok) {
@@ -87,7 +88,7 @@ export default function Reports() {
         lifecycle: '/api/reports/ticket-lifecycle',
       }[reportType];
 
-      const response = await fetch(`${API_BASE}${endpoint}`, {
+      const response = await fetchWithAuth(`${API_BASE}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

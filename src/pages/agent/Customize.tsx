@@ -19,6 +19,7 @@ import BrandingCustomizer from '@/components/branding/BrandingCustomizer';
 import BrandingPreview from '@/components/branding/BrandingPreview';
 import { EyeOff, Plus, Save, RotateCcw } from 'lucide-react';
 import { mergeWithDefaults } from '@/utils/defaultFormConfig';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 const STORAGE_KEY = 'itsm-form-configuration';
 const BRANDING_STORAGE_KEY = 'itsm-branding-configuration';
@@ -50,7 +51,7 @@ export default function Customize() {
 
       try {
         // Try loading from API first
-        const response = await fetch(`${API_BASE}/api/config/form`);
+        const response = await fetchWithAuth(`${API_BASE}/api/config/form`);
         const data = await response.json();
 
         if (data.success && data.config.fields) {
@@ -90,7 +91,7 @@ export default function Customize() {
       // If we added default fields, save to API too
       if (loadedFields.length !== mergedFields.length) {
         try {
-          await fetch(`${API_BASE}/api/config/form`, {
+          await fetchWithAuth(`${API_BASE}/api/config/form`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -112,7 +113,7 @@ export default function Customize() {
     const loadSLAConfig = async () => {
       try {
         // Try loading from API first
-        const response = await fetch(`${API_BASE}/api/sla/rules`);
+        const response = await fetchWithAuth(`${API_BASE}/api/sla/rules`);
         const data = await response.json();
 
         if (data.success && data.rules) {
@@ -255,7 +256,7 @@ export default function Customize() {
 
     try {
       // Save to API
-      const response = await fetch(`${API_BASE}/api/config/form`, {
+      const response = await fetchWithAuth(`${API_BASE}/api/config/form`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -296,7 +297,7 @@ export default function Customize() {
     try {
       if (editingSlaRule) {
         // Update existing rule via API
-        const response = await fetch(`${API_BASE}/api/sla/rules/${editingSlaRule.id}`, {
+        const response = await fetchWithAuth(`${API_BASE}/api/sla/rules/${editingSlaRule.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(ruleData),
@@ -322,7 +323,7 @@ export default function Customize() {
         }
       } else {
         // Create new rule via API
-        const response = await fetch(`${API_BASE}/api/sla/rules`, {
+        const response = await fetchWithAuth(`${API_BASE}/api/sla/rules`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(ruleData),
@@ -361,7 +362,7 @@ export default function Customize() {
   const handleDeleteSla = async (ruleId: string) => {
     if (confirm('Are you sure you want to delete this SLA rule?')) {
       try {
-        const response = await fetch(`${API_BASE}/api/sla/rules/${ruleId}`, {
+        const response = await fetchWithAuth(`${API_BASE}/api/sla/rules/${ruleId}`, {
           method: 'DELETE',
         });
 
@@ -387,7 +388,7 @@ export default function Customize() {
       const rule = slaRules.find((r) => r.id === ruleId);
       if (!rule) return;
 
-      const response = await fetch(`${API_BASE}/api/sla/rules/${ruleId}`, {
+      const response = await fetchWithAuth(`${API_BASE}/api/sla/rules/${ruleId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ enabled: !rule.enabled }),
@@ -420,7 +421,7 @@ export default function Customize() {
   const handleSaveBranding = async () => {
     try {
       // Save to API first
-      const response = await fetch(`${API_BASE}/api/config/branding`, {
+      const response = await fetchWithAuth(`${API_BASE}/api/config/branding`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

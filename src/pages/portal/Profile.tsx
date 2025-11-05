@@ -13,6 +13,7 @@ import { TeamCombobox } from '@/components/ui/team-combobox';
 import { LocationCombobox } from '@/components/ui/location-combobox';
 import { JobTitleCombobox } from '@/components/ui/job-title-combobox';
 import { ManagerCombobox } from '@/components/ui/manager-combobox';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
@@ -53,7 +54,7 @@ export default function Profile() {
     setErrorMessage(null);
 
     try {
-      const response = await fetch(`${API_BASE}/api/users/${user.id}`, {
+      const response = await fetchWithAuth(`${API_BASE}/api/users/${user.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -116,7 +117,7 @@ export default function Profile() {
         mentions: notifyCommentAdded,
       };
 
-      const response = await fetch(`${API_BASE}/api/users/${user.id}`, {
+      const response = await fetchWithAuth(`${API_BASE}/api/users/${user.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ notificationPreferences }),
@@ -164,7 +165,7 @@ export default function Profile() {
     setErrorMessage(null);
 
     try {
-      const response = await fetch(`${API_BASE}/api/users/${user.id}/password`, {
+      const response = await fetchWithAuth(`${API_BASE}/api/users/${user.id}/password`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: newPassword }),

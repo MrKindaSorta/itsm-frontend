@@ -21,6 +21,7 @@ import { ActivityFeed } from '@/components/tickets/ActivityFeed';
 import { formatDate, getInitials } from '@/lib/utils';
 import type { Ticket, Activity } from '@/types';
 import { ArrowLeft, Send, Loader2, Paperclip } from 'lucide-react';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
@@ -107,7 +108,7 @@ export default function TicketDetail() {
     setError(null);
     try {
       // Fetch ticket
-      const ticketResponse = await fetch(`${API_BASE}/api/tickets/${id}`);
+      const ticketResponse = await fetchWithAuth(`${API_BASE}/api/tickets/${id}`);
       const ticketData = await ticketResponse.json();
 
       if (ticketData.success) {
@@ -128,7 +129,7 @@ export default function TicketDetail() {
         setTicket(transformedTicket);
 
         // Fetch activities (only public ones for user view)
-        const activitiesResponse = await fetch(`${API_BASE}/api/tickets/${id}/activities`);
+        const activitiesResponse = await fetchWithAuth(`${API_BASE}/api/tickets/${id}/activities`);
         const activitiesData = await activitiesResponse.json();
 
         if (activitiesData.success) {
@@ -182,7 +183,7 @@ export default function TicketDetail() {
         isInternal: false,
       };
 
-      const response = await fetch(`${API_BASE}/api/tickets/${id}/activities`, {
+      const response = await fetchWithAuth(`${API_BASE}/api/tickets/${id}/activities`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -206,7 +207,7 @@ export default function TicketDetail() {
             formData.append('user_id', user!.id);
             formData.append('activity_id', activityId);
 
-            await fetch(`${API_BASE}/api/tickets/${id}/attachments/batch`, {
+            await fetchWithAuth(`${API_BASE}/api/tickets/${id}/attachments/batch`, {
               method: 'POST',
               body: formData,
             });
@@ -231,7 +232,7 @@ export default function TicketDetail() {
 
         // If reopening, update ticket status to 'open'
         if (reopenTicket) {
-          const updateResponse = await fetch(`${API_BASE}/api/tickets/${id}`, {
+          const updateResponse = await fetchWithAuth(`${API_BASE}/api/tickets/${id}`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',

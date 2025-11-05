@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Search, FileText, ChevronRight, TrendingUp, ArrowLeft, ThumbsUp, ThumbsDown, Download } from 'lucide-react';
 import * as Icons from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
@@ -62,7 +63,7 @@ export default function KnowledgeBase() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/categories`);
+      const response = await fetchWithAuth(`${API_BASE}/api/categories`);
       const data = await response.json();
       if (data.success) {
         setCategories(data.categories);
@@ -74,7 +75,7 @@ export default function KnowledgeBase() {
 
   const fetchArticles = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/articles?status=published`);
+      const response = await fetchWithAuth(`${API_BASE}/api/articles?status=published`);
       const data = await response.json();
       if (data.success) {
         setArticles(data.articles);
@@ -88,7 +89,7 @@ export default function KnowledgeBase() {
 
   const fetchArticleDetail = async (articleId: number) => {
     try {
-      const response = await fetch(`${API_BASE}/api/articles/${articleId}?user_id=${user?.id || ''}`);
+      const response = await fetchWithAuth(`${API_BASE}/api/articles/${articleId}?user_id=${user?.id || ''}`);
       const data = await response.json();
       if (data.success) {
         setSelectedArticle(data.article);
@@ -102,7 +103,7 @@ export default function KnowledgeBase() {
     if (!selectedArticle || !user) return;
 
     try {
-      const response = await fetch(`${API_BASE}/api/articles/${selectedArticle.id}/feedback`, {
+      const response = await fetchWithAuth(`${API_BASE}/api/articles/${selectedArticle.id}/feedback`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from '
 import { useAuth } from './AuthContext';
 import type { ViewPreferences, ColumnConfig } from '@/types';
 import { DEFAULT_TICKET_COLUMNS } from '@/lib/utils';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 interface ViewPreferencesContextType {
   preferences: ViewPreferences | null;
@@ -35,7 +36,7 @@ export function ViewPreferencesProvider({ children }: { children: ReactNode }) {
 
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/users/${user.id}/view-preferences`);
+      const response = await fetchWithAuth(`/api/users/${user.id}/view-preferences`);
       const data = await response.json();
 
       if (data.success && data.preferences) {
@@ -71,7 +72,7 @@ export function ViewPreferencesProvider({ children }: { children: ReactNode }) {
     };
 
     try {
-      const response = await fetch(`/api/users/${user.id}/view-preferences`, {
+      const response = await fetchWithAuth(`/api/users/${user.id}/view-preferences`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -103,7 +104,7 @@ export function ViewPreferencesProvider({ children }: { children: ReactNode }) {
     };
 
     try {
-      const response = await fetch(`/api/users/${user.id}/view-preferences`, {
+      const response = await fetchWithAuth(`/api/users/${user.id}/view-preferences`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

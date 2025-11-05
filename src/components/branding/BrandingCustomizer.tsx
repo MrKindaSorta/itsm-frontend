@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import type { BrandingConfiguration } from '@/types/branding';
 import { BRANDING_PRESETS } from '@/types/branding';
 import ImageCropModal from './ImageCropModal';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 import {
   Palette,
   Type,
@@ -82,7 +83,7 @@ export default function BrandingCustomizer({ branding, onUpdate, previewTheme, o
       const token = localStorage.getItem('token');
 
       // Upload to backend
-      const response = await fetch(`${apiBase}/api/upload/branding/${type}`, {
+      const response = await fetchWithAuth(`${apiBase}/api/upload/branding/${type}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

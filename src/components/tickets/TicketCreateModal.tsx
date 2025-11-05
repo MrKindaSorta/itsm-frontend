@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { SelectRoot as Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UserMultiSelect } from '@/components/ui/user-multi-select';
 import { Loader2 } from 'lucide-react';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
@@ -62,7 +63,7 @@ export function TicketCreateModal({ open, onOpenChange, onSuccess }: TicketCreat
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/users`);
+      const response = await fetchWithAuth(`${API_BASE}/api/users`);
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
@@ -102,7 +103,7 @@ export function TicketCreateModal({ open, onOpenChange, onSuccess }: TicketCreat
         customFields: {},
       };
 
-      const response = await fetch(`${API_BASE}/api/tickets`, {
+      const response = await fetchWithAuth(`${API_BASE}/api/tickets`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

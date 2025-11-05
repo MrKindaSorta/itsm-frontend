@@ -12,6 +12,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { CategoryManager } from '@/components/knowledge/CategoryManager';
 import { ArticleEditor } from '@/components/knowledge/ArticleEditor';
 import { useAuth } from '@/contexts/AuthContext';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
@@ -129,7 +130,7 @@ export default function KnowledgeBase() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/categories`);
+      const response = await fetchWithAuth(`${API_BASE}/api/categories`);
       const data = await response.json();
       if (data.success) {
         setCategories(data.categories);
@@ -147,7 +148,7 @@ export default function KnowledgeBase() {
       if (selectedCategory) params.append('category_id', selectedCategory.toString());
       params.append('user_id', user?.id || '');
 
-      const response = await fetch(`${API_BASE}/api/articles?${params}`);
+      const response = await fetchWithAuth(`${API_BASE}/api/articles?${params}`);
       const data = await response.json();
       if (data.success) {
         setArticles(data.articles);
@@ -171,7 +172,7 @@ export default function KnowledgeBase() {
 
       // Update server
       try {
-        const response = await fetch(`${API_BASE}/api/categories/reorder`, {
+        const response = await fetchWithAuth(`${API_BASE}/api/categories/reorder`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -208,7 +209,7 @@ export default function KnowledgeBase() {
       }
 
       try {
-        const response = await fetch(`${API_BASE}/api/articles`, {
+        const response = await fetchWithAuth(`${API_BASE}/api/articles`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -260,7 +261,7 @@ export default function KnowledgeBase() {
       if (isUnchanged) {
         // Delete the empty article
         try {
-          await fetch(`${API_BASE}/api/articles/${editingArticle.id}?user_id=${user?.id}`, {
+          await fetchWithAuth(`${API_BASE}/api/articles/${editingArticle.id}?user_id=${user?.id}`, {
             method: 'DELETE',
           });
         } catch (error) {
@@ -287,7 +288,7 @@ export default function KnowledgeBase() {
 
     setIsDeleting(true);
     try {
-      const response = await fetch(`${API_BASE}/api/articles/${articleToDelete.id}?user_id=${user?.id}`, {
+      const response = await fetchWithAuth(`${API_BASE}/api/articles/${articleToDelete.id}?user_id=${user?.id}`, {
         method: 'DELETE',
       });
 

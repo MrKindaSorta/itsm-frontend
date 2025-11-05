@@ -17,6 +17,7 @@ import type { FormConfiguration, FormField } from '@/types/formBuilder';
 import type { User, TicketPriority } from '@/types';
 import { getPriorityColor } from '@/lib/utils';
 import { getVisibleFieldsInHierarchicalOrder, getFieldsToHide } from '@/utils/conditionalFieldEvaluator';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 const FORM_CONFIG_STORAGE_KEY = 'itsm-form-configuration';
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
@@ -55,7 +56,7 @@ export default function CreateTicket() {
 
       try {
         // Try loading from API first
-        const response = await fetch(`${API_BASE}/api/config/form`);
+        const response = await fetchWithAuth(`${API_BASE}/api/config/form`);
         const data = await response.json();
 
         if (data.success && data.config.fields) {
@@ -132,7 +133,7 @@ export default function CreateTicket() {
 
     const fetchArticles = async () => {
       try {
-        const response = await fetch(`${API_BASE}/api/articles/search-suggestions?query=${encodeURIComponent(combinedText)}`);
+        const response = await fetchWithAuth(`${API_BASE}/api/articles/search-suggestions?query=${encodeURIComponent(combinedText)}`);
         const data = await response.json();
         if (data.success) {
           setArticles(data.articles || []);
@@ -150,7 +151,7 @@ export default function CreateTicket() {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/users`);
+      const response = await fetchWithAuth(`${API_BASE}/api/users`);
       const data = await response.json();
       if (data.success) {
         // Transform users to match User interface
@@ -195,7 +196,7 @@ export default function CreateTicket() {
         customFields: fieldValues,
       };
 
-      const response = await fetch(`${API_BASE}/api/tickets`, {
+      const response = await fetchWithAuth(`${API_BASE}/api/tickets`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -218,7 +219,7 @@ export default function CreateTicket() {
               formData.append('file', file);
               formData.append('user_id', user.id);
 
-              await fetch(`${API_BASE}/api/tickets/${ticketId}/attachments`, {
+              await fetchWithAuth(`${API_BASE}/api/tickets/${ticketId}/attachments`, {
                 method: 'POST',
                 body: formData,
               });

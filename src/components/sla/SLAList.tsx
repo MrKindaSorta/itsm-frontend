@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import type { SLARule } from '@/types/sla';
 import type { FormConfiguration } from '@/types/formBuilder';
 import { Clock, Edit, Trash2, AlertTriangle, AlertCircle } from 'lucide-react';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 const FORM_CONFIG_STORAGE_KEY = 'itsm-form-configuration';
@@ -25,7 +26,7 @@ export default function SLAList({ rules, onEdit, onDelete, onToggleEnabled }: SL
     const loadFormConfig = async () => {
       try {
         // Try loading from API first
-        const response = await fetch(`${API_BASE}/api/config/form`);
+        const response = await fetchWithAuth(`${API_BASE}/api/config/form`);
         const data = await response.json();
 
         if (data.success && data.config.fields) {

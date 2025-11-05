@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { Loader2, Plus, Minus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getApiBaseUrl } from '@/lib/api';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 interface AddAgentSeatsModalProps {
   open: boolean;
@@ -65,7 +66,7 @@ export function AddAgentSeatsModal({
 
     try {
       const API_BASE = getApiBaseUrl();
-      const response = await fetch(`${API_BASE}/api/billing/manage-agent-seats`, {
+      const response = await fetchWithAuth(`${API_BASE}/api/billing/manage-agent-seats`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Eye, EyeOff, Lock } from 'lucide-react';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
@@ -60,7 +61,7 @@ export default function ChangePasswordFirstLogin() {
 
     try {
       // First verify the current password by attempting login
-      const loginResponse = await fetch(`${API_BASE}/api/auth/login`, {
+      const loginResponse = await fetchWithAuth(`${API_BASE}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: user.email, password: currentPassword }),
@@ -74,7 +75,7 @@ export default function ChangePasswordFirstLogin() {
       }
 
       // Update the password
-      const response = await fetch(`${API_BASE}/api/users/${user.id}/change-password-first-login`, {
+      const response = await fetchWithAuth(`${API_BASE}/api/users/${user.id}/change-password-first-login`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: newPassword }),

@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Image, Paperclip, X, Loader2, Trash2, Download, Eye } from 'lucide-react';
 import { ImageEditor } from './ImageEditor';
 import { RichTextEditor } from './RichTextEditor';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
@@ -116,7 +117,7 @@ export function ArticleEditor({ initialData, categories, userId, onSave, onCance
       formData.append('user_id', userId);
 
       const articleId = initialData?.id || 'temp';
-      const response = await fetch(`${API_BASE}/api/articles/${articleId}/attachments`, {
+      const response = await fetchWithAuth(`${API_BASE}/api/articles/${articleId}/attachments`, {
         method: 'POST',
         body: formData,
       });
@@ -166,7 +167,7 @@ export function ArticleEditor({ initialData, categories, userId, onSave, onCance
   const handleImageEdit = async (src: string) => {
     // When editing an inline image, fetch it and reopen ImageEditor
     try {
-      const response = await fetch(src);
+      const response = await fetchWithAuth(src);
       const blob = await response.blob();
       const file = new File([blob], 'image.jpg', { type: blob.type });
       setSelectedImageFile(file);
@@ -205,7 +206,7 @@ export function ArticleEditor({ initialData, categories, userId, onSave, onCance
       formData.append('user_id', userId);
 
       const articleId = initialData?.id || 'temp';
-      const response = await fetch(`${API_BASE}/api/articles/${articleId}/attachments`, {
+      const response = await fetchWithAuth(`${API_BASE}/api/articles/${articleId}/attachments`, {
         method: 'POST',
         body: formData,
       });
@@ -244,7 +245,7 @@ export function ArticleEditor({ initialData, categories, userId, onSave, onCance
         ? `${API_BASE}/api/articles/${initialData.id}`
         : `${API_BASE}/api/articles`;
 
-      const response = await fetch(url, {
+      const response = await fetchWithAuth(url, {
         method: initialData?.id ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Loader2 } from 'lucide-react';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
@@ -62,7 +63,7 @@ export function NotificationSettingsModal({ open, onOpenChange }: NotificationSe
 
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_BASE}/api/notifications/preferences?userId=${user.id}`);
+      const response = await fetchWithAuth(`${API_BASE}/api/notifications/preferences?userId=${user.id}`);
       const data = await response.json();
 
       if (data.success) {
@@ -80,7 +81,7 @@ export function NotificationSettingsModal({ open, onOpenChange }: NotificationSe
 
     setIsSaving(true);
     try {
-      const response = await fetch(`${API_BASE}/api/notifications/preferences`, {
+      const response = await fetchWithAuth(`${API_BASE}/api/notifications/preferences`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

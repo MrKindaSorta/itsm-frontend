@@ -12,6 +12,7 @@ import { ManagerCombobox } from '@/components/ui/manager-combobox';
 import { Loader2, Eye, EyeOff, Key } from 'lucide-react';
 import { isValidEmail } from '@/lib/utils';
 import type { User } from '@/types';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
@@ -108,7 +109,7 @@ export function UserEditModal({ open, onOpenChange, onSuccess, user }: UserEditM
         manager: formData.manager || null,
       };
 
-      const response = await fetch(`${API_BASE}/api/users/${user.id}`, {
+      const response = await fetchWithAuth(`${API_BASE}/api/users/${user.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -126,7 +127,7 @@ export function UserEditModal({ open, onOpenChange, onSuccess, user }: UserEditM
 
       // Update password if needed
       if (showPasswordSection && newPassword) {
-        const passwordResponse = await fetch(`${API_BASE}/api/users/${user.id}/password`, {
+        const passwordResponse = await fetchWithAuth(`${API_BASE}/api/users/${user.id}/password`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',

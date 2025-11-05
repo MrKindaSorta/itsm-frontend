@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, CreditCard, Download, ExternalLink, AlertCircle, CheckCircle2, UserPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getApiBaseUrl } from '@/lib/api';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 interface BillingInfo {
   plan: string;
@@ -60,7 +61,7 @@ export default function Billing() {
       const API_BASE = getApiBaseUrl();
 
       // Fetch billing info
-      const billingResponse = await fetch(`${API_BASE}/api/billing/info`);
+      const billingResponse = await fetchWithAuth(`${API_BASE}/api/billing/info`);
       const billingData = await billingResponse.json();
 
       if (billingData.success) {
@@ -68,7 +69,7 @@ export default function Billing() {
       }
 
       // Fetch invoices
-      const invoicesResponse = await fetch(`${API_BASE}/api/billing/invoices`);
+      const invoicesResponse = await fetchWithAuth(`${API_BASE}/api/billing/invoices`);
       const invoicesData = await invoicesResponse.json();
 
       if (invoicesData.success) {
@@ -76,7 +77,7 @@ export default function Billing() {
       }
 
       // Fetch agent usage data (for extra seats info)
-      const usageResponse = await fetch(`${API_BASE}/api/billing/agent-usage`);
+      const usageResponse = await fetchWithAuth(`${API_BASE}/api/billing/agent-usage`);
       const usageData = await usageResponse.json();
 
       if (usageData.success) {
@@ -99,7 +100,7 @@ export default function Billing() {
     try {
       const API_BASE = getApiBaseUrl();
 
-      const response = await fetch(`${API_BASE}/api/billing/create-portal-session`, {
+      const response = await fetchWithAuth(`${API_BASE}/api/billing/create-portal-session`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });

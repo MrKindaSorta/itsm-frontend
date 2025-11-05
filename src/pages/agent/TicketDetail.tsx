@@ -5,6 +5,7 @@ import { useWebSocket } from '@/hooks/useWebSocket';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useTicketCache } from '@/contexts/TicketCacheContext';
 import { usersCache } from '@/lib/usersCache';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -191,7 +192,7 @@ export default function TicketDetail() {
     setError(null);
     try {
       // Fetch ticket with user_id to enable auto-open functionality
-      const ticketResponse = await fetch(`${API_BASE}/api/tickets/${id}?user_id=${user?.id || ''}`);
+      const ticketResponse = await fetchWithAuth(`${API_BASE}/api/tickets/${id}?user_id=${user?.id || ''}`);
       const ticketData = await ticketResponse.json();
 
       if (ticketData.success) {
@@ -229,7 +230,7 @@ export default function TicketDetail() {
     if (!id) return;
 
     try {
-      const activitiesResponse = await fetch(`${API_BASE}/api/tickets/${id}/activities`);
+      const activitiesResponse = await fetchWithAuth(`${API_BASE}/api/tickets/${id}/activities`);
       const activitiesData = await activitiesResponse.json();
 
       if (activitiesData.success) {
@@ -248,7 +249,7 @@ export default function TicketDetail() {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/users`);
+      const response = await fetchWithAuth(`${API_BASE}/api/users`);
       const data = await response.json();
       if (data.success) {
         const fetchedUsers = data.users || [];
@@ -314,7 +315,7 @@ export default function TicketDetail() {
         payload.assignee_id = value === 'unassigned' ? null : Number(value);
       }
 
-      const response = await fetch(`${API_BASE}/api/tickets/${id}`, {
+      const response = await fetchWithAuth(`${API_BASE}/api/tickets/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -354,7 +355,7 @@ export default function TicketDetail() {
     if (!user) return;
 
     try {
-      const response = await fetch(`${API_BASE}/api/tickets/${id}/activities/${activity.id}/flag`, {
+      const response = await fetchWithAuth(`${API_BASE}/api/tickets/${id}/activities/${activity.id}/flag`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -406,7 +407,7 @@ export default function TicketDetail() {
         payload.parent_activity_id = replyingToActivity.id;
       }
 
-      const response = await fetch(`${API_BASE}/api/tickets/${id}/activities`, {
+      const response = await fetchWithAuth(`${API_BASE}/api/tickets/${id}/activities`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -430,7 +431,7 @@ export default function TicketDetail() {
             formData.append('user_id', user.id);
             formData.append('activity_id', activityId);
 
-            await fetch(`${API_BASE}/api/tickets/${id}/attachments/batch`, {
+            await fetchWithAuth(`${API_BASE}/api/tickets/${id}/attachments/batch`, {
               method: 'POST',
               body: formData,
             });
@@ -499,7 +500,7 @@ export default function TicketDetail() {
 
     setIsSaving(true);
     try {
-      const response = await fetch(`${API_BASE}/api/tickets/${id}`, {
+      const response = await fetchWithAuth(`${API_BASE}/api/tickets/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -546,7 +547,7 @@ export default function TicketDetail() {
 
     setIsDeleting(true);
     try {
-      const response = await fetch(`${API_BASE}/api/tickets/${id}`, {
+      const response = await fetchWithAuth(`${API_BASE}/api/tickets/${id}`, {
         method: 'DELETE',
       });
 

@@ -3,6 +3,7 @@ import { Check, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 import {
   Popover,
   PopoverContent,
@@ -35,7 +36,7 @@ export function ManagerCombobox({
   React.useEffect(() => {
     const fetchManagers = async () => {
       try {
-        const response = await fetch(`${API_BASE}/api/managers/unique`);
+        const response = await fetchWithAuth(`${API_BASE}/api/managers/unique`);
         const data = await response.json();
         if (data.success) {
           setManagers(data.managers || []);

@@ -9,6 +9,7 @@ import { PriorityBadge } from '@/components/tickets/PriorityBadge';
 import { SLAIndicator } from '@/components/tickets/SLAIndicator';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDate } from '@/lib/utils';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 import { Search, Plus, Clock, Loader2 } from 'lucide-react';
 import type { Ticket } from '@/types';
 
@@ -31,7 +32,7 @@ export default function MyTickets() {
       setError(null);
 
       try {
-        const response = await fetch(`${API_BASE}/api/tickets`);
+        const response = await fetchWithAuth(`${API_BASE}/api/tickets`);
         const data = await response.json();
 
         if (data.success) {

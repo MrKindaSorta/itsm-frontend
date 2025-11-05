@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import type { SLARule } from '@/types/sla';
 import type { FormConfiguration, FormField } from '@/types/formBuilder';
 import { X, AlertTriangle, Loader2, Info } from 'lucide-react';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 const FORM_CONFIG_STORAGE_KEY = 'itsm-form-configuration';
@@ -65,7 +66,7 @@ export default function SLAForm({ rule, onSave, onCancel }: SLAFormProps) {
     const loadFormConfig = async () => {
       try {
         // Try loading from API first
-        const response = await fetch(`${API_BASE}/api/config/form`);
+        const response = await fetchWithAuth(`${API_BASE}/api/config/form`);
         const data = await response.json();
 
         if (data.success && data.config.fields) {
@@ -166,7 +167,7 @@ export default function SLAForm({ rule, onSave, onCancel }: SLAFormProps) {
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
-        const response = await fetch(`${API_BASE}/api/departments/unique`);
+        const response = await fetchWithAuth(`${API_BASE}/api/departments/unique`);
         const data = await response.json();
         if (data.success) {
           setDepartments(data.departments || []);
@@ -183,7 +184,7 @@ export default function SLAForm({ rule, onSave, onCancel }: SLAFormProps) {
   useEffect(() => {
     const fetchTeams = async () => {
       try {
-        const response = await fetch(`${API_BASE}/api/teams/unique`);
+        const response = await fetchWithAuth(`${API_BASE}/api/teams/unique`);
         const data = await response.json();
         if (data.success) {
           setTeams(data.teams || []);
@@ -200,7 +201,7 @@ export default function SLAForm({ rule, onSave, onCancel }: SLAFormProps) {
   useEffect(() => {
     const fetchLocations = async () => {
       try {
-        const response = await fetch(`${API_BASE}/api/locations/unique`);
+        const response = await fetchWithAuth(`${API_BASE}/api/locations/unique`);
         const data = await response.json();
         if (data.success) {
           setLocations(data.locations || []);
@@ -217,7 +218,7 @@ export default function SLAForm({ rule, onSave, onCancel }: SLAFormProps) {
   useEffect(() => {
     const fetchJobTitles = async () => {
       try {
-        const response = await fetch(`${API_BASE}/api/job-titles/unique`);
+        const response = await fetchWithAuth(`${API_BASE}/api/job-titles/unique`);
         const data = await response.json();
         if (data.success) {
           setJobTitles(data.jobTitles || []);
@@ -234,7 +235,7 @@ export default function SLAForm({ rule, onSave, onCancel }: SLAFormProps) {
   useEffect(() => {
     const fetchManagers = async () => {
       try {
-        const response = await fetch(`${API_BASE}/api/managers/unique`);
+        const response = await fetchWithAuth(`${API_BASE}/api/managers/unique`);
         const data = await response.json();
         if (data.success) {
           setManagers(data.managers || []);

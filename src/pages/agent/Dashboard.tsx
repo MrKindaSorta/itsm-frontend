@@ -9,6 +9,7 @@ import { SLAIndicator } from '@/components/tickets/SLAIndicator';
 import { Link } from 'react-router-dom';
 import { getInitials } from '@/lib/utils';
 import type { Ticket as TicketType } from '@/types';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
@@ -69,7 +70,7 @@ export default function Dashboard() {
         url.searchParams.set('user_id', user.id);
       }
 
-      const response = await fetch(url.toString());
+      const response = await fetchWithAuth(url.toString());
       const data = await response.json();
 
       if (data.success) {
@@ -88,7 +89,7 @@ export default function Dashboard() {
   const fetchRecentTickets = async () => {
     setIsLoadingRecent(true);
     try {
-      const response = await fetch(`${API_BASE}/api/dashboard/recent-tickets?limit=5&type=recent`);
+      const response = await fetchWithAuth(`${API_BASE}/api/dashboard/recent-tickets?limit=5&type=recent`);
       const data = await response.json();
 
       if (data.success) {
@@ -116,7 +117,7 @@ export default function Dashboard() {
   const fetchSLAWarnings = async () => {
     setIsLoadingSLA(true);
     try {
-      const response = await fetch(`${API_BASE}/api/dashboard/recent-tickets?limit=5&type=sla_warnings`);
+      const response = await fetchWithAuth(`${API_BASE}/api/dashboard/recent-tickets?limit=5&type=sla_warnings`);
       const data = await response.json();
 
       if (data.success) {
@@ -144,7 +145,7 @@ export default function Dashboard() {
   const fetchAgentLogins = async () => {
     setIsLoadingAgents(true);
     try {
-      const response = await fetch(`${API_BASE}/api/dashboard/agent-logins`);
+      const response = await fetchWithAuth(`${API_BASE}/api/dashboard/agent-logins`);
       const data = await response.json();
 
       if (data.success) {

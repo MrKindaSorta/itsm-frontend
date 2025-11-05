@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { SystemSettings } from '@/types';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 interface SettingsContextType {
   settings: SystemSettings | null;
@@ -64,7 +65,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   const refreshSettings = async () => {
     try {
-      const response = await fetch(`/api/settings`);
+      const response = await fetchWithAuth(`/api/settings`);
       const data = await response.json();
 
       if (data.success && data.settings) {
@@ -84,7 +85,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   const updateSettings = async (updates: Partial<SystemSettings>) => {
     try {
-      const response = await fetch(`/api/settings`, {
+      const response = await fetchWithAuth(`/api/settings`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),

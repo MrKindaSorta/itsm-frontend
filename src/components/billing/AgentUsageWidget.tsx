@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Users, TrendingUp, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getApiBaseUrl } from '@/lib/api';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 interface AgentUsageData {
   currentCount: number;
@@ -47,7 +48,7 @@ export function AgentUsageWidget({
   const fetchUsageData = async () => {
     try {
       const API_BASE = getApiBaseUrl();
-      const response = await fetch(`${API_BASE}/api/billing/agent-usage`);
+      const response = await fetchWithAuth(`${API_BASE}/api/billing/agent-usage`);
       const data = await response.json();
 
       if (data.success) {

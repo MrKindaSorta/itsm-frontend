@@ -4,6 +4,7 @@ import { Check, Loader2, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import type { User } from '@/types';
 import { cn, getInitials } from '@/lib/utils';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
@@ -30,7 +31,7 @@ export function InlineAssigneeSelect({ assignee, onAssigneeChange, disabled }: I
   const fetchUsers = async () => {
     setIsLoadingUsers(true);
     try {
-      const response = await fetch(`${API_BASE}/api/users`);
+      const response = await fetchWithAuth(`${API_BASE}/api/users`);
       const data = await response.json();
       if (data.success) {
         // Filter to only show agents, managers, and admins

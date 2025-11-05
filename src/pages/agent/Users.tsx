@@ -12,6 +12,7 @@ import { AgentUsageWidget } from '@/components/billing/AgentUsageWidget';
 import { useAuth } from '@/contexts/AuthContext';
 import { sortUsers, type UserSortColumn, type SortDirection } from '@/lib/utils';
 import type { User } from '@/types';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
@@ -46,7 +47,7 @@ export default function Users() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${API_BASE}/api/users`);
+      const response = await fetchWithAuth(`${API_BASE}/api/users`);
       const data = await response.json();
 
       if (data.success) {
@@ -85,7 +86,7 @@ export default function Users() {
 
   const fetchDeletedUsers = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/users?deleted_only=true`);
+      const response = await fetchWithAuth(`${API_BASE}/api/users?deleted_only=true`);
       const data = await response.json();
 
       if (data.success) {
@@ -123,7 +124,7 @@ export default function Users() {
 
   const handleToggleActive = async (userId: string) => {
     try {
-      const response = await fetch(`${API_BASE}/api/users/${userId}/toggle`, {
+      const response = await fetchWithAuth(`${API_BASE}/api/users/${userId}/toggle`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -147,7 +148,7 @@ export default function Users() {
 
   const handleDelete = async (userId: string) => {
     try {
-      const response = await fetch(`${API_BASE}/api/users/${userId}`, {
+      const response = await fetchWithAuth(`${API_BASE}/api/users/${userId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -175,7 +176,7 @@ export default function Users() {
 
   const handleRestore = async (userId: string) => {
     try {
-      const response = await fetch(`${API_BASE}/api/users/${userId}/restore`, {
+      const response = await fetchWithAuth(`${API_BASE}/api/users/${userId}/restore`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -213,7 +214,7 @@ export default function Users() {
     }
 
     try {
-      const response = await fetch(`${API_BASE}/api/users/${userId}/permanent`, {
+      const response = await fetchWithAuth(`${API_BASE}/api/users/${userId}/permanent`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

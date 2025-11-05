@@ -8,6 +8,7 @@ import { Plus, Edit, Trash2 } from 'lucide-react';
 import * as Icons from 'lucide-react';
 import { IconPicker } from './IconPicker';
 import { ColorPicker } from './ColorPicker';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
@@ -41,7 +42,7 @@ export function CategoryManager({ userId }: CategoryManagerProps) {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/categories`);
+      const response = await fetchWithAuth(`${API_BASE}/api/categories`);
       const data = await response.json();
       if (data.success) {
         setCategories(data.categories);
@@ -61,7 +62,7 @@ export function CategoryManager({ userId }: CategoryManagerProps) {
         ? `${API_BASE}/api/categories/${editingCategory.id}`
         : `${API_BASE}/api/categories`;
 
-      const response = await fetch(url, {
+      const response = await fetchWithAuth(url, {
         method: editingCategory ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...formData, user_id: userId }),
@@ -88,7 +89,7 @@ export function CategoryManager({ userId }: CategoryManagerProps) {
     }
 
     try {
-      const response = await fetch(`${API_BASE}/api/categories/${categoryId}?user_id=${userId}`, {
+      const response = await fetchWithAuth(`${API_BASE}/api/categories/${categoryId}?user_id=${userId}`, {
         method: 'DELETE',
       });
 

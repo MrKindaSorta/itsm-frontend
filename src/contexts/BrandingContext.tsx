@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import type { BrandingConfiguration } from '@/types/branding';
 import { DEFAULT_BRANDING } from '@/types/branding';
 import { useTheme } from '@/contexts/ThemeContext';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 const BRANDING_STORAGE_KEY = 'itsm-branding-configuration';
 
@@ -53,7 +54,7 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
 
     try {
       // Try loading from API first
-      const response = await fetch(`/api/config/branding`);
+      const response = await fetchWithAuth(`/api/config/branding`);
       const data = await response.json();
 
       if (data.success && data.config) {
