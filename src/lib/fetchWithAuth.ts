@@ -42,8 +42,10 @@ export async function fetchWithAuth(
     localStorage.removeItem('token');
     localStorage.removeItem('tokenExpires');
 
-    // Redirect to login page
-    window.location.href = '/auth/login';
+    // Only redirect if NOT already on auth page (prevent infinite loop)
+    if (!window.location.pathname.startsWith('/auth/')) {
+      window.location.href = '/auth/login';
+    }
 
     throw new Error('Authentication required');
   }
