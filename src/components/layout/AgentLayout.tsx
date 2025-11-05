@@ -20,7 +20,6 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  Home,
   UserCircle,
   Info,
   CreditCard,
@@ -220,12 +219,10 @@ export default function AgentLayout() {
             <div className="flex items-center space-x-2">
               {/* Portal Button */}
               <Button
-                variant="ghost"
-                size="icon"
+                variant="outline"
                 onClick={() => navigate('/portal/tickets/create')}
-                title="User Portal"
               >
-                <Home className="h-5 w-5" />
+                User Portal
               </Button>
 
               {/* Notification Bell */}

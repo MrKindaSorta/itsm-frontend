@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Moon, Sun, User, LogOut, ChevronDown, LayoutDashboard, PlusCircle, Ticket, BookOpen, UserCircle } from 'lucide-react';
+import { Moon, Sun, User, LogOut, ChevronDown, PlusCircle, Ticket, BookOpen, UserCircle } from 'lucide-react';
 
 export default function PortalLayout() {
   const { user, logout } = useAuth();
@@ -113,12 +113,10 @@ export default function PortalLayout() {
               {/* Agent Dashboard Button - Only shown for agent/manager/admin */}
               {user && ['agent', 'manager', 'admin'].includes(user.role) && (
                 <Button
-                  variant="ghost"
-                  size="icon"
+                  variant="outline"
                   onClick={() => navigate('/agent/dashboard')}
-                  title="Agent Dashboard"
                 >
-                  <LayoutDashboard className="h-5 w-5" />
+                  Agent Dashboard
                 </Button>
               )}
 
