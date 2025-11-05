@@ -18,14 +18,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for stored user session
+    // Check for stored user session and token validity
     const storedUser = localStorage.getItem('user');
-    if (storedUser) {
+    const storedToken = localStorage.getItem('token');
+    const tokenExpires = localStorage.getItem('tokenExpires');
+
+    if (storedUser && storedToken && tokenExpires) {
       try {
-        setUser(JSON.parse(storedUser));
+        const expiresAt = parseInt(tokenExpires);
+        const now = Date.now();
+
+        // Check if token is expired
+        if (expiresAt < now) {
+          console.log('Token expired, logging out');
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          localStorage.removeItem('tokenExpires');
+          setUser(null);
+        } else {
+          setUser(JSON.parse(storedUser));
+        }
       } catch (error) {
         console.error('Error parsing stored user:', error);
         localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        localStorage.removeItem('tokenExpires');
       }
     }
     setIsLoading(false);
@@ -45,6 +62,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       setUser(data.user);
       localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('tokenExpires', data.expiresAt.toString());
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -67,6 +86,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       setUser(data.user);
       localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('tokenExpires', data.expiresAt.toString());
     } catch (error) {
       console.error('Signup error:', error);
       throw error;
@@ -78,6 +99,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    localStorage.removeItem('tokenExpires');
   };
 
   const updateUser = (updatedUser: User) => {
