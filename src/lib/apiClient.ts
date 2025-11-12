@@ -1,7 +1,10 @@
 /**
- * API Client with automatic JWT token injection
+ * API Client with automatic JWT token injection and date parsing
  * Handles all API requests with proper authentication headers
+ * Automatically converts ISO 8601 date strings to Date objects
  */
+
+import { isISO8601 } from './timezone';
 
 interface RequestOptions extends RequestInit {
   params?: Record<string, string>;
@@ -59,6 +62,38 @@ class APIClient {
     return url.toString();
   }
 
+  /**
+   * Recursively parse ISO 8601 date strings to Date objects
+   * Automatically converts API timestamp strings to native Date objects
+   * This enables automatic timezone handling throughout the app
+   */
+  private parseDates(obj: any): any {
+    if (obj === null || obj === undefined) return obj;
+
+    // Check if it's an ISO 8601 date string
+    if (typeof obj === 'string' && isISO8601(obj)) {
+      return new Date(obj);
+    }
+
+    // Recursively parse arrays
+    if (Array.isArray(obj)) {
+      return obj.map(item => this.parseDates(item));
+    }
+
+    // Recursively parse objects
+    if (typeof obj === 'object' && !(obj instanceof Date)) {
+      const parsed: any = {};
+      for (const key in obj) {
+        if (obj.hasOwnProperty(key)) {
+          parsed[key] = this.parseDates(obj[key]);
+        }
+      }
+      return parsed;
+    }
+
+    return obj;
+  }
+
   private async handleResponse<T>(response: Response): Promise<T> {
     // Handle 401 Unauthorized - token expired or invalid
     if (response.status === 401) {
@@ -81,7 +116,8 @@ class APIClient {
         throw new Error(data.error || data.message || `HTTP ${response.status}`);
       }
 
-      return data;
+      // Automatically parse ISO 8601 date strings to Date objects
+      return this.parseDates(data);
     }
 
     // For non-JSON responses

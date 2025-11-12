@@ -1,46 +1,54 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { formatDistanceToNow } from 'date-fns';
 import type { TicketStatus, TicketPriority, SLAStatusType, ColumnConfig } from '@/types';
+import { formatInUserTimezone, parseDate } from './timezone';
 
 // Utility for merging Tailwind classes
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// Date formatting utilities
+// Date formatting utilities using automatic timezone detection
+// All timestamps automatically display in user's browser timezone
+
+/**
+ * Format date without time (date-only display)
+ * Automatically uses user's locale and timezone
+ * @example "Nov 12, 2025"
+ */
 export function formatDate(date: Date | string): string {
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return d.toLocaleDateString('en-US', {
+  return formatInUserTimezone(date, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
+    hour: undefined,
+    minute: undefined,
+    timeZoneName: undefined,
   });
 }
 
+/**
+ * Format date with time and timezone indicator
+ * Automatically detects user's timezone from browser
+ * @example "Nov 12, 2025, 9:30 AM EST"
+ */
 export function formatDateTime(date: Date | string): string {
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return d.toLocaleString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  return formatInUserTimezone(date);
 }
 
+/**
+ * Format relative time (e.g., "2 hours ago")
+ * Uses date-fns for consistent formatting across the app
+ * Timezone-agnostic - relative time is the same everywhere
+ * @example "2 hours ago", "5 days ago", "just now"
+ */
 export function formatRelativeTime(date: Date | string): string {
-  const d = typeof date === 'string' ? new Date(date) : date;
-  const now = new Date();
-  const diffInMs = now.getTime() - d.getTime();
-  const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
-  const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
-  const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+  const parsed = parseDate(date);
+  if (!parsed) return 'Invalid date';
 
-  if (diffInMinutes < 1) return 'just now';
-  if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-  if (diffInHours < 24) return `${diffInHours}h ago`;
-  if (diffInDays < 7) return `${diffInDays}d ago`;
-  return formatDate(d);
+  // Use date-fns for consistent relative time formatting
+  return formatDistanceToNow(parsed, { addSuffix: true });
 }
 
 // Status color mapping
