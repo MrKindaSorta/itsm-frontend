@@ -26,6 +26,7 @@ export interface BrandingTypography {
 
 export interface BrandingContent {
   companyName: string;
+  applicationName?: string;
   tagline?: string;
   welcomeMessage?: string;
   loginTitle?: string;
@@ -239,6 +240,7 @@ export const DEFAULT_BRANDING: BrandingConfiguration = {
   colors: BRANDING_PRESETS[0].colors, // Uses default blue with light/dark variants
   content: {
     companyName: 'ITSM',
+    applicationName: 'ITSM Agent',
     tagline: 'Enterprise IT Service Management',
     welcomeMessage: 'Welcome to our support portal',
     loginTitle: 'Welcome back',

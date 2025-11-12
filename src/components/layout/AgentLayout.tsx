@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useBranding } from '@/contexts/BrandingContext';
 import { Button } from '@/components/ui/button';
 import { NotificationTray } from '@/components/notifications/NotificationTray';
 import {
@@ -28,6 +29,7 @@ import {
 export default function AgentLayout() {
   const { user, logout } = useAuth();
   const { setTheme, actualTheme } = useTheme();
+  const { branding } = useBranding();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -75,12 +77,46 @@ export default function AgentLayout() {
         <div className="flex h-full flex-col">
           {/* Sidebar Header */}
           <div className="flex h-16 items-center justify-between border-b px-4">
-            {sidebarOpen && (
+            {sidebarOpen ? (
               <Link to="/agent" className="flex items-center space-x-2">
-                <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-                  <span className="text-primary-foreground font-bold text-sm">IT</span>
-                </div>
-                <span className="font-bold text-lg">ITSM Agent</span>
+                {branding.logo?.url ? (
+                  <img
+                    src={branding.logo.url}
+                    alt={branding.content.companyName}
+                    className="h-8 max-w-[120px] object-contain"
+                  />
+                ) : branding.logoSmall?.url ? (
+                  <img
+                    src={branding.logoSmall.url}
+                    alt={branding.content.companyName}
+                    className="h-8 w-8 object-contain"
+                  />
+                ) : (
+                  <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+                    <span className="text-primary-foreground font-bold text-sm">
+                      {branding.content.companyName.substring(0, 2).toUpperCase()}
+                    </span>
+                  </div>
+                )}
+                <span className="font-bold text-lg">
+                  {branding.content.applicationName || 'ITSM Agent'}
+                </span>
+              </Link>
+            ) : (
+              <Link to="/agent" className="flex items-center justify-center w-full">
+                {branding.logoSmall?.url ? (
+                  <img
+                    src={branding.logoSmall.url}
+                    alt={branding.content.companyName}
+                    className="h-8 w-8 object-contain"
+                  />
+                ) : (
+                  <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+                    <span className="text-primary-foreground font-bold text-sm">
+                      {branding.content.companyName.substring(0, 2).toUpperCase()}
+                    </span>
+                  </div>
+                )}
               </Link>
             )}
             <Button

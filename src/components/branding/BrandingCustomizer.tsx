@@ -364,7 +364,7 @@ export default function BrandingCustomizer({ branding, onUpdate, previewTheme, o
             <div>
               <Label className="text-sm font-medium mb-2 block">Small Logo / Icon</Label>
               <p className="text-xs text-muted-foreground mb-3">
-                Compact version for mobile and collapsed states • Recommended: 48x48px PNG or SVG
+                Used in agent sidebar, mobile views, and compact layouts • Recommended: 48x48px PNG or SVG
               </p>
               {branding.logoSmall ? (
                 <div className="border rounded-lg p-4 flex items-center justify-between">
@@ -473,6 +473,19 @@ export default function BrandingCustomizer({ branding, onUpdate, previewTheme, o
                   onChange={(e) => updateContent('companyName', e.target.value)}
                   placeholder="ACME Corporation"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="applicationName">Application Name</Label>
+                <Input
+                  id="applicationName"
+                  value={branding.content.applicationName || ''}
+                  onChange={(e) => updateContent('applicationName', e.target.value)}
+                  placeholder="ITSM Agent"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Displayed in agent dashboard sidebar • Default: ITSM Agent
+                </p>
               </div>
 
               <div className="space-y-2">
