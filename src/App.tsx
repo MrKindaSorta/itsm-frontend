@@ -7,6 +7,7 @@ import { BrandingProvider } from '@/contexts/BrandingContext';
 import { ViewPreferencesProvider } from '@/contexts/ViewPreferencesContext';
 import { SettingsProvider } from '@/contexts/SettingsContext';
 import { TicketCacheProvider } from '@/contexts/TicketCacheContext';
+import { WebSocketProvider } from '@/contexts/WebSocketContext';
 import { UpdateNotification } from '@/components/UpdateNotification';
 import { IdleTimeoutWarning } from '@/components/auth/IdleTimeoutWarning';
 import { Toaster } from '@/components/ui/toaster';
@@ -73,11 +74,13 @@ function App() {
         <SettingsProvider>
           <BrandingProvider>
             <AuthProvider>
-              <TicketCacheProvider>
-                <ViewPreferencesProvider>
-                  <AppContent />
-                </ViewPreferencesProvider>
-              </TicketCacheProvider>
+              <WebSocketProvider>
+                <TicketCacheProvider>
+                  <ViewPreferencesProvider>
+                    <AppContent />
+                  </ViewPreferencesProvider>
+                </TicketCacheProvider>
+              </WebSocketProvider>
             </AuthProvider>
           </BrandingProvider>
         </SettingsProvider>
