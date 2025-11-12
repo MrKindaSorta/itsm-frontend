@@ -142,14 +142,6 @@ export default function Login() {
                 </Link>
               </div>
             )}
-            {branding.authSettings?.showDemoAccounts && (
-              <div className="text-xs text-center text-muted-foreground border-t pt-4">
-                <p className="mb-2 font-medium">Demo Accounts:</p>
-                <p>User: user@demo.com / demo123</p>
-                <p>Agent: agent@demo.com / demo123</p>
-                <p>Admin: admin@demo.com / demo123</p>
-              </div>
-            )}
           </CardFooter>
         </Card>
       </div>

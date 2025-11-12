@@ -65,7 +65,6 @@ export interface BrandingConfiguration {
     backgroundStyle: 'solid' | 'gradient' | 'image';
     backgroundImage?: string;
     cardStyle: 'standard' | 'elevated' | 'minimal';
-    showDemoAccounts: boolean;
   };
 
   createdAt: Date;
@@ -256,7 +255,6 @@ export const DEFAULT_BRANDING: BrandingConfiguration = {
   authSettings: {
     backgroundStyle: 'solid',
     cardStyle: 'standard',
-    showDemoAccounts: true,
   },
   createdAt: new Date(),
   updatedAt: new Date(),

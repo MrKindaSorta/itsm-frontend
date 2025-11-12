@@ -598,37 +598,6 @@ export default function BrandingCustomizer({ branding, onUpdate, previewTheme, o
               </div>
             </div>
 
-            {/* Auth Settings */}
-            <div>
-              <Label className="text-sm font-medium mb-3 block">Authentication Pages</Label>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 border rounded-lg">
-                  <div>
-                    <p className="text-sm font-medium">Show Demo Accounts</p>
-                    <p className="text-xs text-muted-foreground">Display demo login credentials</p>
-                  </div>
-                  <button
-                    onClick={() =>
-                      updateBranding({
-                        authSettings: {
-                          ...branding.authSettings!,
-                          showDemoAccounts: !branding.authSettings?.showDemoAccounts,
-                        },
-                      })
-                    }
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      branding.authSettings?.showDemoAccounts ? 'bg-primary' : 'bg-muted'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        branding.authSettings?.showDemoAccounts ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
-                </div>
-              </div>
-            </div>
           </CardContent>
         </Card>
       )}
