@@ -195,7 +195,7 @@ export function useUpdateTicketMutation() {
 
       // Optimistically update all ticket queries
       queryClient.setQueriesData<Ticket[]>({ queryKey: ['tickets'] }, (old) => {
-        if (!old) return old;
+        if (!old || !Array.isArray(old)) return old;
 
         return old.map((ticket): Ticket => {
           if (ticket.id !== ticketId) return ticket;
@@ -242,7 +242,7 @@ export function useUpdateTicketMutation() {
     onSuccess: (updatedTicket) => {
       // Update all ticket queries with the actual server response
       queryClient.setQueriesData<Ticket[]>({ queryKey: ['tickets'] }, (old) => {
-        if (!old) return old;
+        if (!old || !Array.isArray(old)) return old;
 
         return old.map((ticket) =>
           ticket.id === updatedTicket.id ? updatedTicket : ticket
