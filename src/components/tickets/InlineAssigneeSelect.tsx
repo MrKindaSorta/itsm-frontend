@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import type { User } from '@/types';
 import { cn, getInitials } from '@/lib/utils';
 import { fetchWithAuth } from '@/lib/fetchWithAuth';
+import { usersCache } from '@/lib/usersCache';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
@@ -21,10 +22,21 @@ export function InlineAssigneeSelect({ assignee, onAssigneeChange, disabled }: I
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Fetch users when popover opens
+  // Fetch users when popover opens (check cache first)
   useEffect(() => {
     if (isOpen && users.length === 0) {
-      fetchUsers();
+      // Try cache first
+      const cachedUsers = usersCache.get();
+      if (cachedUsers) {
+        // Filter to only show agents, managers, and admins
+        const eligibleUsers = cachedUsers.filter((u: User) =>
+          ['agent', 'manager', 'admin'].includes(u.role)
+        );
+        setUsers(eligibleUsers);
+      } else {
+        // Cache miss - fetch from API
+        fetchUsers();
+      }
     }
   }, [isOpen]);
 
@@ -34,6 +46,9 @@ export function InlineAssigneeSelect({ assignee, onAssigneeChange, disabled }: I
       const response = await fetchWithAuth(`${API_BASE}/api/users`);
       const data = await response.json();
       if (data.success) {
+        // Save to cache for future use
+        usersCache.set(data.users);
+
         // Filter to only show agents, managers, and admins
         const eligibleUsers = data.users.filter((u: User) =>
           ['agent', 'manager', 'admin'].includes(u.role)

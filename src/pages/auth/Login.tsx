@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBranding } from '@/contexts/BrandingContext';
 import { useSettings } from '@/contexts/SettingsContext';
+import { usePrefetchTickets } from '@/hooks/useTicketsQuery';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,6 +18,7 @@ export default function Login() {
   const { branding } = useBranding();
   const { settings } = useSettings();
   const navigate = useNavigate();
+  const { prefetchTickets, prefetchClosedCount } = usePrefetchTickets();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,6 +27,7 @@ export default function Login() {
 
     try {
       await login(email, password);
+
       // Check if password change is required
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
@@ -34,11 +37,17 @@ export default function Login() {
           return;
         }
       }
-      // Redirect based on user role
+
+      // Prefetch tickets data before navigation for instant page load
       const storedUserForRedirect = localStorage.getItem('user');
       if (storedUserForRedirect) {
         const userDataForRedirect = JSON.parse(storedUserForRedirect);
+
+        // For agents/managers/admins, prefetch tickets data
         if (['agent', 'manager', 'admin'].includes(userDataForRedirect.role)) {
+          // Fire prefetch requests in background (don't await - let them complete while navigating)
+          prefetchTickets({ statusFilter: 'all' });
+          prefetchClosedCount();
           navigate('/agent/dashboard');
         } else {
           navigate('/portal/tickets/create');

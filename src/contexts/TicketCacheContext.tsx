@@ -1,6 +1,9 @@
-import { createContext, useContext, useCallback, useRef } from 'react';
+import { createContext, useContext, useCallback, useRef, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { Ticket, Activity } from '@/types';
+
+const TICKETS_CACHE_KEY = 'itsm_tickets_cache';
+const ACTIVITIES_CACHE_KEY = 'itsm_activities_cache';
 
 interface TicketCacheEntry {
   ticket: Ticket;
@@ -32,13 +35,89 @@ interface TicketCacheContextType {
 const TicketCacheContext = createContext<TicketCacheContextType | undefined>(undefined);
 
 // TTL configurations (in milliseconds)
-const TICKET_TTL = 2 * 60 * 1000; // 2 minutes
+const TICKET_TTL = 5 * 60 * 1000; // 5 minutes (increased for better caching)
 const ACTIVITIES_TTL = 5 * 60 * 1000; // 5 minutes (activities are mostly immutable)
 
+// Helper functions for localStorage persistence
+function serializeCache<T>(cache: Map<string, T>): string {
+  return JSON.stringify(Array.from(cache.entries()));
+}
+
+function deserializeCache<T>(data: string): Map<string, T> {
+  try {
+    const entries = JSON.parse(data);
+    const map = new Map<string, T>();
+
+    // Restore Date objects from serialized strings
+    entries.forEach(([key, value]: [string, any]) => {
+      // For ticket cache entries
+      if (value.ticket) {
+        value.ticket.createdAt = new Date(value.ticket.createdAt);
+        value.ticket.updatedAt = new Date(value.ticket.updatedAt);
+        if (value.ticket.dueDate) value.ticket.dueDate = new Date(value.ticket.dueDate);
+        if (value.ticket.resolvedAt) value.ticket.resolvedAt = new Date(value.ticket.resolvedAt);
+        if (value.ticket.closedAt) value.ticket.closedAt = new Date(value.ticket.closedAt);
+        if (value.ticket.sla) {
+          value.ticket.sla.firstResponseDue = new Date(value.ticket.sla.firstResponseDue);
+          value.ticket.sla.resolutionDue = new Date(value.ticket.sla.resolutionDue);
+        }
+      }
+
+      // For activities cache entries
+      if (value.activities) {
+        value.activities = value.activities.map((activity: any) => ({
+          ...activity,
+          createdAt: new Date(activity.createdAt),
+        }));
+      }
+
+      map.set(key, value);
+    });
+
+    return map;
+  } catch (error) {
+    console.error('Error deserializing cache:', error);
+    return new Map();
+  }
+}
+
+function loadCacheFromStorage<T>(key: string): Map<string, T> {
+  try {
+    const cached = localStorage.getItem(key);
+    if (!cached) return new Map();
+    return deserializeCache<T>(cached);
+  } catch (error) {
+    console.error('Error loading cache from storage:', error);
+    return new Map();
+  }
+}
+
+function saveCacheToStorage<T>(key: string, cache: Map<string, T>): void {
+  try {
+    localStorage.setItem(key, serializeCache(cache));
+  } catch (error) {
+    console.error('Error saving cache to storage:', error);
+  }
+}
+
 export function TicketCacheProvider({ children }: { children: ReactNode }) {
-  // Use refs to avoid re-renders when cache updates
-  const ticketCache = useRef<Map<string, TicketCacheEntry>>(new Map());
-  const activitiesCache = useRef<Map<string, ActivitiesCacheEntry>>(new Map());
+  // Initialize caches from localStorage on mount
+  const ticketCache = useRef<Map<string, TicketCacheEntry>>(
+    loadCacheFromStorage<TicketCacheEntry>(TICKETS_CACHE_KEY)
+  );
+  const activitiesCache = useRef<Map<string, ActivitiesCacheEntry>>(
+    loadCacheFromStorage<ActivitiesCacheEntry>(ACTIVITIES_CACHE_KEY)
+  );
+
+  // Persist caches to localStorage periodically
+  useEffect(() => {
+    const interval = setInterval(() => {
+      saveCacheToStorage(TICKETS_CACHE_KEY, ticketCache.current);
+      saveCacheToStorage(ACTIVITIES_CACHE_KEY, activitiesCache.current);
+    }, 30000); // Save every 30 seconds
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Ticket cache operations
   const getTicket = useCallback((id: string): Ticket | undefined => {
@@ -59,6 +138,8 @@ export function TicketCacheProvider({ children }: { children: ReactNode }) {
       ticket,
       timestamp: Date.now(),
     });
+    // Save to localStorage immediately for important updates
+    saveCacheToStorage(TICKETS_CACHE_KEY, ticketCache.current);
   }, []);
 
   const invalidateTicket = useCallback((id: string) => {

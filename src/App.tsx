@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { RouterProvider } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { BrandingProvider } from '@/contexts/BrandingContext';
@@ -10,6 +11,18 @@ import { UpdateNotification } from '@/components/UpdateNotification';
 import { IdleTimeoutWarning } from '@/components/auth/IdleTimeoutWarning';
 import { useIdleTimeout } from '@/hooks/useIdleTimeout';
 import { router } from '@/routes';
+
+// Create a React Query client with optimized defaults
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 2 * 60 * 1000, // 2 minutes
+      gcTime: 5 * 60 * 1000, // 5 minutes (formerly cacheTime)
+      retry: 2,
+      refetchOnWindowFocus: true,
+    },
+  },
+});
 
 function AppContent() {
   const { logout, isAuthenticated } = useAuth();
@@ -53,19 +66,21 @@ function AppContent() {
 
 function App() {
   return (
-    <ThemeProvider>
-      <SettingsProvider>
-        <BrandingProvider>
-          <AuthProvider>
-            <TicketCacheProvider>
-              <ViewPreferencesProvider>
-                <AppContent />
-              </ViewPreferencesProvider>
-            </TicketCacheProvider>
-          </AuthProvider>
-        </BrandingProvider>
-      </SettingsProvider>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <SettingsProvider>
+          <BrandingProvider>
+            <AuthProvider>
+              <TicketCacheProvider>
+                <ViewPreferencesProvider>
+                  <AppContent />
+                </ViewPreferencesProvider>
+              </TicketCacheProvider>
+            </AuthProvider>
+          </BrandingProvider>
+        </SettingsProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 

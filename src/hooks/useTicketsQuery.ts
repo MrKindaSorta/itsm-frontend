@@ -1,0 +1,192 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { UseQueryOptions } from '@tanstack/react-query';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
+import type { Ticket, TicketStatus } from '@/types';
+
+const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
+
+interface FetchTicketsParams {
+  statusFilter?: TicketStatus | 'all' | 'my_tickets' | 'closed';
+  searchQuery?: string;
+}
+
+interface TicketsResponse {
+  success: boolean;
+  tickets: any[];
+  error?: string;
+}
+
+/**
+ * Transform API ticket data to add Date objects
+ */
+function transformTicket(ticket: any): Ticket {
+  return {
+    ...ticket,
+    createdAt: new Date(ticket.createdAt),
+    updatedAt: new Date(ticket.updatedAt),
+    dueDate: ticket.dueDate ? new Date(ticket.dueDate) : undefined,
+    resolvedAt: ticket.resolvedAt ? new Date(ticket.resolvedAt) : undefined,
+    closedAt: ticket.closedAt ? new Date(ticket.closedAt) : undefined,
+    sla: ticket.sla ? {
+      ...ticket.sla,
+      firstResponseDue: ticket.sla.firstResponseDue ? new Date(ticket.sla.firstResponseDue) : new Date(),
+      resolutionDue: ticket.sla.resolutionDue ? new Date(ticket.sla.resolutionDue) : new Date(),
+    } : null,
+  };
+}
+
+/**
+ * Fetch tickets from API
+ */
+async function fetchTickets(params: FetchTicketsParams): Promise<Ticket[]> {
+  const url = new URL(`${API_BASE}/api/tickets`);
+
+  // If viewing closed tickets specifically, fetch only closed
+  if (params.statusFilter === 'closed') {
+    url.searchParams.set('status', 'closed');
+  } else {
+    // For "all" and "my_tickets" views, exclude closed tickets
+    url.searchParams.set('exclude_closed', 'true');
+  }
+
+  if (params.searchQuery) {
+    url.searchParams.set('search', params.searchQuery);
+  }
+
+  const response = await fetchWithAuth(url.toString());
+  const data: TicketsResponse = await response.json();
+
+  if (!data.success) {
+    throw new Error(data.error || 'Failed to fetch tickets');
+  }
+
+  return data.tickets.map(transformTicket);
+}
+
+/**
+ * Fetch closed ticket count
+ */
+async function fetchClosedTicketCount(): Promise<number> {
+  const url = new URL(`${API_BASE}/api/tickets`);
+  url.searchParams.set('status', 'closed');
+
+  const response = await fetchWithAuth(url.toString());
+  const data: TicketsResponse = await response.json();
+
+  if (!data.success) {
+    throw new Error(data.error || 'Failed to fetch closed ticket count');
+  }
+
+  return data.tickets.length;
+}
+
+/**
+ * React Query hook for fetching tickets
+ * Provides automatic caching, background refetching, and request deduplication
+ */
+export function useTicketsQuery(
+  params: FetchTicketsParams,
+  options?: Omit<UseQueryOptions<Ticket[], Error>, 'queryKey' | 'queryFn'>
+) {
+  return useQuery<Ticket[], Error>({
+    queryKey: ['tickets', params.statusFilter, params.searchQuery],
+    queryFn: () => fetchTickets(params),
+    staleTime: 2 * 60 * 1000, // Consider data fresh for 2 minutes
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes (formerly cacheTime)
+    retry: 2,
+    refetchOnWindowFocus: true,
+    ...options,
+  });
+}
+
+/**
+ * React Query hook for fetching closed ticket count
+ */
+export function useClosedTicketCountQuery(
+  options?: Omit<UseQueryOptions<number, Error>, 'queryKey' | 'queryFn'>
+) {
+  return useQuery<number, Error>({
+    queryKey: ['tickets', 'closed-count'],
+    queryFn: fetchClosedTicketCount,
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
+    retry: 2,
+    refetchOnWindowFocus: false, // Don't refetch count on window focus
+    ...options,
+  });
+}
+
+/**
+ * Hook to prefetch tickets (useful for login page)
+ */
+export function usePrefetchTickets() {
+  const queryClient = useQueryClient();
+
+  const prefetchTickets = async (params: FetchTicketsParams = {}) => {
+    await queryClient.prefetchQuery({
+      queryKey: ['tickets', params.statusFilter, params.searchQuery],
+      queryFn: () => fetchTickets(params),
+      staleTime: 2 * 60 * 1000,
+    });
+  };
+
+  const prefetchClosedCount = async () => {
+    await queryClient.prefetchQuery({
+      queryKey: ['tickets', 'closed-count'],
+      queryFn: fetchClosedTicketCount,
+      staleTime: 5 * 60 * 1000,
+    });
+  };
+
+  return { prefetchTickets, prefetchClosedCount };
+}
+
+/**
+ * Mutation hook for updating tickets
+ */
+interface UpdateTicketParams {
+  ticketId: string;
+  field: 'status' | 'priority' | 'assignee';
+  value: string | null;
+  userId: string;
+}
+
+export function useUpdateTicketMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ ticketId, field, value, userId }: UpdateTicketParams) => {
+      const payload: any = {
+        updated_by_id: userId,
+      };
+
+      if (field === 'status') {
+        payload.status = value;
+      } else if (field === 'priority') {
+        payload.priority = value;
+      } else if (field === 'assignee') {
+        payload.assignee_id = value === null ? null : Number(value);
+      }
+
+      const response = await fetchWithAuth(`${API_BASE}/api/tickets/${ticketId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to update ticket');
+      }
+
+      return transformTicket(data.ticket);
+    },
+    onSuccess: () => {
+      // Invalidate all ticket queries to trigger refetch
+      queryClient.invalidateQueries({ queryKey: ['tickets'] });
+    },
+  });
+}

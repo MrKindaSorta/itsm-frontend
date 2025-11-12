@@ -11,23 +11,19 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useViewPreferences } from '@/contexts/ViewPreferencesContext';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { useTicketCache } from '@/contexts/TicketCacheContext';
+import { useTicketsQuery, useClosedTicketCountQuery, useUpdateTicketMutation } from '@/hooks/useTicketsQuery';
 import { sortTickets, type SortColumn, type SortDirection } from '@/lib/utils';
-import { fetchWithAuth } from '@/lib/fetchWithAuth';
 import type { Ticket, TicketStatus } from '@/types';
-
-const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
 export default function Tickets() {
   const { user } = useAuth();
   const { isLoading: isPreferencesLoading } = useViewPreferences();
   const { subscribeToGlobal, unsubscribeFromGlobal, on } = useWebSocket();
   const ticketCache = useTicketCache();
+  const updateTicketMutation = useUpdateTicketMutation();
+
+  // UI state
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTickets, setActiveTickets] = useState<Ticket[]>([]);
-  const [closedTickets, setClosedTickets] = useState<Ticket[]>([]);
-  const [closedTicketCount, setClosedTicketCount] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isColumnCustomizerOpen, setIsColumnCustomizerOpen] = useState(false);
 
@@ -40,6 +36,30 @@ export default function Tickets() {
   const [showMyTickets, setShowMyTickets] = useState(false);
   const [showUnassigned, setShowUnassigned] = useState(false);
 
+  // React Query hooks - automatic caching and request deduplication
+  const {
+    data: ticketsData = [],
+    isLoading: isLoadingTickets,
+    error: ticketsError,
+    refetch: refetchTickets
+  } = useTicketsQuery({
+    statusFilter,
+    searchQuery: searchQuery || undefined,
+  });
+
+  const {
+    data: closedTicketCount = 0,
+  } = useClosedTicketCountQuery();
+
+  // Cache tickets for instant detail page loading
+  useEffect(() => {
+    if (ticketsData) {
+      ticketsData.forEach((ticket: Ticket) => {
+        ticketCache.setTicket(ticket.id, ticket);
+      });
+    }
+  }, [ticketsData, ticketCache]);
+
   // Subscribe to global WebSocket events for real-time ticket creation
   useEffect(() => {
     subscribeToGlobal();
@@ -51,191 +71,36 @@ export default function Tickets() {
 
   // Listen for real-time ticket creation
   useEffect(() => {
-    const unsubTicketCreated = on('ticket:created', (message) => {
-      // Add new ticket to the beginning of the list
-      const newTicket = {
-        ...message.data,
-        createdAt: new Date(message.data.createdAt),
-        updatedAt: new Date(message.data.updatedAt),
-        dueDate: message.data.dueDate ? new Date(message.data.dueDate) : undefined,
-        resolvedAt: message.data.resolvedAt ? new Date(message.data.resolvedAt) : undefined,
-        closedAt: message.data.closedAt ? new Date(message.data.closedAt) : undefined,
-        sla: message.data.sla ? {
-          ...message.data.sla,
-          firstResponseDue: message.data.sla.firstResponseDue ? new Date(message.data.sla.firstResponseDue) : new Date(),
-          resolutionDue: message.data.sla.resolutionDue ? new Date(message.data.sla.resolutionDue) : new Date(),
-        } : null,
-      };
-      // Cache the new ticket
-      ticketCache.setTicket(newTicket.id, newTicket);
-      // New tickets are always active (not closed), so add to activeTickets
-      setActiveTickets(prev => [newTicket, ...prev]);
+    const unsubTicketCreated = on('ticket:created', () => {
+      // Refetch tickets to get the new ticket with proper backend transform
+      refetchTickets();
     });
 
     return () => {
       unsubTicketCreated();
     };
-  }, [on]);
+  }, [on, refetchTickets]);
 
-  // Fetch tickets from API
-  useEffect(() => {
-    fetchTickets();
-    fetchClosedTicketCount(); // Fetch count separately for display
-  }, []);
-
-  // Reload tickets when switching to/from closed status
-  useEffect(() => {
-    if (statusFilter === 'closed' || statusFilter === 'all' || statusFilter === 'my_tickets') {
-      fetchTickets();
-    }
-  }, [statusFilter]);
-
-  // Fetch closed ticket count for display (doesn't load full ticket data)
-  const fetchClosedTicketCount = async () => {
-    try {
-      const url = new URL(`${API_BASE}/api/tickets`);
-      url.searchParams.set('status', 'closed');
-
-      const response = await fetchWithAuth(url.toString());
-      const data = await response.json();
-
-      if (data.success) {
-        setClosedTicketCount(data.tickets.length);
-      }
-    } catch (err) {
-      console.error('Error fetching closed ticket count:', err);
-      // Don't show error for count fetch - not critical
-    }
-  };
-
-  const fetchTickets = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const url = new URL(`${API_BASE}/api/tickets`);
-
-      // If viewing closed tickets specifically, fetch only closed
-      if (statusFilter === 'closed') {
-        url.searchParams.set('status', 'closed');
-      } else {
-        // For "all" and "my_tickets" views, exclude closed tickets
-        url.searchParams.set('exclude_closed', 'true');
-      }
-
-      if (searchQuery) {
-        url.searchParams.set('search', searchQuery);
-      }
-
-      const response = await fetchWithAuth(url.toString());
-      const data = await response.json();
-
-      if (data.success) {
-        // Transform date strings to Date objects
-        const transformedTickets = data.tickets.map((ticket: any) => ({
-          ...ticket,
-          createdAt: new Date(ticket.createdAt),
-          updatedAt: new Date(ticket.updatedAt),
-          dueDate: ticket.dueDate ? new Date(ticket.dueDate) : undefined,
-          resolvedAt: ticket.resolvedAt ? new Date(ticket.resolvedAt) : undefined,
-          closedAt: ticket.closedAt ? new Date(ticket.closedAt) : undefined,
-          sla: ticket.sla ? {
-            ...ticket.sla,
-            firstResponseDue: ticket.sla.firstResponseDue ? new Date(ticket.sla.firstResponseDue) : new Date(),
-            resolutionDue: ticket.sla.resolutionDue ? new Date(ticket.sla.resolutionDue) : new Date(),
-          } : null,
-        }));
-
-        // Cache all tickets for instant detail page loading
-        transformedTickets.forEach((ticket: Ticket) => {
-          ticketCache.setTicket(ticket.id, ticket);
-        });
-
-        // Update the appropriate array based on what we fetched
-        if (statusFilter === 'closed') {
-          setClosedTickets(transformedTickets);
-          setClosedTicketCount(transformedTickets.length); // Update count when fetching closed tickets
-        } else {
-          setActiveTickets(transformedTickets);
-        }
-      } else {
-        setError(data.error || 'Failed to fetch tickets');
-      }
-    } catch (err) {
-      console.error('Error fetching tickets:', err);
-      setError('Failed to connect to server');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Handle inline ticket updates
+  // Handle inline ticket updates using React Query mutation
   const handleTicketUpdate = async (ticketId: string, field: 'status' | 'priority' | 'assignee', value: string | null) => {
     if (!user) return;
 
     try {
-      const payload: any = {
-        updated_by_id: user.id,
-      };
-
-      if (field === 'status') {
-        payload.status = value;
-      } else if (field === 'priority') {
-        payload.priority = value;
-      } else if (field === 'assignee') {
-        payload.assignee_id = value === null ? null : Number(value);
-      }
-
-      const response = await fetchWithAuth(`${API_BASE}/api/tickets/${ticketId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
+      const updatedTicket = await updateTicketMutation.mutateAsync({
+        ticketId,
+        field,
+        value,
+        userId: user.id,
       });
 
-      const data = await response.json();
-
-      if (data.success) {
-        // Update ticket in local state (both arrays in case it moved between them)
-        const updateTicket = (ticket: Ticket) => {
-          if (ticket.id === ticketId) {
-            const updatedTicket = {
-              ...ticket,
-              status: data.ticket.status,
-              priority: data.ticket.priority,
-              assignee: data.ticket.assignee,
-              updatedAt: new Date(data.ticket.updatedAt),
-            };
-            // Update cache
-            ticketCache.setTicket(ticketId, updatedTicket);
-            return updatedTicket;
-          }
-          return ticket;
-        };
-
-        setActiveTickets(prevTickets => prevTickets.map(updateTicket));
-        setClosedTickets(prevTickets => prevTickets.map(updateTicket));
-      } else {
-        alert('Failed to update ticket: ' + (data.error || 'Unknown error'));
-        throw new Error(data.error || 'Failed to update ticket');
-      }
+      // Update cache with new ticket data
+      ticketCache.setTicket(ticketId, updatedTicket);
     } catch (error) {
       console.error('Error updating ticket:', error);
-      alert('Failed to connect to server');
+      alert('Failed to update ticket: ' + (error instanceof Error ? error.message : 'Unknown error'));
       throw error;
     }
   };
-
-  // Debounced search
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (searchQuery !== '') {
-        fetchTickets();
-      }
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
 
   // Handle sort
   const handleSort = (column: SortColumn) => {
@@ -255,11 +120,8 @@ export default function Tickets() {
     }
   };
 
-  // Determine which tickets array to use based on active filter
-  const ticketsToFilter = statusFilter === 'closed' ? closedTickets : activeTickets;
-
   // Filter tickets based on all active filters
-  const filteredTickets = ticketsToFilter.filter((ticket) => {
+  const filteredTickets = ticketsData.filter((ticket) => {
     // Search filter
     if (searchQuery) {
       const searchLower = searchQuery.toLowerCase();
@@ -310,16 +172,20 @@ export default function Tickets() {
   // Apply sorting
   const sortedAndFilteredTickets = sortTickets(filteredTickets, sortColumn, sortDirection);
 
-  // Count My Tickets (from active tickets only)
-  const myTicketsCount = activeTickets.filter(t => t.assignee?.id === user?.id).length;
-  const unassignedCount = activeTickets.filter(t => !t.assignee).length;
+  // Count My Tickets (from active tickets only - exclude closed)
+  const myTicketsCount = ticketsData.filter(t =>
+    t.assignee?.id === user?.id && t.status !== 'closed'
+  ).length;
+  const unassignedCount = ticketsData.filter(t =>
+    !t.assignee && t.status !== 'closed'
+  ).length;
 
   return (
     <div className="space-y-6">
       <TicketCreateModal
         open={isCreateModalOpen}
         onOpenChange={setIsCreateModalOpen}
-        onSuccess={fetchTickets}
+        onSuccess={refetchTickets}
       />
 
       <ColumnCustomizer
@@ -410,7 +276,7 @@ export default function Tickets() {
 
         {/* Status Filter Tabs */}
         <StatusTabs
-          activeTickets={activeTickets}
+          activeTickets={ticketsData.filter(t => t.status !== 'closed')}
           activeStatus={statusFilter}
           onStatusChange={setStatusFilter}
           currentUser={user}
@@ -418,17 +284,19 @@ export default function Tickets() {
         />
 
         <CardContent className="pt-6">
-          {isLoading || isPreferencesLoading ? (
+          {isLoadingTickets || isPreferencesLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               <span className="ml-3 text-muted-foreground">
                 {isPreferencesLoading ? 'Loading preferences...' : 'Loading tickets...'}
               </span>
             </div>
-          ) : error ? (
+          ) : ticketsError ? (
             <div className="flex flex-col items-center justify-center py-12">
-              <p className="text-destructive mb-4">{error}</p>
-              <Button onClick={fetchTickets} variant="outline">
+              <p className="text-destructive mb-4">
+                {ticketsError instanceof Error ? ticketsError.message : 'Failed to load tickets'}
+              </p>
+              <Button onClick={() => refetchTickets()} variant="outline">
                 Retry
               </Button>
             </div>
