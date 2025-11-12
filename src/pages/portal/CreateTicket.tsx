@@ -18,6 +18,7 @@ import type { User, TicketPriority } from '@/types';
 import { getPriorityColor } from '@/lib/utils';
 import { getVisibleFieldsInHierarchicalOrder, getFieldsToHide } from '@/utils/conditionalFieldEvaluator';
 import { fetchWithAuth } from '@/lib/fetchWithAuth';
+import { mergeWithDefaults } from '@/utils/defaultFormConfig';
 
 const FORM_CONFIG_STORAGE_KEY = 'itsm-form-configuration';
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
@@ -59,7 +60,7 @@ export default function CreateTicket() {
         const response = await fetchWithAuth(`${API_BASE}/api/config/form`);
         const data = await response.json();
 
-        if (data.success && data.config.fields) {
+        if (data.success && data.config.fields && data.config.fields.length > 0) {
           fields = data.config.fields;
           // Cache in localStorage
           localStorage.setItem(FORM_CONFIG_STORAGE_KEY, JSON.stringify(data.config));
@@ -79,6 +80,12 @@ export default function CreateTicket() {
             console.error('Failed to parse localStorage config:', parseError);
           }
         }
+      }
+
+      // If no fields loaded from API or localStorage, use defaults
+      if (fields.length === 0) {
+        console.log('No form configuration found, using default system fields');
+        fields = mergeWithDefaults([]);
       }
 
       // Sort all fields by order property

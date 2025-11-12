@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -29,7 +29,7 @@ export default function Customize() {
   const [fields, setFields] = useState<FormField[]>([]);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
-  const [saveMessage, setSaveMessage] = useState<string>('');
+  const [savedFieldsSnapshot, setSavedFieldsSnapshot] = useState<string>('');
 
   // SLA state
   const [slaRules, setSlaRules] = useState<SLARule[]>([]);
@@ -43,6 +43,12 @@ export default function Customize() {
   const [brandingPreviewMode, setBrandingPreviewMode] = useState<'login' | 'portal'>('login');
   const [brandingPreviewTheme, setBrandingPreviewTheme] = useState<'light' | 'dark'>('light');
   const [brandingSaveMessage, setBrandingSaveMessage] = useState<string>('');
+
+  // Compute if there are unsaved changes by comparing current fields with saved snapshot
+  const hasUnsavedChanges = useMemo(() => {
+    const currentSnapshot = JSON.stringify(fields);
+    return currentSnapshot !== savedFieldsSnapshot;
+  }, [fields, savedFieldsSnapshot]);
 
   // Load form configuration from API (fallback to localStorage) on mount
   useEffect(() => {
@@ -75,6 +81,9 @@ export default function Customize() {
       // Merge loaded fields with default system fields
       const mergedFields = mergeWithDefaults(loadedFields);
       setFields(mergedFields);
+
+      // Snapshot the loaded fields for change detection
+      setSavedFieldsSnapshot(JSON.stringify(mergedFields));
 
       // Save merged configuration to both API and localStorage
       const mergedConfig: FormConfiguration = {
@@ -270,16 +279,12 @@ export default function Customize() {
       const data = await response.json();
 
       if (data.success) {
-        setSaveMessage('Form configuration saved successfully!');
-      } else {
-        setSaveMessage('Saved locally (API error: ' + data.error + ')');
+        // Update snapshot after successful save
+        setSavedFieldsSnapshot(JSON.stringify(fields));
       }
     } catch (error) {
       console.error('Failed to save to API:', error);
-      setSaveMessage('Saved locally (server unavailable)');
     }
-
-    setTimeout(() => setSaveMessage(''), 3000);
   };
 
   const handleResetForm = () => {
@@ -287,8 +292,6 @@ export default function Customize() {
       setFields([]);
       setSelectedFieldId(null);
       localStorage.removeItem(STORAGE_KEY);
-      setSaveMessage('Form reset successfully!');
-      setTimeout(() => setSaveMessage(''), 3000);
     }
   };
 
@@ -512,7 +515,7 @@ export default function Customize() {
                     onSave={handleSaveConfiguration}
                     onPreview={() => setShowPreview(true)}
                     onReset={handleResetForm}
-                    saveStatus={saveMessage ? 'saved' : 'unsaved'}
+                    saveStatus={hasUnsavedChanges ? 'unsaved' : 'saved'}
                   />
                 }
                 palette={<FieldPalette />}
