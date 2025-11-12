@@ -3,6 +3,7 @@ import type { UseQueryOptions } from '@tanstack/react-query';
 import { fetchWithAuth } from '@/lib/fetchWithAuth';
 import type { Ticket, TicketStatus, TicketPriority } from '@/types';
 import { toast } from '@/hooks/use-toast';
+import { usersCache } from '@/lib/usersCache';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
@@ -210,8 +211,19 @@ export function useUpdateTicketMutation() {
             if (value === null) {
               return { ...ticket, assignee: undefined };
             }
-            // Keep existing assignee object if we don't have full user data
-            // The actual user data will come from the API response
+
+            // Look up full user data from cache for optimistic update
+            const cachedUsers = usersCache.get();
+            if (cachedUsers) {
+              const selectedUser = cachedUsers.find((u) => u.id === value);
+              if (selectedUser) {
+                // Optimistically update with full user object
+                return { ...ticket, assignee: selectedUser };
+              }
+            }
+
+            // Fallback: If cache miss, keep existing assignee until API responds
+            // This is unlikely since InlineAssigneeSelect already loads users to cache
             return ticket;
           }
           return ticket;
