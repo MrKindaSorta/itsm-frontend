@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,6 +45,22 @@ export default function Profile() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
+  // Sync form state with user data from AuthContext
+  useEffect(() => {
+    if (user) {
+      setName(user.name || '');
+      setDepartment(user.department || '');
+      setTeam(user.team || '');
+      setPhone(user.phone || '');
+      setMobilePhone(user.mobile_phone || '');
+      setLocation(user.location || '');
+      setJobTitle(user.job_title || '');
+      setManager(user.manager || '');
+      setEmailEnabled(user.notificationPreferences?.emailEnabled ?? true);
+      setEmailFrequency(user.notificationPreferences?.emailFrequency || 'immediate');
+    }
+  }, [user]);
 
   const handleSavePersonalInfo = async (e: React.FormEvent) => {
     e.preventDefault();
