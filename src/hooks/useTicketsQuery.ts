@@ -1,7 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { UseQueryOptions } from '@tanstack/react-query';
 import { fetchWithAuth } from '@/lib/fetchWithAuth';
-import type { Ticket, TicketStatus } from '@/types';
+import type { Ticket, TicketStatus, TicketPriority } from '@/types';
+import { toast } from '@/hooks/use-toast';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
@@ -184,8 +185,72 @@ export function useUpdateTicketMutation() {
 
       return transformTicket(data.ticket);
     },
-    onSuccess: () => {
-      // Invalidate all ticket queries to trigger refetch
+    // Optimistic update: Update cache immediately before API call
+    onMutate: async ({ ticketId, field, value }) => {
+      // Cancel any outgoing refetches to avoid overwriting optimistic update
+      await queryClient.cancelQueries({ queryKey: ['tickets'] });
+
+      // Snapshot the previous state for rollback
+      const previousTickets = queryClient.getQueriesData<Ticket[]>({ queryKey: ['tickets'] });
+
+      // Optimistically update all ticket queries
+      queryClient.setQueriesData<Ticket[]>({ queryKey: ['tickets'] }, (old) => {
+        if (!old) return old;
+
+        return old.map((ticket): Ticket => {
+          if (ticket.id !== ticketId) return ticket;
+
+          // Update the specific field
+          if (field === 'status') {
+            return { ...ticket, status: value as TicketStatus };
+          } else if (field === 'priority') {
+            return { ...ticket, priority: value as TicketPriority };
+          } else if (field === 'assignee') {
+            // For assignee, value is null or a user ID string
+            if (value === null) {
+              return { ...ticket, assignee: undefined };
+            }
+            // Keep existing assignee object if we don't have full user data
+            // The actual user data will come from the API response
+            return ticket;
+          }
+          return ticket;
+        });
+      });
+
+      // Return context with snapshot for rollback
+      return { previousTickets };
+    },
+    // On error, rollback to previous state
+    onError: (_error, variables, context) => {
+      // Rollback optimistic update
+      if (context?.previousTickets) {
+        context.previousTickets.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+
+      // Show error toast
+      const fieldName = variables.field === 'assignee' ? 'assignee' : variables.field;
+      toast({
+        title: 'Update failed',
+        description: `Failed to update ${fieldName}. Changes have been reverted.`,
+        variant: 'destructive',
+      });
+    },
+    // On success, update cache with actual server data
+    onSuccess: (updatedTicket) => {
+      // Update all ticket queries with the actual server response
+      queryClient.setQueriesData<Ticket[]>({ queryKey: ['tickets'] }, (old) => {
+        if (!old) return old;
+
+        return old.map((ticket) =>
+          ticket.id === updatedTicket.id ? updatedTicket : ticket
+        );
+      });
+    },
+    // Always refetch in the background to ensure consistency
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['tickets'] });
     },
   });

@@ -9,6 +9,7 @@ import { SettingsProvider } from '@/contexts/SettingsContext';
 import { TicketCacheProvider } from '@/contexts/TicketCacheContext';
 import { UpdateNotification } from '@/components/UpdateNotification';
 import { IdleTimeoutWarning } from '@/components/auth/IdleTimeoutWarning';
+import { Toaster } from '@/components/ui/toaster';
 import { useIdleTimeout } from '@/hooks/useIdleTimeout';
 import { router } from '@/routes';
 
@@ -54,6 +55,7 @@ function AppContent() {
     <>
       <RouterProvider router={router} />
       <UpdateNotification />
+      <Toaster />
       <IdleTimeoutWarning
         open={showWarning}
         warningSeconds={60}

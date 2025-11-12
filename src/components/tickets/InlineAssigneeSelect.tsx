@@ -3,7 +3,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Check, Loader2, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import type { User } from '@/types';
-import { cn, getInitials } from '@/lib/utils';
+import { getInitials } from '@/lib/utils';
 import { fetchWithAuth } from '@/lib/fetchWithAuth';
 import { usersCache } from '@/lib/usersCache';
 
@@ -17,7 +17,6 @@ interface InlineAssigneeSelectProps {
 
 export function InlineAssigneeSelect({ assignee, onAssigneeChange, disabled }: InlineAssigneeSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -62,21 +61,20 @@ export function InlineAssigneeSelect({ assignee, onAssigneeChange, disabled }: I
     }
   };
 
-  const handleSelect = async (userId: string | null) => {
+  const handleSelect = (userId: string | null) => {
     if (userId === (assignee?.id ?? null)) {
       setIsOpen(false);
       return;
     }
 
-    setIsUpdating(true);
-    try {
-      await onAssigneeChange(userId);
-      setIsOpen(false);
-    } catch (error) {
+    // Close popover immediately (optimistic UI)
+    setIsOpen(false);
+
+    // Fire the update in the background
+    onAssigneeChange(userId).catch((error) => {
       console.error('Failed to update assignee:', error);
-    } finally {
-      setIsUpdating(false);
-    }
+      // Error handling is done by the mutation hook (shows toast)
+    });
   };
 
   const filteredUsers = users.filter((user) =>
@@ -88,7 +86,7 @@ export function InlineAssigneeSelect({ assignee, onAssigneeChange, disabled }: I
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <button
-          disabled={disabled || isUpdating}
+          disabled={disabled}
           className="inline-flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded px-2 py-1 hover:bg-accent transition-colors"
           onClick={(e) => {
             e.stopPropagation(); // Prevent row click
@@ -122,11 +120,7 @@ export function InlineAssigneeSelect({ assignee, onAssigneeChange, disabled }: I
             {/* Unassigned option */}
             <button
               onClick={() => handleSelect(null)}
-              disabled={isUpdating}
-              className={cn(
-                "w-full flex items-center gap-3 px-2 py-2 rounded-md hover:bg-accent transition-colors text-left",
-                isUpdating && "opacity-50 cursor-not-allowed"
-              )}
+              className="w-full flex items-center gap-3 px-2 py-2 rounded-md hover:bg-accent transition-colors text-left"
             >
               <div className="flex-shrink-0">
                 {!assignee ? (
@@ -157,11 +151,7 @@ export function InlineAssigneeSelect({ assignee, onAssigneeChange, disabled }: I
                 <button
                   key={user.id}
                   onClick={() => handleSelect(String(user.id))}
-                  disabled={isUpdating}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-2 py-2 rounded-md hover:bg-accent transition-colors text-left",
-                    isUpdating && "opacity-50 cursor-not-allowed"
-                  )}
+                  className="w-full flex items-center gap-3 px-2 py-2 rounded-md hover:bg-accent transition-colors text-left"
                 >
                   <div className="flex-shrink-0">
                     {assignee?.id === user.id ? (
@@ -177,9 +167,6 @@ export function InlineAssigneeSelect({ assignee, onAssigneeChange, disabled }: I
                     <p className="text-sm font-medium truncate">{user.name}</p>
                     <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                   </div>
-                  {isUpdating && assignee?.id === user.id && (
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                  )}
                 </button>
               ))
             )}

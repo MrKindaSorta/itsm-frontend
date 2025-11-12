@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { StatusBadge } from './StatusBadge';
-import { Check, Loader2 } from 'lucide-react';
+import { Check } from 'lucide-react';
 import type { TicketStatus } from '@/types';
-import { cn } from '@/lib/utils';
 
 interface InlineStatusSelectProps {
   status: TicketStatus;
@@ -22,30 +21,28 @@ const statusOptions: { value: TicketStatus; label: string; description: string }
 
 export function InlineStatusSelect({ status, onStatusChange, disabled }: InlineStatusSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
 
-  const handleSelect = async (newStatus: TicketStatus) => {
+  const handleSelect = (newStatus: TicketStatus) => {
     if (newStatus === status) {
       setIsOpen(false);
       return;
     }
 
-    setIsUpdating(true);
-    try {
-      await onStatusChange(newStatus);
-      setIsOpen(false);
-    } catch (error) {
+    // Close popover immediately (optimistic UI)
+    setIsOpen(false);
+
+    // Fire the update in the background
+    onStatusChange(newStatus).catch((error) => {
       console.error('Failed to update status:', error);
-    } finally {
-      setIsUpdating(false);
-    }
+      // Error handling is done by the mutation hook (shows toast)
+    });
   };
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <button
-          disabled={disabled || isUpdating}
+          disabled={disabled}
           className="inline-flex items-center focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded"
           onClick={(e) => {
             e.stopPropagation(); // Prevent row click
@@ -61,11 +58,7 @@ export function InlineStatusSelect({ status, onStatusChange, disabled }: InlineS
             <button
               key={option.value}
               onClick={() => handleSelect(option.value)}
-              disabled={isUpdating}
-              className={cn(
-                "w-full flex items-start gap-3 px-2 py-2 rounded-md hover:bg-accent transition-colors text-left",
-                isUpdating && "opacity-50 cursor-not-allowed"
-              )}
+              className="w-full flex items-start gap-3 px-2 py-2 rounded-md hover:bg-accent transition-colors text-left"
             >
               <div className="flex-shrink-0 mt-0.5">
                 {status === option.value ? (
@@ -80,9 +73,6 @@ export function InlineStatusSelect({ status, onStatusChange, disabled }: InlineS
                 </div>
                 <p className="text-xs text-muted-foreground">{option.description}</p>
               </div>
-              {isUpdating && status === option.value && (
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-              )}
             </button>
           ))}
         </div>

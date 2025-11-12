@@ -81,25 +81,19 @@ export default function Tickets() {
     };
   }, [on, refetchTickets]);
 
-  // Handle inline ticket updates using React Query mutation
+  // Handle inline ticket updates using React Query mutation with optimistic updates
   const handleTicketUpdate = async (ticketId: string, field: 'status' | 'priority' | 'assignee', value: string | null) => {
     if (!user) return;
 
-    try {
-      const updatedTicket = await updateTicketMutation.mutateAsync({
-        ticketId,
-        field,
-        value,
-        userId: user.id,
-      });
+    const updatedTicket = await updateTicketMutation.mutateAsync({
+      ticketId,
+      field,
+      value,
+      userId: user.id,
+    });
 
-      // Update cache with new ticket data
-      ticketCache.setTicket(ticketId, updatedTicket);
-    } catch (error) {
-      console.error('Error updating ticket:', error);
-      alert('Failed to update ticket: ' + (error instanceof Error ? error.message : 'Unknown error'));
-      throw error;
-    }
+    // Update cache with server response for instant detail page navigation
+    ticketCache.setTicket(ticketId, updatedTicket);
   };
 
   // Handle sort
