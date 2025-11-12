@@ -288,10 +288,24 @@ export default function Customize() {
   };
 
   const handleResetForm = () => {
-    if (confirm('Are you sure you want to reset the form? This will clear all fields.')) {
-      setFields([]);
+    if (confirm('Are you sure you want to reset the form? This will remove all custom fields and restore defaults.')) {
+      // Reset to default system fields instead of clearing completely
+      const defaultFields = mergeWithDefaults([]);
+      setFields(defaultFields);
       setSelectedFieldId(null);
-      localStorage.removeItem(STORAGE_KEY);
+
+      // Save default configuration to localStorage
+      const defaultConfig: FormConfiguration = {
+        id: 'default',
+        name: 'Ticket Creation Form',
+        fields: defaultFields,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultConfig));
+
+      // Update snapshot to mark as saved
+      setSavedFieldsSnapshot(JSON.stringify(defaultFields));
     }
   };
 
