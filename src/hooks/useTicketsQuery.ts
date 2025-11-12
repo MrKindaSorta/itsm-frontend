@@ -215,7 +215,7 @@ export function useUpdateTicketMutation() {
             // Look up full user data from cache for optimistic update
             const cachedUsers = usersCache.get();
             if (cachedUsers) {
-              const selectedUser = cachedUsers.find((u) => u.id === value);
+              const selectedUser = cachedUsers.find((u) => String(u.id) === value);
               if (selectedUser) {
                 // Optimistically update with full user object
                 return { ...ticket, assignee: selectedUser };
