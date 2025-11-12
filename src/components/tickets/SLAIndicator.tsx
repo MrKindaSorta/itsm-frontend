@@ -1,6 +1,5 @@
 import type { SLAStatus } from '@/types';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { getSLAStatusColor, formatDateTime } from '@/lib/utils';
 import { Clock } from 'lucide-react';
 
@@ -38,21 +37,13 @@ export function SLAIndicator({ sla }: SLAIndicatorProps) {
   }
 
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Badge variant="outline" className={`${colorClass} flex items-center gap-1 w-fit cursor-help`}>
-            <Clock className="h-3 w-3" />
-            {displayText}
-          </Badge>
-        </TooltipTrigger>
-        <TooltipContent>
-          <div className="space-y-1">
-            <p className="font-medium">SLA Resolution Due:</p>
-            <p className="text-sm">{formatDateTime(sla.resolutionDue)}</p>
-          </div>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <Badge
+      variant="outline"
+      className={`${colorClass} flex items-center gap-1 w-fit cursor-help`}
+      title={`SLA Resolution Due: ${formatDateTime(sla.resolutionDue)}`}
+    >
+      <Clock className="h-3 w-3" />
+      {displayText}
+    </Badge>
   );
 }
