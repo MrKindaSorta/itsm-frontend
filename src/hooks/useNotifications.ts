@@ -1,13 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWebSocket } from './useWebSocket';
 import type { Notification } from '@/types';
 import { fetchWithAuth } from '@/lib/fetchWithAuth';
+import { toast } from '@/hooks/use-toast';
 
 const REFRESH_INTERVAL = 30000; // 30 seconds
 
 export function useNotifications() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { subscribeToUser, unsubscribeFromUser, on } = useWebSocket();
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -153,13 +156,26 @@ export function useNotifications() {
         actionUrl: message.data.actionUrl,
         createdAt: new Date(message.data.createdAt),
       };
+
+      // Add notification to list
       addNotification(newNotification);
+
+      // Show toast notification
+      toast({
+        title: newNotification.title,
+        description: newNotification.message,
+        onClick: newNotification.actionUrl ? () => {
+          // Mark as read and navigate to ticket
+          markAsRead(newNotification.id);
+          navigate(newNotification.actionUrl!);
+        } : undefined,
+      } as any);
     });
 
     return () => {
       unsubNotificationCreated();
     };
-  }, [on, addNotification]);
+  }, [on, addNotification, markAsRead, navigate]);
 
   // Initial fetch and periodic refresh
   useEffect(() => {

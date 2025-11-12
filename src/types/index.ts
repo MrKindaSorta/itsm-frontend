@@ -227,7 +227,9 @@ export interface DashboardMetrics {
 export interface Notification {
   id: string;
   userId: string;
-  type: 'ticket_assigned' | 'ticket_updated' | 'sla_warning' | 'ticket_resolved' | 'mention';
+  type: 'ticket_assigned' | 'ticket_updated' | 'ticket_commented' |
+        'status_changed' | 'priority_changed' | 'ticket_resolved' |
+        'sla_warning' | 'mention';
   title: string;
   message: string;
   read: boolean;

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Check, Settings, Loader2, MessageSquare, AlertCircle, Info, CheckCircle, History } from 'lucide-react';
+import { Bell, Check, Settings, Loader2, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
@@ -10,6 +10,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useNotifications } from '@/hooks/useNotifications';
 import { NotificationSettingsModal } from './NotificationSettingsModal';
+import { getNotificationIcon } from '@/lib/notificationUtils';
 import { formatDistanceToNow } from 'date-fns';
 
 export function NotificationTray() {
@@ -43,24 +44,6 @@ export function NotificationTray() {
     }
   };
 
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case 'ticket_assigned':
-      case 'ticket_updated':
-        return <Info className="h-4 w-4 text-blue-500" />;
-      case 'ticket_commented':
-        return <MessageSquare className="h-4 w-4 text-purple-500" />;
-      case 'status_changed':
-      case 'priority_changed':
-        return <AlertCircle className="h-4 w-4 text-orange-500" />;
-      case 'ticket_resolved':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'sla_warning':
-        return <AlertCircle className="h-4 w-4 text-red-500" />;
-      default:
-        return <Bell className="h-4 w-4 text-gray-500" />;
-    }
-  };
 
   return (
     <>
@@ -139,7 +122,9 @@ export function NotificationTray() {
                   >
                     <div className="flex gap-3">
                       <div className="flex-shrink-0 mt-0.5">
-                        {getNotificationIcon(notification.type)}
+                        <div className={getNotificationIcon(notification.type).colorClass}>
+                          {getNotificationIcon(notification.type).icon}
+                        </div>
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
