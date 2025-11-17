@@ -339,9 +339,9 @@ export default function Billing() {
                       Unlock 3 agents + unlimited overage billing ($4.99/agent/month)
                     </p>
                   </>
-                ) : billingInfo.plan === 'business' && agentUsageData ? (
+                ) : (billingInfo.plan === 'business' || billingInfo.plan === 'paid') && agentUsageData ? (
                   <>
-                    {/* Business plan (legacy) gets special "Manage Agent Seats" button */}
+                    {/* Professional and Business plans can manage extra agent seats */}
                     <Button
                       onClick={() => setIsAddSeatsModalOpen(true)}
                       className="w-full"
@@ -350,7 +350,7 @@ export default function Billing() {
                       Manage Agent Seats
                     </Button>
                     <p className="text-xs text-muted-foreground text-center">
-                      Add or remove extra agent seats ($4.99/seat/month)
+                      Add or remove extra agent seats (${agentUsageData.extraSeatPrice?.toFixed(2) || '4.99'}/seat/month)
                     </p>
 
                     <Separator />
