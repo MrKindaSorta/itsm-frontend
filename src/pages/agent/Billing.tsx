@@ -279,10 +279,32 @@ export default function Billing() {
                   <span className="font-semibold">{getPlanName(billingInfo.plan)}</span>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Price</span>
-                  <span className="font-semibold">${billingInfo.planPrice}/month</span>
-                </div>
+                {/* Price Breakdown - show breakdown if extra seats exist */}
+                {agentUsageData && agentUsageData.extraSeats > 0 ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>Base Plan</span>
+                      <span>${billingInfo.planPrice.toFixed(2)}/mo</span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>{agentUsageData.extraSeats} Extra Seat{agentUsageData.extraSeats !== 1 ? 's' : ''} × ${agentUsageData.extraSeatPrice.toFixed(2)}</span>
+                      <span>${(agentUsageData.extraSeats * agentUsageData.extraSeatPrice).toFixed(2)}/mo</span>
+                    </div>
+                    <Separator className="my-2" />
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-semibold">Total Price</span>
+                      <span className="font-semibold">
+                        ${(billingInfo.planPrice + (agentUsageData.extraSeats * agentUsageData.extraSeatPrice)).toFixed(2)}/month
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  // No extra seats - show simple price
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Price</span>
+                    <span className="font-semibold">${billingInfo.planPrice}/month</span>
+                  </div>
+                )}
 
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Status</span>
