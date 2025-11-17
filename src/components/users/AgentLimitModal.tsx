@@ -13,14 +13,12 @@ interface AgentLimitModalProps {
 }
 
 const PLAN_NAMES: Record<string, string> = {
-  starter: 'Starter',
-  professional: 'Professional',
-  business: 'Business',
+  free: 'Free',
+  paid: 'Professional',
 };
 
 const UPGRADE_SUGGESTIONS: Record<string, { nextPlan: string; nextLimit: number }> = {
-  starter: { nextPlan: 'Professional', nextLimit: 5 },
-  professional: { nextPlan: 'Business', nextLimit: 10 },
+  free: { nextPlan: 'Professional', nextLimit: 3 },
 };
 
 export function AgentLimitModal({

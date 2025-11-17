@@ -180,7 +180,7 @@ export function AddAgentSeatsModal({
           <div className="bg-muted rounded-lg p-4 space-y-3">
             {/* Base Plan Price */}
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Business Plan (Base)</span>
+              <span className="text-muted-foreground">Professional Plan (Base)</span>
               <span className="font-medium">${basePlanPrice.toFixed(2)}/month</span>
             </div>
 

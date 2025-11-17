@@ -87,9 +87,8 @@ export function AgentUsageWidget({
 
   const getPlanName = (plan: string) => {
     const names: Record<string, string> = {
-      'starter': 'Starter',
-      'professional': 'Professional',
-      'business': 'Business',
+      'free': 'Free',
+      'paid': 'Professional',
     };
     return names[plan] || plan;
   };

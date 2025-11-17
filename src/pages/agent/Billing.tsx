@@ -168,9 +168,8 @@ export default function Billing() {
 
   const getPlanName = (plan: string) => {
     const names: Record<string, string> = {
-      'starter': 'Starter',
-      'professional': 'Professional',
-      'business': 'Business',
+      'free': 'Free',
+      'paid': 'Professional',
     };
     return names[plan] || plan;
   };
@@ -296,7 +295,7 @@ export default function Billing() {
                       Manage Agent Seats
                     </Button>
                     <p className="text-xs text-muted-foreground text-center">
-                      Add or remove extra agent seats ($9.99/seat/month)
+                      Add or remove extra agent seats ($4.99/seat/month)
                     </p>
 
                     <Separator />
