@@ -139,6 +139,36 @@ export default function Billing() {
     }
   };
 
+  const handleUpgradeToPaid = async () => {
+    setIsCreatingSession(true);
+    try {
+      const API_BASE = getApiBaseUrl();
+
+      const response = await fetchWithAuth(`${API_BASE}/api/billing/create-upgrade-checkout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.url) {
+        // Redirect to Stripe Checkout
+        window.location.href = data.url;
+      } else {
+        throw new Error(data.error || 'Failed to create checkout session');
+      }
+    } catch (error: any) {
+      console.error('Error creating upgrade checkout:', error);
+
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to start upgrade. Please try again.',
+        variant: 'destructive',
+      });
+      setIsCreatingSession(false);
+    }
+  };
+
   const formatPrice = (amount: number, currency: string) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -284,9 +314,34 @@ export default function Billing() {
 
                 <Separator />
 
-                {/* Business plan gets special "Manage Agent Seats" button */}
-                {billingInfo.plan === 'business' && agentUsageData ? (
+                {/* Free plan gets "Upgrade to Professional" button */}
+                {billingInfo.plan === 'free' ? (
                   <>
+                    <Button
+                      onClick={handleUpgradeToPaid}
+                      disabled={isCreatingSession}
+                      className="w-full"
+                    >
+                      {isCreatingSession ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Starting upgrade...
+                        </>
+                      ) : (
+                        <>
+                          Upgrade to Professional
+                          <ExternalLink className="ml-2 h-4 w-4" />
+                        </>
+                      )}
+                    </Button>
+
+                    <p className="text-xs text-muted-foreground text-center">
+                      Unlock 3 agents + unlimited overage billing ($4.99/agent/month)
+                    </p>
+                  </>
+                ) : billingInfo.plan === 'business' && agentUsageData ? (
+                  <>
+                    {/* Business plan (legacy) gets special "Manage Agent Seats" button */}
                     <Button
                       onClick={() => setIsAddSeatsModalOpen(true)}
                       className="w-full"
@@ -324,6 +379,7 @@ export default function Billing() {
                   </>
                 ) : (
                   <>
+                    {/* Professional plan gets "Manage Subscription" button */}
                     <Button
                       onClick={handleManageSubscription}
                       disabled={isCreatingSession}
