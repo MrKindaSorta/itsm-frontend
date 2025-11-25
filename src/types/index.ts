@@ -327,6 +327,7 @@ export interface SettingsFormData {
     passwordExpiryDays: number;
     maxLoginAttempts: number;
     lockoutDurationMinutes: number;
+    autoUnlockEnabled: boolean;
     sessionTimeoutMinutes: number;
     enable2FA: boolean;
     forcePasswordChangeFirstLogin: boolean;

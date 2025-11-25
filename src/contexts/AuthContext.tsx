@@ -59,7 +59,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       const data = await response.json();
       if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Login failed');
+        // Preserve full error details for lockout scenarios
+        const error: any = new Error(data.error || 'Login failed');
+        error.accountLocked = data.accountLocked;
+        error.minutesRemaining = data.minutesRemaining;
+        throw error;
       }
       setUser(data.user);
       localStorage.setItem('user', JSON.stringify(data.user));

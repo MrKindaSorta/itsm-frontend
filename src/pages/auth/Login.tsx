@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState<{message: string, accountLocked?: boolean, minutesRemaining?: number} | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const { branding } = useBranding();
@@ -22,7 +22,7 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError(null);
     setIsLoading(true);
 
     try {
@@ -53,8 +53,12 @@ export default function Login() {
           navigate('/portal/tickets/create');
         }
       }
-    } catch (err) {
-      setError('Invalid email or password');
+    } catch (err: any) {
+      setError({
+        message: err.message || 'Invalid email or password',
+        accountLocked: err.accountLocked,
+        minutesRemaining: err.minutesRemaining
+      });
     } finally {
       setIsLoading(false);
     }
@@ -118,8 +122,17 @@ export default function Login() {
                 />
               </div>
               {error && (
-                <div className="text-sm text-destructive text-center bg-destructive/10 p-2 rounded">
-                  {error}
+                <div className={`text-sm text-center p-3 rounded ${
+                  error.accountLocked
+                    ? 'text-amber-800 bg-amber-50 dark:text-amber-200 dark:bg-amber-950 border border-amber-200 dark:border-amber-800'
+                    : 'text-destructive bg-destructive/10'
+                }`}>
+                  <p className="font-medium">{error.message}</p>
+                  {error.accountLocked && error.minutesRemaining && (
+                    <p className="text-xs mt-1 opacity-90">
+                      Your account will automatically unlock in approximately {error.minutesRemaining} minute{error.minutesRemaining !== 1 ? 's' : ''}.
+                    </p>
+                  )}
                 </div>
               )}
               <Button type="submit" className="w-full" disabled={isLoading}>

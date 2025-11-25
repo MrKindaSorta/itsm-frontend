@@ -44,6 +44,7 @@ export default function Settings() {
           passwordExpiryDays: settings.passwordExpiryDays,
           maxLoginAttempts: settings.maxLoginAttempts,
           lockoutDurationMinutes: settings.lockoutDurationMinutes,
+          autoUnlockEnabled: settings.autoUnlockEnabled,
           sessionTimeoutMinutes: settings.sessionTimeoutMinutes,
           enable2FA: settings.enable2FA,
           forcePasswordChangeFirstLogin: settings.forcePasswordChangeFirstLogin,
@@ -345,6 +346,24 @@ export default function Settings() {
                         setFormData({
                           ...formData,
                           security: { ...formData.security, lockoutDurationMinutes: parseInt(e.target.value) || 15 },
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between py-2">
+                    <div className="space-y-0.5">
+                      <Label className="text-sm font-medium">Automatic Account Unlock</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Automatically unlock accounts after lockout duration expires
+                      </p>
+                    </div>
+                    <Switch
+                      checked={formData.security.autoUnlockEnabled}
+                      onCheckedChange={(checked) =>
+                        setFormData({
+                          ...formData,
+                          security: { ...formData.security, autoUnlockEnabled: checked }
                         })
                       }
                     />

@@ -29,6 +29,7 @@ const DEFAULT_SETTINGS: SystemSettings = {
   passwordExpiryDays: 0,
   maxLoginAttempts: 5,
   lockoutDurationMinutes: 15,
+  autoUnlockEnabled: false,
   sessionTimeoutMinutes: 480,
   enable2FA: false,
   forcePasswordChangeFirstLogin: true,
