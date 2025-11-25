@@ -2,7 +2,7 @@ import type { User } from '@/types';
 import { RoleBadge } from './RoleBadge';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit, ToggleLeft, ToggleRight, Trash2, Mail, Briefcase, Clock } from 'lucide-react';
+import { Edit, ToggleLeft, ToggleRight, Trash2, Mail, Briefcase, Clock, Lock, Unlock } from 'lucide-react';
 import { formatRelativeTime, getInitials } from '@/lib/utils';
 import { useState } from 'react';
 
@@ -11,9 +11,10 @@ interface UserCardsProps {
   onEdit: (user: User) => void;
   onToggleActive: (userId: string) => void;
   onDelete: (userId: string) => void;
+  onUnlock?: (userId: string, userName: string) => void;
 }
 
-export function UserCards({ users, onEdit, onToggleActive, onDelete }: UserCardsProps) {
+export function UserCards({ users, onEdit, onToggleActive, onDelete, onUnlock }: UserCardsProps) {
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
 
   const handleDelete = (userId: string, userName: string) => {
@@ -56,7 +57,12 @@ export function UserCards({ users, onEdit, onToggleActive, onDelete }: UserCards
           {/* Role & Status */}
           <div className="flex flex-wrap items-center gap-2 mb-3">
             <RoleBadge role={user.role} />
-            {user.active ? (
+            {user.account_locked ? (
+              <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 border-red-200 dark:border-red-800 inline-flex items-center gap-1">
+                <Lock className="h-3 w-3" />
+                Locked
+              </Badge>
+            ) : user.active ? (
               <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border-green-200 dark:border-green-800">
                 Active
               </Badge>
@@ -96,6 +102,18 @@ export function UserCards({ users, onEdit, onToggleActive, onDelete }: UserCards
 
           {/* Actions */}
           <div className="flex items-center gap-2 pt-3 border-t">
+            {user.account_locked && onUnlock && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onUnlock(user.id, user.name)}
+                title="Unlock user account"
+                className="text-orange-600 border-orange-300 hover:bg-orange-50 dark:hover:bg-orange-950"
+              >
+                <Unlock className="h-4 w-4 mr-1" />
+                Unlock
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"

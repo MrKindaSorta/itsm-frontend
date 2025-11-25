@@ -3,7 +3,7 @@ import type { User } from '@/types';
 import { RoleBadge } from './RoleBadge';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit, ToggleLeft, ToggleRight, Trash2 } from 'lucide-react';
+import { Edit, ToggleLeft, ToggleRight, Trash2, Lock, Unlock } from 'lucide-react';
 import { formatRelativeTime, getInitials, type UserSortColumn, type SortDirection } from '@/lib/utils';
 import { SortableHeader } from '@/components/tickets/SortableHeader';
 import { UserCards } from './UserCards';
@@ -16,9 +16,10 @@ interface UserTableProps {
   onEdit: (user: User) => void;
   onToggleActive: (userId: string) => void;
   onDelete: (userId: string) => void;
+  onUnlock?: (userId: string, userName: string) => void;
 }
 
-export function UserTable({ users, sortColumn, sortDirection, onSort, onEdit, onToggleActive, onDelete }: UserTableProps) {
+export function UserTable({ users, sortColumn, sortDirection, onSort, onEdit, onToggleActive, onDelete, onUnlock }: UserTableProps) {
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
 
   const handleDelete = (userId: string, userName: string) => {
@@ -139,21 +140,40 @@ export function UserTable({ users, sortColumn, sortDirection, onSort, onEdit, on
                     {user.team || <span className="text-muted-foreground italic">None</span>}
                   </td>
                   <td className="px-4 py-3">
-                    {user.active ? (
-                      <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border-green-200 dark:border-green-800">
-                        Active
-                      </Badge>
-                    ) : (
-                      <Badge className="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200 border-gray-200 dark:border-gray-800">
-                        Inactive
-                      </Badge>
-                    )}
+                    <div className="flex flex-col gap-1">
+                      {user.account_locked ? (
+                        <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 border-red-200 dark:border-red-800 inline-flex items-center gap-1 w-fit">
+                          <Lock className="h-3 w-3" />
+                          Locked
+                        </Badge>
+                      ) : user.active ? (
+                        <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border-green-200 dark:border-green-800">
+                          Active
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200 border-gray-200 dark:border-gray-800">
+                          Inactive
+                        </Badge>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-sm text-muted-foreground">
                     {user.lastLogin ? formatRelativeTime(new Date(user.lastLogin)) : 'Never'}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-2">
+                      {user.account_locked && onUnlock && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onUnlock(user.id, user.name)}
+                          title="Unlock user account"
+                          className="text-orange-600 border-orange-300 hover:bg-orange-50 dark:hover:bg-orange-950"
+                        >
+                          <Unlock className="h-4 w-4 mr-1" />
+                          Unlock
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"
@@ -201,6 +221,7 @@ export function UserTable({ users, sortColumn, sortDirection, onSort, onEdit, on
           onEdit={onEdit}
           onToggleActive={onToggleActive}
           onDelete={onDelete}
+          onUnlock={onUnlock}
         />
       </div>
     </>

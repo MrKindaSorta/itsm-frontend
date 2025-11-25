@@ -35,6 +35,9 @@ export interface User {
   permanently_deleted?: number;
   isDeleted?: boolean;
   requirePasswordChange?: boolean;
+  account_locked?: boolean;
+  locked_at?: string | null;
+  failed_login_attempts?: number;
 }
 
 // Notification settings

@@ -4,10 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { UserPlus, Search, Loader2, Trash2, RotateCcw } from 'lucide-react';
+import { UserPlus, Search, Loader2, Trash2, RotateCcw, Lock } from 'lucide-react';
 import { UserTable } from '@/components/users/UserTable';
 import { UserCreateModal } from '@/components/users/UserCreateModal';
 import { UserEditModal } from '@/components/users/UserEditModal';
+import { UserUnlockModal } from '@/components/users/UserUnlockModal';
 import { AgentUsageWidget } from '@/components/billing/AgentUsageWidget';
 import { useAuth } from '@/contexts/AuthContext';
 import { sortUsers, type UserSortColumn, type SortDirection } from '@/lib/utils';
@@ -16,7 +17,7 @@ import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
-type ViewMode = 'users' | 'agents' | 'inactive' | 'deleted';
+type ViewMode = 'users' | 'agents' | 'inactive' | 'locked' | 'deleted';
 
 export default function Users() {
   const { user: currentUser } = useAuth();
@@ -28,7 +29,10 @@ export default function Users() {
   const [error, setError] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isUnlockModalOpen, setIsUnlockModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [unlockUserId, setUnlockUserId] = useState<string | null>(null);
+  const [unlockUserName, setUnlockUserName] = useState<string | null>(null);
 
   // Sorting state
   const [sortColumn, setSortColumn] = useState<UserSortColumn | null>(null);
@@ -71,6 +75,9 @@ export default function Users() {
           deleted_at: user.deleted_at,
           permanently_deleted: user.permanently_deleted,
           isDeleted: user.isDeleted,
+          account_locked: user.account_locked === 1,
+          locked_at: user.locked_at,
+          failed_login_attempts: user.failed_login_attempts,
         }));
         setUsers(transformedUsers);
       } else {
@@ -199,6 +206,12 @@ export default function Users() {
     }
   };
 
+  const handleUnlock = (userId: string, userName: string) => {
+    setUnlockUserId(userId);
+    setUnlockUserName(userName);
+    setIsUnlockModalOpen(true);
+  };
+
   const handlePermanentDelete = async (userId: string, userName: string) => {
     if (
       !confirm(
@@ -270,13 +283,15 @@ export default function Users() {
   };
 
   // Filter users by category
-  const regularUsers = users.filter((user) => user.role === 'user' && user.active && matchesSearch(user));
+  const regularUsers = users.filter((user) => user.role === 'user' && user.active && !user.account_locked && matchesSearch(user));
   const agentUsers = users.filter((user) =>
     (user.role === 'agent' || user.role === 'manager' || user.role === 'admin') &&
     user.active &&
+    !user.account_locked &&
     matchesSearch(user)
   );
-  const inactiveUsers = users.filter((user) => !user.active && matchesSearch(user));
+  const inactiveUsers = users.filter((user) => !user.active && !user.account_locked && matchesSearch(user));
+  const lockedUsers = users.filter((user) => user.account_locked && matchesSearch(user));
   const filteredDeletedUsers = deletedUsers.filter(matchesSearch);
 
   // Get current tab's users
@@ -288,6 +303,8 @@ export default function Users() {
         return agentUsers;
       case 'inactive':
         return inactiveUsers;
+      case 'locked':
+        return lockedUsers;
       case 'deleted':
         return filteredDeletedUsers;
       default:
@@ -442,6 +459,16 @@ export default function Users() {
         user={selectedUser}
       />
 
+      <UserUnlockModal
+        open={isUnlockModalOpen}
+        onOpenChange={setIsUnlockModalOpen}
+        onSuccess={() => {
+          fetchUsers();
+        }}
+        userId={unlockUserId}
+        userName={unlockUserName}
+      />
+
       <Card>
         <CardHeader>
           <div className="flex flex-col gap-4">
@@ -486,10 +513,14 @@ export default function Users() {
         {/* Tabs for User Categories */}
         <div className="border-b px-6">
           <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)} className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="users">Users ({regularUsers.length})</TabsTrigger>
               <TabsTrigger value="agents">Agents ({agentUsers.length})</TabsTrigger>
               <TabsTrigger value="inactive">Inactive ({inactiveUsers.length})</TabsTrigger>
+              <TabsTrigger value="locked" className={lockedUsers.length > 0 ? 'text-red-600 dark:text-red-400' : ''}>
+                <Lock className="h-3 w-3 mr-1" />
+                Locked ({lockedUsers.length})
+              </TabsTrigger>
               <TabsTrigger value="deleted">Deleted ({filteredDeletedUsers.length})</TabsTrigger>
             </TabsList>
           </Tabs>
@@ -519,6 +550,7 @@ export default function Users() {
               onEdit={handleEdit}
               onToggleActive={handleToggleActive}
               onDelete={handleDelete}
+              onUnlock={handleUnlock}
             />
           )}
         </CardContent>
