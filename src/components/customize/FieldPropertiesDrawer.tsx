@@ -424,6 +424,151 @@ export default function FieldPropertiesDrawer({
                   </div>
                 )}
 
+              {/* File Upload Options */}
+              {!isSystemField && localField.type === 'file' && (
+                <div className="pt-4 border-t border-border">
+                  <Label className="text-sm font-medium mb-3 block">
+                    File Upload Options
+                  </Label>
+                  <div className="space-y-3">
+                    {/* Upload Mode Toggle */}
+                    <div className="flex items-center justify-between p-3 rounded-lg border border-border">
+                      <div>
+                        <Label className="font-medium">Multiple Files</Label>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Allow users to upload multiple files at once
+                        </p>
+                      </div>
+                      <button
+                        onClick={() =>
+                          updateField({
+                            validation: {
+                              ...localField.validation,
+                              fileValidation: {
+                                ...localField.validation?.fileValidation,
+                                multiple: !localField.validation?.fileValidation?.multiple,
+                                maxFiles: localField.validation?.fileValidation?.multiple ? 1 : 5,
+                              },
+                            },
+                          })
+                        }
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          localField.validation?.fileValidation?.multiple
+                            ? 'bg-primary'
+                            : 'bg-muted'
+                        }`}
+                        aria-checked={Boolean(localField.validation?.fileValidation?.multiple)}
+                        role="switch"
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            localField.validation?.fileValidation?.multiple
+                              ? 'translate-x-6'
+                              : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Max File Size */}
+                    <div>
+                      <Label htmlFor="file-max-size" className="text-xs">
+                        Max File Size (MB)
+                      </Label>
+                      <Input
+                        id="file-max-size"
+                        type="number"
+                        value={
+                          localField.validation?.fileValidation?.maxSize
+                            ? localField.validation.fileValidation.maxSize / 1048576
+                            : 10
+                        }
+                        onChange={(e) => {
+                          const sizeInMB = parseInt(e.target.value) || 10;
+                          updateField({
+                            validation: {
+                              ...localField.validation,
+                              fileValidation: {
+                                ...localField.validation?.fileValidation,
+                                maxSize: sizeInMB * 1048576,
+                              },
+                            },
+                          });
+                        }}
+                        placeholder="10"
+                        min="1"
+                        max="100"
+                        className="mt-1"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Maximum size per file (1-100 MB)
+                      </p>
+                    </div>
+
+                    {/* Max Number of Files (only if multiple is enabled) */}
+                    {localField.validation?.fileValidation?.multiple && (
+                      <div>
+                        <Label htmlFor="file-max-count" className="text-xs">
+                          Max Number of Files
+                        </Label>
+                        <Input
+                          id="file-max-count"
+                          type="number"
+                          value={localField.validation?.fileValidation?.maxFiles || 5}
+                          onChange={(e) => {
+                            const maxFiles = parseInt(e.target.value) || 5;
+                            updateField({
+                              validation: {
+                                ...localField.validation,
+                                fileValidation: {
+                                  ...localField.validation?.fileValidation,
+                                  maxFiles,
+                                },
+                              },
+                            });
+                          }}
+                          placeholder="5"
+                          min="1"
+                          max="20"
+                          className="mt-1"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Maximum number of files users can upload (1-20)
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Accept Attribute (File Type Filter) */}
+                    <div>
+                      <Label htmlFor="file-accept" className="text-xs">
+                        Allowed File Types
+                      </Label>
+                      <Input
+                        id="file-accept"
+                        type="text"
+                        value={localField.validation?.fileValidation?.accept || ''}
+                        onChange={(e) =>
+                          updateField({
+                            validation: {
+                              ...localField.validation,
+                              fileValidation: {
+                                ...localField.validation?.fileValidation,
+                                accept: e.target.value,
+                              },
+                            },
+                          })
+                        }
+                        placeholder="e.g., image/*,.pdf,.doc,.docx"
+                        className="mt-1"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Leave empty for all types. Examples: image/*, .pdf, .doc
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Conditional Logic */}
               {!isSystemField && (
                 <div className="pt-4 border-t border-border">

@@ -37,6 +37,14 @@ export interface ConditionalLogic {
   nestingLevel?: number; // Track depth (0 = root, 1 = child, 2 = grandchild)
 }
 
+// File validation configuration (for file upload fields)
+export interface FileValidation {
+  accept?: string; // File type restrictions (e.g., "image/*,.pdf")
+  maxSize?: number; // Max file size in bytes (e.g., 10485760 for 10MB)
+  maxFiles?: number; // Max number of files (only for multiple mode)
+  multiple?: boolean; // Allow multiple file selection (default: false)
+}
+
 // Form field configuration
 export interface FormField {
   id: string;
@@ -56,6 +64,7 @@ export interface FormField {
     max?: number;
     pattern?: string;
     maxLength?: number;
+    fileValidation?: FileValidation; // File-specific validation
   };
   conditionalLogic?: ConditionalLogic; // Conditional field logic
 }

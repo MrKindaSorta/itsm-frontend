@@ -217,19 +217,40 @@ export default function CreateTicket() {
         const ticketId = data.ticket.id;
 
         // Upload any file attachments
-        const fileFields = allFields.filter(f => f.type === 'file');
+        const fileFields = allFields.filter((f) => f.type === 'file');
         for (const field of fileFields) {
-          const file = fieldValues[field.id];
-          if (file instanceof File) {
-            try {
-              const formData = new FormData();
-              formData.append('file', file);
-              formData.append('user_id', user.id);
+          const fieldValue = fieldValues[field.id];
+          if (!fieldValue) continue;
 
-              await fetchWithAuth(`${API_BASE}/api/tickets/${ticketId}/attachments`, {
-                method: 'POST',
-                body: formData,
-              });
+          // Handle both single file and array of files
+          const files = Array.isArray(fieldValue) ? fieldValue : [fieldValue];
+          const validFiles = files.filter((f) => f instanceof File);
+
+          if (validFiles.length > 0) {
+            try {
+              if (validFiles.length === 1) {
+                // Single file upload
+                const formData = new FormData();
+                formData.append('file', validFiles[0]);
+                formData.append('user_id', user.id);
+
+                await fetchWithAuth(`${API_BASE}/api/tickets/${ticketId}/attachments`, {
+                  method: 'POST',
+                  body: formData,
+                });
+              } else {
+                // Batch file upload (multiple files)
+                const formData = new FormData();
+                validFiles.forEach((file) => {
+                  formData.append('files', file); // Multiple files with same key
+                });
+                formData.append('user_id', user.id);
+
+                await fetchWithAuth(`${API_BASE}/api/tickets/${ticketId}/attachments/batch`, {
+                  method: 'POST',
+                  body: formData,
+                });
+              }
             } catch (uploadError) {
               console.error('Failed to upload attachment:', uploadError);
               // Don't fail the whole ticket creation if attachment upload fails
@@ -497,6 +518,10 @@ export default function CreateTicket() {
         );
 
       case 'file':
+        const fileValidation = field.validation?.fileValidation;
+        const isMultiple = fileValidation?.multiple;
+        const selectedFiles = value ? (Array.isArray(value) ? value : [value]) : [];
+
         return (
           <div key={field.id} className="space-y-2">
             <Label htmlFor={field.id}>
@@ -505,19 +530,64 @@ export default function CreateTicket() {
             <Input
               id={field.id}
               type="file"
+              multiple={isMultiple}
+              accept={fileValidation?.accept}
               onChange={(e) => {
-                const file = e.target.files?.[0];
-                handleFieldValueChange(field.id, file);
+                const files = Array.from(e.target.files || []);
+
+                // Validate number of files
+                if (isMultiple && fileValidation?.maxFiles && files.length > fileValidation.maxFiles) {
+                  alert(`You can only upload up to ${fileValidation.maxFiles} files`);
+                  e.target.value = ''; // Reset input
+                  return;
+                }
+
+                // Validate file sizes
+                const maxSize = fileValidation?.maxSize || 10485760; // 10MB default
+                const oversizedFiles = files.filter((f) => f.size > maxSize);
+                if (oversizedFiles.length > 0) {
+                  alert(
+                    `Some files exceed the maximum size of ${(maxSize / 1048576).toFixed(0)}MB`
+                  );
+                  e.target.value = ''; // Reset input
+                  return;
+                }
+
+                // Store files
+                if (isMultiple) {
+                  handleFieldValueChange(field.id, files); // Array of files
+                } else {
+                  handleFieldValueChange(field.id, files[0]); // Single file
+                }
               }}
               required={field.required}
               disabled={showSuccess}
               className="cursor-pointer"
             />
-            {value && (
-              <div className="text-sm text-muted-foreground">
-                Selected: {value.name}
+
+            {/* Show selected files */}
+            {selectedFiles.length > 0 && (
+              <div className="space-y-1 p-2 bg-muted/50 rounded-md">
+                {selectedFiles.map((file: File, idx: number) => (
+                  <div
+                    key={idx}
+                    className="flex items-center gap-2 text-sm text-muted-foreground"
+                  >
+                    <span className="font-medium text-green-600">✓</span>
+                    <span className="truncate flex-1">{file.name}</span>
+                    <span className="text-xs">({(file.size / 1024).toFixed(1)} KB)</span>
+                  </div>
+                ))}
               </div>
             )}
+
+            {isMultiple && (
+              <p className="text-xs text-muted-foreground">
+                You can upload up to {fileValidation?.maxFiles || 5} files (max{' '}
+                {((fileValidation?.maxSize || 10485760) / 1048576).toFixed(0)}MB each)
+              </p>
+            )}
+
             {field.helpText && (
               <p className="text-xs text-muted-foreground">{field.helpText}</p>
             )}

@@ -149,14 +149,28 @@ export default function FormFieldItem({
         );
 
       case 'file':
+        const fileValidation = field.validation?.fileValidation;
         return (
-          <Input
-            id={controlId}
-            type="file"
-            required={field.required}
-            disabled
-            className="bg-muted/30"
-          />
+          <div className="space-y-2">
+            <Input
+              id={controlId}
+              type="file"
+              required={field.required}
+              disabled
+              multiple={fileValidation?.multiple}
+              accept={fileValidation?.accept}
+              className="bg-muted/30"
+            />
+            {fileValidation?.multiple && (
+              <p className="text-xs text-muted-foreground">
+                Multiple files allowed (max {fileValidation.maxFiles || 5} files,
+                {fileValidation.maxSize
+                  ? ` ${(fileValidation.maxSize / 1048576).toFixed(0)}MB each`
+                  : ' 10MB each'}
+                )
+              </p>
+            )}
+          </div>
         );
 
       default:

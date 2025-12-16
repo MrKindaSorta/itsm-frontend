@@ -110,6 +110,13 @@ const FIELD_TYPES: PaletteFieldType[] = [
       type: 'file',
       label: 'File Upload',
       required: false,
+      validation: {
+        fileValidation: {
+          multiple: false,
+          maxSize: 10485760, // 10MB default
+          maxFiles: 1,
+        },
+      },
     },
   },
   {
