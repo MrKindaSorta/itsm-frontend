@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { UserMultiSelect } from '@/components/ui/user-multi-select';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Send, FileText, AlertCircle, Lightbulb } from 'lucide-react';
+import { Send, FileText, AlertCircle, Lightbulb, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import type { FormConfiguration, FormField } from '@/types/formBuilder';
@@ -38,6 +38,8 @@ export default function CreateTicket() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [showSuccess, setShowSuccess] = useState(false);
+  const [isUploadingFiles, setIsUploadingFiles] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
 
   // All form fields (system + custom) in order
   const [allFields, setAllFields] = useState<FormField[]>([]);
@@ -218,6 +220,23 @@ export default function CreateTicket() {
 
         // Upload any file attachments
         const fileFields = allFields.filter((f) => f.type === 'file');
+
+        // Calculate total files to upload
+        const totalFiles = fileFields.reduce((sum, field) => {
+          const fieldValue = fieldValues[field.id];
+          if (!fieldValue) return sum;
+          const files = Array.isArray(fieldValue) ? fieldValue : [fieldValue];
+          return sum + files.filter((f) => f instanceof File).length;
+        }, 0);
+
+        // Set uploading state if there are files
+        if (totalFiles > 0) {
+          setIsUploadingFiles(true);
+          setUploadProgress({ current: 0, total: totalFiles });
+        }
+
+        let uploadedCount = 0;
+
         for (const field of fileFields) {
           const fieldValue = fieldValues[field.id];
           if (!fieldValue) continue;
@@ -238,6 +257,9 @@ export default function CreateTicket() {
                   method: 'POST',
                   body: formData,
                 });
+
+                uploadedCount++;
+                setUploadProgress({ current: uploadedCount, total: totalFiles });
               } else {
                 // Batch file upload (multiple files)
                 const formData = new FormData();
@@ -250,6 +272,9 @@ export default function CreateTicket() {
                   method: 'POST',
                   body: formData,
                 });
+
+                uploadedCount += validFiles.length;
+                setUploadProgress({ current: uploadedCount, total: totalFiles });
               }
             } catch (uploadError) {
               console.error('Failed to upload attachment:', uploadError);
@@ -257,6 +282,9 @@ export default function CreateTicket() {
             }
           }
         }
+
+        // Clear uploading state
+        setIsUploadingFiles(false);
 
         // Show success message
         setShowSuccess(true);
@@ -681,7 +709,25 @@ export default function CreateTicket() {
                 {/* Render visible fields based on conditional logic */}
                 {visibleFields.filter(field => !field.hidden).map((field) => renderField(field))}
 
-                <Button type="submit" className="w-full" disabled={showSuccess}>
+                {/* File Upload Loading Indicator */}
+                {isUploadingFiles && (
+                  <div className="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <Loader2 className="h-5 w-5 animate-spin text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                        Uploading files...
+                      </p>
+                      <p className="text-xs text-blue-700 dark:text-blue-300">
+                        {uploadProgress.current} of {uploadProgress.total} files uploaded
+                      </p>
+                    </div>
+                    <div className="text-sm text-blue-600 dark:text-blue-400 font-semibold">
+                      {Math.round((uploadProgress.current / uploadProgress.total) * 100)}%
+                    </div>
+                  </div>
+                )}
+
+                <Button type="submit" className="w-full" disabled={showSuccess || isUploadingFiles}>
                   <Send className="h-4 w-4 mr-2" />
                   Submit Ticket
                 </Button>
