@@ -1,5 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import type { PaletteFieldType, FormFieldType } from '@/types/formBuilder';
 import {
   Type,
@@ -196,14 +194,17 @@ export default function FieldPalette() {
   };
 
   return (
-    <Card className="h-full">
-      <CardHeader>
-        <CardTitle className="text-lg">Field Types</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Drag fields to the canvas to build your form
+    <div className="h-full flex flex-col">
+      {/* Header */}
+      <div className="px-4 py-4 border-b border-border">
+        <h3 className="font-semibold text-sm">Field Types</h3>
+        <p className="text-xs text-muted-foreground mt-1">
+          Drag to add
         </p>
-      </CardHeader>
-      <CardContent className="space-y-2">
+      </div>
+
+      {/* Field Type List */}
+      <div className="flex-1 overflow-y-auto p-2 space-y-1">
         {FIELD_TYPES.map((fieldType) => {
           const Icon = IconMap[fieldType.icon];
           const isConditionalCapable = CONDITIONAL_CAPABLE_TYPES.includes(fieldType.type);
@@ -214,34 +215,30 @@ export default function FieldPalette() {
               draggable
               onDragStart={(e) => handleDragStart(e, fieldType.type)}
               onDragEnd={handleDragEnd}
-              className="flex items-start gap-3 p-3 rounded-lg border border-border bg-card hover:bg-accent hover:border-primary cursor-move transition-colors group relative"
+              className="flex items-center gap-2 px-3 py-2.5 rounded-md hover:bg-accent cursor-move transition-colors group"
+              title={fieldType.description}
             >
-              <div className="mt-0.5 p-2 rounded-md bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+              {/* Icon */}
+              <div className="flex-shrink-0 text-muted-foreground group-hover:text-foreground transition-colors">
                 <Icon className="h-4 w-4" />
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <div className="font-medium text-sm">{fieldType.label}</div>
-                  {isConditionalCapable && (
-                    <Badge
-                      variant="outline"
-                      className="text-[10px] px-1.5 py-0 h-4 gap-1 bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950 dark:text-orange-300 dark:border-orange-800"
-                      title="Supports conditional logic"
-                    >
-                      <Zap className="h-2.5 w-2.5" />
-                      Conditional
-                    </Badge>
-                  )}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {fieldType.description}
-                </div>
+
+              {/* Label */}
+              <div className="flex-1 min-w-0 text-sm font-medium truncate">
+                {fieldType.label}
               </div>
+
+              {/* Conditional Indicator (small icon) */}
+              {isConditionalCapable && (
+                <div className="flex-shrink-0" title="Supports conditional logic">
+                  <Zap className="h-3 w-3 text-orange-500" />
+                </div>
+              )}
             </div>
           );
         })}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 

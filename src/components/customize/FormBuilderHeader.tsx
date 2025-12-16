@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import {
   Save,
   Eye,
+  EyeOff,
   MoreHorizontal,
   HelpCircle,
   Settings,
@@ -28,7 +29,6 @@ interface FormBuilderHeaderProps {
   formName: string;
   onFormNameChange: (name: string) => void;
   onSave: () => void | Promise<void>;
-  onPreview: () => void;
   onReset: () => void;
   onUndo?: () => void;
   onRedo?: () => void;
@@ -39,13 +39,14 @@ interface FormBuilderHeaderProps {
   canUndo?: boolean;
   canRedo?: boolean;
   saveStatus?: 'saved' | 'saving' | 'error' | 'unsaved';
+  showConditionalIndicators?: boolean;
+  onToggleConditionalIndicators?: () => void;
 }
 
 export default function FormBuilderHeader({
   formName,
   onFormNameChange,
   onSave,
-  onPreview,
   onReset,
   onUndo,
   onRedo,
@@ -56,6 +57,8 @@ export default function FormBuilderHeader({
   canUndo = false,
   canRedo = false,
   saveStatus = 'saved',
+  showConditionalIndicators = true,
+  onToggleConditionalIndicators,
 }: FormBuilderHeaderProps) {
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState(formName);
@@ -171,11 +174,31 @@ export default function FormBuilderHeader({
           )}
         </div>
 
-        {/* Preview Button */}
-        <Button variant="outline" size="sm" onClick={onPreview}>
-          <Eye className="h-4 w-4 mr-1" />
-          Preview
-        </Button>
+        {/* Conditional Logic Toggle */}
+        {onToggleConditionalIndicators && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onToggleConditionalIndicators}
+            title={
+              showConditionalIndicators
+                ? 'Hide conditional logic indicators'
+                : 'Show conditional logic indicators'
+            }
+          >
+            {showConditionalIndicators ? (
+              <>
+                <Eye className="h-4 w-4 mr-1" />
+                Show Logic
+              </>
+            ) : (
+              <>
+                <EyeOff className="h-4 w-4 mr-1" />
+                Hide Logic
+              </>
+            )}
+          </Button>
+        )}
 
         {/* Save Button */}
         <Button

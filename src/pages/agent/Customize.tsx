@@ -8,16 +8,15 @@ import type { BrandingConfiguration } from '@/types/branding';
 import { DEFAULT_BRANDING } from '@/types/branding';
 import { useBranding } from '@/contexts/BrandingContext';
 import FieldPalette, { FIELD_TYPES } from '@/components/customize/FieldPalette';
-import FormCanvas from '@/components/customize/FormCanvas';
-import FieldConfigurator from '@/components/customize/FieldConfigurator';
-import FormPreview from '@/components/customize/FormPreview';
+import LiveFormPreview from '@/components/customize/LiveFormPreview';
+import FieldPropertiesDrawer from '@/components/customize/FieldPropertiesDrawer';
 import FormBuilderLayout from '@/components/customize/FormBuilderLayout';
 import FormBuilderHeader from '@/components/customize/FormBuilderHeader';
 import SLAList from '@/components/sla/SLAList';
 import SLAForm from '@/components/sla/SLAForm';
 import BrandingCustomizer from '@/components/branding/BrandingCustomizer';
 import BrandingPreview from '@/components/branding/BrandingPreview';
-import { EyeOff, Plus, Save, RotateCcw } from 'lucide-react';
+import { Plus, Save, RotateCcw } from 'lucide-react';
 import { mergeWithDefaults } from '@/utils/defaultFormConfig';
 import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
@@ -28,7 +27,8 @@ const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 export default function Customize() {
   const [fields, setFields] = useState<FormField[]>([]);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
-  const [showPreview, setShowPreview] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [showConditionalIndicators, setShowConditionalIndicators] = useState(true);
   const [savedFieldsSnapshot, setSavedFieldsSnapshot] = useState<string>('');
 
   // SLA state
@@ -192,64 +192,88 @@ export default function Customize() {
     setFields(fields.map((f) => (f.id === updatedField.id ? updatedField : f)));
   };
 
-  const handleCreateChildField = (childField: Partial<FormField>, parentFieldId: string) => {
-    const parentField = fields.find(f => f.id === parentFieldId);
-    if (!parentField) {
-      console.error('[handleCreateChildField] Parent field not found:', parentFieldId);
+  const handleFieldSettingsClick = (fieldId: string) => {
+    setSelectedFieldId(fieldId);
+    setIsDrawerOpen(true);
+  };
+
+  const handleDrawerClose = () => {
+    setIsDrawerOpen(false);
+    // Don't clear selectedFieldId immediately to allow drawer animation to complete
+    setTimeout(() => setSelectedFieldId(null), 300);
+  };
+
+  const handleFieldDelete = (fieldId: string) => {
+    const field = fields.find((f) => f.id === fieldId);
+    if (!field) return;
+
+    // Check if field is non-deletable system field
+    if (field.deletable === false) {
+      alert('This system field cannot be deleted');
       return;
     }
 
-    // Create the new child field
-    const newChildField: FormField = {
-      ...childField,
-      id: childField.id!,
-      type: childField.type!,
-      label: childField.label!,
-      required: childField.required!,
-      order: fields.length,
-      deletable: true, // Child fields are always deletable
-    } as FormField;
+    // Check if field has conditional children
+    const childFields = fields.filter(
+      (f) => f.conditionalLogic?.parentFieldId === fieldId
+    );
 
-    // Update parent field to include this child in its childFields array
-    const updatedParent: FormField = {
-      ...parentField,
-      conditionalLogic: {
-        ...parentField.conditionalLogic,
-        enabled: parentField.conditionalLogic?.enabled || false,
-        childFields: [
-          ...(parentField.conditionalLogic?.childFields || []),
-          newChildField.id
-        ],
-        conditions: parentField.conditionalLogic?.conditions || [],
-        nestingLevel: parentField.conditionalLogic?.nestingLevel || 0,
-      }
-    };
-
-    // ATOMIC UPDATE: Add child field AND update parent in a single state update
-    setFields(prevFields => {
-      // Add the new child field
-      const fieldsWithChild = [...prevFields, newChildField];
-
-      // Update the parent field to reference the child
-      const finalFields = fieldsWithChild.map(f =>
-        f.id === parentFieldId ? updatedParent : f
+    if (childFields.length > 0) {
+      // Show custom confirmation dialog
+      const shouldDeleteChildren = window.confirm(
+        `This field has ${childFields.length} conditional child field(s).\n\n` +
+        `Click OK to delete all children too, or Cancel to keep children as regular fields.`
       );
 
-      console.log('[handleCreateChildField] Created child field:', {
-        childId: newChildField.id,
-        childLabel: newChildField.label,
-        parentId: updatedParent.id,
-        parentLabel: updatedParent.label,
-        parentChildFields: updatedParent.conditionalLogic?.childFields,
-        totalFields: finalFields.length
-      });
+      if (shouldDeleteChildren) {
+        // Delete parent + all descendants recursively
+        const toDelete = new Set([fieldId]);
+        const findDescendants = (parentId: string) => {
+          fields.forEach((f) => {
+            if (f.conditionalLogic?.parentFieldId === parentId) {
+              toDelete.add(f.id);
+              findDescendants(f.id); // Recursive
+            }
+          });
+        };
+        findDescendants(fieldId);
 
-      return finalFields;
-    });
+        setFields((prev) => prev.filter((f) => !toDelete.has(f.id)));
+      } else {
+        // Orphan children (remove parentFieldId, disable conditional logic)
+        setFields((prev) =>
+          prev
+            .map((f) => {
+              if (f.conditionalLogic?.parentFieldId === fieldId) {
+                return {
+                  ...f,
+                  conditionalLogic: {
+                    ...f.conditionalLogic,
+                    enabled: false,
+                    parentFieldId: undefined,
+                  },
+                };
+              }
+              return f;
+            })
+            .filter((f) => f.id !== fieldId)
+        );
+      }
+    } else {
+      // No children, simple delete
+      setFields((prev) => prev.filter((f) => f.id !== fieldId));
+    }
 
-    // Select the newly created child field
-    setSelectedFieldId(newChildField.id);
+    // Close drawer if the deleted field was selected
+    if (selectedFieldId === fieldId) {
+      setIsDrawerOpen(false);
+      setSelectedFieldId(null);
+    }
   };
+
+  // Note: handleCreateChildField is kept for potential future conditional logic features
+  // but is not currently used in the new LiveFormPreview design
+  // const handleCreateChildField = (childField: Partial<FormField>, parentFieldId: string) => { ... }
 
   const handleSaveConfiguration = async () => {
     const config: FormConfiguration = {
@@ -501,58 +525,43 @@ export default function Customize() {
         {/* Ticket Form Builder Tab */}
         <TabsContent value="form-builder" className="mt-6 h-[calc(100vh-12rem)]">
           <Card className="h-full flex flex-col overflow-hidden">
-            {showPreview ? (
-              <>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>Form Preview</CardTitle>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowPreview(false)}
-                    >
-                      <EyeOff className="h-4 w-4 mr-2" />
-                      Hide Preview
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="flex-1 overflow-auto">
-                  <FormPreview fields={fields} />
-                </CardContent>
-              </>
-            ) : (
-              <FormBuilderLayout
-                header={
-                  <FormBuilderHeader
-                    formName="Ticket Creation Form"
-                    onFormNameChange={(name) => console.log('Form name changed:', name)}
-                    onSave={handleSaveConfiguration}
-                    onPreview={() => setShowPreview(true)}
-                    onReset={handleResetForm}
-                    saveStatus={hasUnsavedChanges ? 'unsaved' : 'saved'}
-                  />
-                }
-                palette={<FieldPalette />}
-                canvas={
-                  <FormCanvas
-                    fields={fields}
-                    selectedFieldId={selectedFieldId}
-                    onFieldsChange={setFields}
-                    onFieldSelect={setSelectedFieldId}
-                    onAddField={handleAddField}
-                    onCreateChildField={handleCreateChildField}
-                  />
-                }
-                properties={
-                  <FieldConfigurator
-                    field={selectedField}
-                    allFields={fields}
-                    onFieldUpdate={handleFieldUpdate}
-                    onClose={() => setSelectedFieldId(null)}
-                  />
-                }
-              />
-            )}
+            <FormBuilderLayout
+              header={
+                <FormBuilderHeader
+                  formName="Ticket Creation Form"
+                  onFormNameChange={(name) => console.log('Form name changed:', name)}
+                  onSave={handleSaveConfiguration}
+                  onReset={handleResetForm}
+                  saveStatus={hasUnsavedChanges ? 'unsaved' : 'saved'}
+                  showConditionalIndicators={showConditionalIndicators}
+                  onToggleConditionalIndicators={() =>
+                    setShowConditionalIndicators(!showConditionalIndicators)
+                  }
+                />
+              }
+              palette={<FieldPalette />}
+              livePreview={
+                <LiveFormPreview
+                  fields={fields}
+                  selectedFieldId={selectedFieldId}
+                  showConditionalIndicators={showConditionalIndicators}
+                  onFieldsChange={setFields}
+                  onFieldSelect={setSelectedFieldId}
+                  onAddField={handleAddField}
+                  onFieldSettingsClick={handleFieldSettingsClick}
+                  onFieldDelete={handleFieldDelete}
+                />
+              }
+            />
+
+            {/* Field Properties Drawer */}
+            <FieldPropertiesDrawer
+              isOpen={isDrawerOpen}
+              field={selectedField}
+              allFields={fields}
+              onFieldUpdate={handleFieldUpdate}
+              onClose={handleDrawerClose}
+            />
           </Card>
         </TabsContent>
 
