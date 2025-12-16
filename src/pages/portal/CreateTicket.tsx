@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { UserMultiSelect } from '@/components/ui/user-multi-select';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Send, FileText, AlertCircle, Lightbulb, Loader2 } from 'lucide-react';
+import { Send, FileText, AlertCircle, Lightbulb, Loader2, X } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import type { FormConfiguration, FormField } from '@/types/formBuilder';
@@ -235,6 +235,7 @@ export default function CreateTicket() {
           setUploadProgress({ current: 0, total: totalFiles });
         }
 
+        const uploadStartTime = Date.now();
         let uploadedCount = 0;
 
         for (const field of fileFields) {
@@ -283,7 +284,16 @@ export default function CreateTicket() {
           }
         }
 
-        // Clear uploading state
+        // Clear uploading state with minimum display time
+        if (totalFiles > 0) {
+          const uploadDuration = Date.now() - uploadStartTime;
+          const minDisplayTime = 800; // 800ms minimum
+          if (uploadDuration < minDisplayTime) {
+            await new Promise((resolve) =>
+              setTimeout(resolve, minDisplayTime - uploadDuration)
+            );
+          }
+        }
         setIsUploadingFiles(false);
 
         // Show success message
@@ -320,6 +330,25 @@ export default function CreateTicket() {
     });
 
     setFieldValues(newFieldValues);
+  };
+
+  // Handler to remove individual files from selection
+  const handleRemoveFile = (fieldId: string, fileIndex: number) => {
+    const currentValue = fieldValues[fieldId];
+    if (!currentValue) return;
+
+    if (Array.isArray(currentValue)) {
+      // Multiple files - remove specific index
+      const updatedFiles = currentValue.filter((_, idx) => idx !== fileIndex);
+      if (updatedFiles.length > 0) {
+        handleFieldValueChange(fieldId, updatedFiles);
+      } else {
+        handleFieldValueChange(fieldId, null); // Clear if last file removed
+      }
+    } else {
+      // Single file - clear entirely
+      handleFieldValueChange(fieldId, null);
+    }
   };
 
   // Smart KB article suggestions with tag-based scoring
@@ -593,17 +622,29 @@ export default function CreateTicket() {
               className="cursor-pointer"
             />
 
-            {/* Show selected files */}
+            {/* Show selected files with remove buttons */}
             {selectedFiles.length > 0 && (
               <div className="space-y-1 p-2 bg-muted/50 rounded-md">
                 {selectedFiles.map((file: File, idx: number) => (
                   <div
                     key={idx}
-                    className="flex items-center gap-2 text-sm text-muted-foreground"
+                    className="flex items-center gap-2 text-sm group"
                   >
                     <span className="font-medium text-green-600">✓</span>
                     <span className="truncate flex-1">{file.name}</span>
-                    <span className="text-xs">({(file.size / 1024).toFixed(1)} KB)</span>
+                    <span className="text-xs text-muted-foreground">
+                      ({(file.size / 1024).toFixed(1)} KB)
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => handleRemoveFile(field.id, idx)}
+                      title="Remove file"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
                   </div>
                 ))}
               </div>
