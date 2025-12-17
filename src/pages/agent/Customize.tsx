@@ -8,9 +8,10 @@ import type { BrandingConfiguration } from '@/types/branding';
 import { DEFAULT_BRANDING } from '@/types/branding';
 import { useBranding } from '@/contexts/BrandingContext';
 import FieldPalette, { FIELD_TYPES } from '@/components/customize/FieldPalette';
-import LiveFormPreview from '@/components/customize/LiveFormPreview';
+import FieldList from '@/components/customize/FieldList';
+import AddFieldButton from '@/components/customize/AddFieldButton';
+import FormPreviewMode from '@/components/customize/FormPreviewMode';
 import FieldPropertiesDrawer from '@/components/customize/FieldPropertiesDrawer';
-import FormBuilderLayout from '@/components/customize/FormBuilderLayout';
 import FormBuilderHeader from '@/components/customize/FormBuilderHeader';
 import SLAList from '@/components/sla/SLAList';
 import SLAForm from '@/components/sla/SLAForm';
@@ -149,7 +150,7 @@ export default function Customize() {
 
   const selectedField = fields.find((f) => f.id === selectedFieldId) || null;
 
-  const handleAddField = (fieldType: FormFieldType, insertAtIndex?: number) => {
+  const handleAddField = (fieldType: FormFieldType) => {
     const fieldTemplate = FIELD_TYPES.find((ft) => ft.type === fieldType);
     if (!fieldTemplate) return;
 
@@ -161,31 +162,14 @@ export default function Customize() {
       required: fieldTemplate.defaultConfig.required || false,
       options: fieldTemplate.defaultConfig.options,
       defaultValue: fieldTemplate.defaultConfig.defaultValue,
-      order: 0, // Will be set below
+      order: fields.length, // Add to end
     };
 
-    // Insert at specific index or append to end
-    let updatedFields: FormField[];
-    if (insertAtIndex !== undefined) {
-      // Insert at the specified index
-      updatedFields = [
-        ...fields.slice(0, insertAtIndex),
-        newField,
-        ...fields.slice(insertAtIndex),
-      ];
-    } else {
-      // Append to end
-      updatedFields = [...fields, newField];
-    }
-
-    // Recalculate order properties for all fields
-    updatedFields = updatedFields.map((field, idx) => ({
-      ...field,
-      order: idx,
-    }));
+    const updatedFields = [...fields, newField];
 
     setFields(updatedFields);
     setSelectedFieldId(newField.id);
+    setIsDrawerOpen(true); // Auto-open properties drawer
   };
 
   const handleFieldUpdate = (updatedField: FormField) => {
@@ -194,6 +178,151 @@ export default function Customize() {
 
   const handleFieldSettingsClick = (fieldId: string) => {
     setSelectedFieldId(fieldId);
+    setIsDrawerOpen(true);
+  };
+
+  const handleFieldMove = (fieldId: string, direction: 'up' | 'down') => {
+    const currentIndex = fields.findIndex((f) => f.id === fieldId);
+    if (currentIndex === -1) return;
+
+    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+
+    // Boundary checks
+    if (newIndex < 0 || newIndex >= fields.length) return;
+
+    // Validate move doesn't break parent-child relationships
+    if (!validateFieldMove(fieldId, newIndex)) {
+      alert('Cannot move field: would break parent-child relationship');
+      return;
+    }
+
+    // Swap fields
+    const newFields = [...fields];
+    [newFields[currentIndex], newFields[newIndex]] = [
+      newFields[newIndex],
+      newFields[currentIndex],
+    ];
+
+    // Update order properties
+    const updatedFields = newFields.map((field, idx) => ({
+      ...field,
+      order: idx,
+    }));
+
+    setFields(updatedFields);
+  };
+
+  const validateFieldMove = (fieldId: string, newIndex: number): boolean => {
+    const field = fields.find((f) => f.id === fieldId);
+    if (!field) return false;
+
+    // If field is a child, ensure it stays after its parent
+    if (field.conditionalLogic?.parentFieldId) {
+      const parentIndex = fields.findIndex(
+        (f) => f.id === field.conditionalLogic?.parentFieldId
+      );
+      if (newIndex <= parentIndex) {
+        return false; // Child cannot move before parent
+      }
+    }
+
+    // If field has children, ensure they move together
+    const childFields = fields.filter(
+      (f) => f.conditionalLogic?.parentFieldId === fieldId
+    );
+    if (childFields.length > 0) {
+      const childIndices = childFields.map((c) => fields.findIndex((f) => f.id === c.id));
+      const lastChildIndex = Math.max(...childIndices);
+      const currentIndex = fields.findIndex((f) => f.id === fieldId);
+
+      // Parent cannot move between its children
+      if (newIndex > currentIndex && newIndex <= lastChildIndex) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  const handleAddChildField = (parentFieldId: string) => {
+    const parentIndex = fields.findIndex((f) => f.id === parentFieldId);
+    const parentField = fields[parentIndex];
+    if (!parentField) return;
+
+    // Validate parent type
+    const conditionalCapableTypes: FormFieldType[] = [
+      'number',
+      'dropdown',
+      'checkbox',
+      'category',
+      'multiselect',
+    ];
+    if (!conditionalCapableTypes.includes(parentField.type)) {
+      alert('This field type does not support conditional logic');
+      return;
+    }
+
+    // Check nesting depth
+    const parentLevel = parentField.conditionalLogic?.nestingLevel || 0;
+    if (parentLevel >= 2) {
+      alert('Maximum nesting depth (3 levels) reached. Cannot add more children.');
+      return;
+    }
+
+    // Prompt user to select child field type
+    const fieldTypeOptions = FIELD_TYPES.map((ft) => `${ft.label} (${ft.type})`).join('\n');
+    const selectedType = prompt(
+      `Select field type for child field:\n\n${fieldTypeOptions}\n\nEnter the field type (e.g., "text", "dropdown"):`,
+      'text'
+    );
+
+    if (!selectedType) return; // User cancelled
+
+    const fieldTemplate = FIELD_TYPES.find((ft) => ft.type === selectedType);
+    if (!fieldTemplate) {
+      alert('Invalid field type selected');
+      return;
+    }
+
+    // Create child field
+    const newField: FormField = {
+      id: `field-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      type: selectedType as FormFieldType,
+      label: fieldTemplate.defaultConfig.label || 'New Field',
+      placeholder: fieldTemplate.defaultConfig.placeholder,
+      required: false,
+      order: parentIndex + 1,
+      conditionalLogic: {
+        enabled: true,
+        parentFieldId: parentFieldId,
+        conditions: [],
+        childFields: [],
+        nestingLevel: parentLevel + 1,
+      },
+    };
+
+    // Update parent field to track child
+    const updatedParent = {
+      ...parentField,
+      conditionalLogic: {
+        ...parentField.conditionalLogic,
+        enabled: true,
+        childFields: [...(parentField.conditionalLogic?.childFields || []), newField.id],
+        conditions: parentField.conditionalLogic?.conditions || [],
+        nestingLevel: parentLevel,
+      },
+    };
+
+    // Insert child immediately after parent
+    const updatedFields = [
+      ...fields.slice(0, parentIndex),
+      updatedParent,
+      newField,
+      ...fields.slice(parentIndex + 1),
+    ].map((field, idx) => ({ ...field, order: idx }));
+
+    setFields(updatedFields);
+    setSelectedFieldId(newField.id);
     setIsDrawerOpen(true);
   };
 
@@ -525,43 +654,67 @@ export default function Customize() {
         {/* Ticket Form Builder Tab */}
         <TabsContent value="form-builder" className="mt-6 h-[calc(100vh-12rem)]">
           <Card className="h-full flex flex-col overflow-hidden">
-            <FormBuilderLayout
-              header={
-                <FormBuilderHeader
-                  formName="Ticket Creation Form"
-                  onFormNameChange={(name) => console.log('Form name changed:', name)}
-                  onSave={handleSaveConfiguration}
-                  onReset={handleResetForm}
-                  saveStatus={hasUnsavedChanges ? 'unsaved' : 'saved'}
-                  showConditionalIndicators={showConditionalIndicators}
-                  onToggleConditionalIndicators={() =>
-                    setShowConditionalIndicators(!showConditionalIndicators)
-                  }
-                />
-              }
-              palette={<FieldPalette />}
-              livePreview={
-                <LiveFormPreview
-                  fields={fields}
-                  selectedFieldId={selectedFieldId}
-                  showConditionalIndicators={showConditionalIndicators}
-                  onFieldsChange={setFields}
-                  onFieldSelect={setSelectedFieldId}
-                  onAddField={handleAddField}
-                  onFieldSettingsClick={handleFieldSettingsClick}
-                  onFieldDelete={handleFieldDelete}
-                />
+            {/* Header */}
+            <FormBuilderHeader
+              formName="Ticket Creation Form"
+              onFormNameChange={(name) => console.log('Form name changed:', name)}
+              onSave={handleSaveConfiguration}
+              onReset={handleResetForm}
+              saveStatus={hasUnsavedChanges ? 'unsaved' : 'saved'}
+              showConditionalIndicators={showConditionalIndicators}
+              onToggleConditionalIndicators={() =>
+                setShowConditionalIndicators(!showConditionalIndicators)
               }
             />
 
-            {/* Field Properties Drawer */}
-            <FieldPropertiesDrawer
-              isOpen={isDrawerOpen}
-              field={selectedField}
-              allFields={fields}
-              onFieldUpdate={handleFieldUpdate}
-              onClose={handleDrawerClose}
-            />
+            {/* Main Content Area */}
+            <div className="flex flex-1 overflow-hidden">
+              {/* Left: Field Palette (Optional Reference) */}
+              <div className="w-[200px] border-r border-border overflow-y-auto">
+                <FieldPalette />
+              </div>
+
+              {/* Center: List or Preview */}
+              <div className="flex-1 overflow-auto">
+                <Tabs defaultValue="list" className="h-full">
+                  <div className="border-b px-4 pt-4">
+                    <TabsList>
+                      <TabsTrigger value="list">List View</TabsTrigger>
+                      <TabsTrigger value="preview">Preview</TabsTrigger>
+                    </TabsList>
+                  </div>
+
+                  <TabsContent value="list" className="mt-0">
+                    <FieldList
+                      fields={fields}
+                      selectedFieldId={selectedFieldId}
+                      showConditionalIndicators={showConditionalIndicators}
+                      onFieldSelect={setSelectedFieldId}
+                      onFieldMove={handleFieldMove}
+                      onFieldDelete={handleFieldDelete}
+                      onFieldEdit={handleFieldSettingsClick}
+                      onAddChildField={handleAddChildField}
+                    />
+                    <AddFieldButton onAddField={handleAddField} fieldTypes={FIELD_TYPES} />
+                  </TabsContent>
+
+                  <TabsContent value="preview" className="mt-0">
+                    <FormPreviewMode fields={fields} />
+                  </TabsContent>
+                </Tabs>
+              </div>
+
+              {/* Right: Properties Drawer (Stays Open) */}
+              <div className="w-[350px] border-l border-border overflow-y-auto">
+                <FieldPropertiesDrawer
+                  isOpen={isDrawerOpen}
+                  field={selectedField}
+                  allFields={fields}
+                  onFieldUpdate={handleFieldUpdate}
+                  onClose={handleDrawerClose}
+                />
+              </div>
+            </div>
           </Card>
         </TabsContent>
 

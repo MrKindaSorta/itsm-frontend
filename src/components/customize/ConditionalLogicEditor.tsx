@@ -137,7 +137,7 @@ export default function ConditionalLogicEditor({
               <div className="text-xs text-muted-foreground text-center py-4 border border-dashed rounded-md">
                 <p className="mb-1">No child fields added yet</p>
                 <p className="text-[10px]">
-                  Drag a field from the palette and hold over this field for 2s to create a child
+                  Hover over this field in the list and click "Add Child" button
                 </p>
               </div>
             ) : (

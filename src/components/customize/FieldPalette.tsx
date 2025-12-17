@@ -184,29 +184,13 @@ const IconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 const CONDITIONAL_CAPABLE_TYPES: FormFieldType[] = ['number', 'dropdown', 'checkbox', 'category', 'multiselect'];
 
 export default function FieldPalette() {
-  const handleDragStart = (e: React.DragEvent, fieldType: FormFieldType) => {
-    e.dataTransfer.effectAllowed = 'copy';
-    e.dataTransfer.setData('fieldType', fieldType);
-    e.dataTransfer.setData('dragSource', 'palette');
-
-    // Emit custom event so FormCanvas knows immediately
-    window.dispatchEvent(new CustomEvent('palette-drag-start', {
-      detail: { fieldType }
-    }));
-  };
-
-  const handleDragEnd = () => {
-    // Emit custom event so FormCanvas can cleanup
-    window.dispatchEvent(new CustomEvent('palette-drag-end'));
-  };
-
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
       <div className="px-4 py-4 border-b border-border">
-        <h3 className="font-semibold text-sm">Field Types</h3>
+        <h3 className="font-semibold text-sm">Field Types Reference</h3>
         <p className="text-xs text-muted-foreground mt-1">
-          Drag to add
+          Use "Add Field" button below the list
         </p>
       </div>
 
@@ -219,14 +203,11 @@ export default function FieldPalette() {
           return (
             <div
               key={fieldType.type}
-              draggable
-              onDragStart={(e) => handleDragStart(e, fieldType.type)}
-              onDragEnd={handleDragEnd}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-md hover:bg-accent cursor-move transition-colors group"
+              className="flex items-center gap-2 px-3 py-2.5 rounded-md transition-colors"
               title={fieldType.description}
             >
               {/* Icon */}
-              <div className="flex-shrink-0 text-muted-foreground group-hover:text-foreground transition-colors">
+              <div className="flex-shrink-0 text-muted-foreground">
                 <Icon className="h-4 w-4" />
               </div>
 
