@@ -177,7 +177,7 @@ function NumberConditionEditor({
   onUpdate: (logic: ConditionalLogic) => void;
 }) {
   const condition = conditionalLogic.conditions[0] || {
-    type: 'range' as const,
+    type: 'equals' as const,
     operator: 'equals' as const,
     value: undefined,
   };
@@ -206,7 +206,7 @@ function NumberConditionEditor({
           size="sm"
           onClick={() => {
             setConditionType('exact');
-            updateCondition({ type: 'range', operator: 'equals', rangeMin: undefined, rangeMax: undefined });
+            updateCondition({ type: 'equals', operator: 'equals', value: undefined, rangeMin: undefined, rangeMax: undefined });
           }}
           className="flex-1"
         >
