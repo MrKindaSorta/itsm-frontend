@@ -1,4 +1,4 @@
-import { useState, type DragEvent } from 'react';
+import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select } from '@/components/ui/select';
@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { FormField } from '@/types/formBuilder';
-import { GripVertical, Settings, Trash2 } from 'lucide-react';
+import { GripVertical, Settings, Trash2, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface FormFieldItemProps {
@@ -14,10 +14,10 @@ interface FormFieldItemProps {
   isSelected: boolean;
   isDragging: boolean;
   showConditionalIndicators: boolean;
+  showConditionalDropZone?: boolean; // Show drop zone for creating child fields
   onSettingsClick: () => void;
   onDeleteClick: () => void;
-  onDragStart: (e: DragEvent) => void;
-  onDragEnd: (e: DragEvent) => void;
+  dragHandleProps?: any; // @dnd-kit listeners and attributes
 }
 
 export default function FormFieldItem({
@@ -25,10 +25,10 @@ export default function FormFieldItem({
   isSelected,
   isDragging,
   showConditionalIndicators,
+  showConditionalDropZone = false,
   onSettingsClick,
   onDeleteClick,
-  onDragStart,
-  onDragEnd,
+  dragHandleProps,
 }: FormFieldItemProps) {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -225,10 +225,8 @@ export default function FormFieldItem({
       <div className="flex items-center gap-2 px-4 py-3 bg-muted/20 border-b border-border">
         {/* Drag Handle */}
         <button
-          draggable
-          onDragStart={onDragStart}
-          onDragEnd={onDragEnd}
-          className="cursor-move text-muted-foreground hover:text-foreground transition-colors"
+          {...dragHandleProps}
+          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors"
           aria-label={`Drag to reorder ${field.label}`}
           title="Drag to reorder"
         >
@@ -318,6 +316,18 @@ export default function FormFieldItem({
       <div className="sr-only">
         Press Enter to configure, Delete to remove, Shift+Arrow to reorder
       </div>
+
+      {/* Conditional Drop Zone (shown when dragging from palette over conditional-capable field) */}
+      {showConditionalDropZone && (
+        <div className="absolute inset-0 z-10 border-4 border-dashed border-orange-500 bg-orange-500/10 rounded-lg flex items-center justify-center pointer-events-none">
+          <div className="bg-background border border-orange-500 rounded px-3 py-2 shadow-lg">
+            <div className="flex items-center gap-2 text-orange-600">
+              <Zap className="h-4 w-4" />
+              <span className="text-sm font-medium">Drop to create child field</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

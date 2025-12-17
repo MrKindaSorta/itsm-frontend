@@ -110,12 +110,13 @@ export function mergeWithDefaults(existingFields: FormField[]): FormField[] {
   const mergedSystemFields = defaults.map(defaultField => {
     const existing = existingFieldMap.get(defaultField.id);
     if (existing) {
-      // Preserve existing field's order and merge with default config
+      // Only Title and Description are truly non-deletable
+      const isNonDeletable = ['system-title', 'system-description'].includes(defaultField.id);
       return {
         ...defaultField,
         ...existing,
         isSystemField: true,
-        deletable: false,
+        deletable: isNonDeletable ? false : (existing.deletable ?? defaultField.deletable),
       };
     }
     // New system field - will be assigned order later
