@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -13,18 +13,6 @@ interface FieldPropertiesDrawerProps {
   allFields?: FormField[];
   onFieldUpdate: (updatedField: FormField) => void;
   onClose: () => void;
-}
-
-// Simple debounce utility (500ms delay)
-function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  delay: number
-): (...args: Parameters<T>) => void {
-  let timeoutId: ReturnType<typeof setTimeout>;
-  return (...args: Parameters<T>) => {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => func(...args), delay);
-  };
 }
 
 export default function FieldPropertiesDrawer({
@@ -43,27 +31,23 @@ export default function FieldPropertiesDrawer({
     setIsDirty(false);
   }, [field]);
 
-  // Debounced auto-save function
-  const debouncedUpdate = useMemo(
-    () =>
-      debounce((updatedField: FormField) => {
-        onFieldUpdate(updatedField);
-        setIsDirty(false);
-      }, 500),
-    [onFieldUpdate]
-  );
-
-  // Update field with auto-save
+  // Update field (no auto-save, requires manual save button click)
   const updateField = useCallback(
     (updates: Partial<FormField>) => {
       if (!localField) return;
       const updated = { ...localField, ...updates };
       setLocalField(updated);
       setIsDirty(true);
-      debouncedUpdate(updated);
     },
-    [localField, debouncedUpdate]
+    [localField]
   );
+
+  // Manual save handler
+  const handleSave = () => {
+    if (!localField) return;
+    onFieldUpdate(localField);
+    setIsDirty(false);
+  };
 
   // Handle close with unsaved changes warning
   const handleClose = () => {
@@ -587,17 +571,32 @@ export default function FieldPropertiesDrawer({
             </div>
           )}
 
-          {/* Footer (Optional - could add action buttons here) */}
-          {/* <div className="px-6 py-4 border-t border-border">
-            <div className="flex items-center justify-end gap-2">
-              <Button variant="outline" onClick={handleClose}>
-                Cancel
-              </Button>
-              <Button onClick={() => onFieldUpdate(localField!)}>
-                Save Changes
-              </Button>
+          {/* Footer with Save/Cancel buttons */}
+          {localField && (
+            <div className="px-6 py-4 border-t border-border bg-muted/20">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-xs text-muted-foreground">
+                  {isDirty ? (
+                    <span className="text-orange-600 font-medium">Unsaved changes</span>
+                  ) : (
+                    <span className="text-green-600">All changes saved</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" onClick={handleClose} size="sm">
+                    {isDirty ? 'Cancel' : 'Close'}
+                  </Button>
+                  <Button
+                    onClick={handleSave}
+                    disabled={!isDirty}
+                    size="sm"
+                  >
+                    Save Changes
+                  </Button>
+                </div>
+              </div>
             </div>
-          </div> */}
+          )}
         </div>
       </div>
     </>
