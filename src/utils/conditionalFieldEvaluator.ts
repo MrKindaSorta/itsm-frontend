@@ -10,8 +10,15 @@ export function evaluateFieldVisibility(
   fieldValues: Record<string, any>,
   visitedFields: Set<string> = new Set()
 ): boolean {
+  const nestingLevel = field.conditionalLogic?.nestingLevel || 0;
+  const fieldType = nestingLevel === 0 ? 'ROOT' : nestingLevel === 1 ? 'CHILD' : 'GRANDCHILD';
+
+  console.group(`🔍 [${fieldType}] Evaluating visibility for: ${field.label} (${field.id})`);
+
   // If conditional logic is disabled, field is always visible
   if (!field.conditionalLogic?.enabled) {
+    console.log('✅ Conditional logic DISABLED → Always visible');
+    console.groupEnd();
     return true;
   }
 
@@ -19,44 +26,75 @@ export function evaluateFieldVisibility(
   const parentFieldId = field.conditionalLogic.parentFieldId;
   if (!parentFieldId) {
     // Root field with conditional logic enabled is always visible
+    console.log('✅ ROOT field with conditional logic → Always visible');
+    console.groupEnd();
     return true;
   }
 
+  console.log(`👨‍👦 Parent field ID: ${parentFieldId}`);
+
   // Circular dependency protection
   if (visitedFields.has(field.id)) {
-    console.error(`Circular dependency detected for field ${field.id}`);
+    console.error(`❌ Circular dependency detected for field ${field.id}`);
+    console.groupEnd();
     return false; // Hide field to prevent infinite recursion
   }
 
   // Find parent field
   const parentField = allFields.find(f => f.id === parentFieldId);
   if (!parentField) {
+    console.error(`❌ Parent field not found: ${parentFieldId}`);
+    console.groupEnd();
     return false; // Parent not found, hide field
   }
+
+  console.log(`👨 Parent field found: ${parentField.label}`);
 
   // Add current field to visited set
   const newVisitedFields = new Set(visitedFields);
   newVisitedFields.add(field.id);
 
   // First check if parent itself is visible
+  console.log('🔄 Checking if parent is visible...');
   const isParentVisible = evaluateFieldVisibility(parentField, allFields, fieldValues, newVisitedFields);
+
   if (!isParentVisible) {
+    console.log('❌ Parent is HIDDEN → Child must be hidden too');
+    console.groupEnd();
     return false; // Parent is hidden, so child must be hidden too
   }
 
+  console.log('✅ Parent is VISIBLE → Checking conditions...');
+
   // Get parent's value
   const parentValue = fieldValues[parentFieldId];
+  console.log(`📊 Parent value:`, parentValue);
 
   // Evaluate conditions
   const conditions = field.conditionalLogic.conditions || [];
   if (conditions.length === 0) {
+    console.log('❌ No conditions defined → Hide by default');
+    console.groupEnd();
     return false; // No conditions defined, hide by default
   }
 
+  console.log(`🧪 Evaluating ${conditions.length} condition(s) (AND logic):`);
+
   // All conditions must be met (AND logic)
-  return conditions.every(condition => {
-    return evaluateCondition(condition, parentValue);
+  const allConditionsMet = conditions.every((condition, index) => {
+    const result = evaluateCondition(condition, parentValue);
+    console.log(`  ${index + 1}. Condition type: ${condition.type}, Result: ${result ? '✅' : '❌'}`);
+    return result;
   });
+
+  if (allConditionsMet) {
+    console.log('✅ All conditions MET → Field VISIBLE');
+  } else {
+    console.log('❌ Some conditions FAILED → Field HIDDEN');
+  }
+
+  console.groupEnd();
+  return allConditionsMet;
 }
 
 /**
@@ -66,52 +104,74 @@ function evaluateCondition(
   condition: ConditionRule,
   value: any
 ): boolean {
+  console.log(`    🔬 Evaluating condition:`, { type: condition.type, value });
+
+  let result: boolean;
+
   switch (condition.type) {
     case 'equals':
     case 'range':
-      return evaluateNumberCondition(condition, value);
+      result = evaluateNumberCondition(condition, value);
+      break;
 
     case 'optionMatch':
-      return evaluateDropdownCondition(condition, value);
+      result = evaluateDropdownCondition(condition, value);
+      break;
 
     case 'checkboxState':
-      return evaluateCheckboxCondition(condition, value);
+      result = evaluateCheckboxCondition(condition, value);
+      break;
 
     default:
-      return false;
+      console.log(`    ❌ Unknown condition type: ${condition.type}`);
+      result = false;
   }
+
+  console.log(`    → Result: ${result ? '✅ PASS' : '❌ FAIL'}`);
+  return result;
 }
 
 /**
  * Evaluates number field conditions (exact value or range)
  */
 function evaluateNumberCondition(condition: ConditionRule, value: any): boolean {
+  console.log(`      🔢 Number condition - Operator: ${condition.operator}`);
+
   const numValue = parseFloat(value);
   // If value is empty, null, undefined, or non-numeric, hide the child field
   // This ensures conditional children only appear when a valid number is entered
   if (isNaN(numValue)) {
+    console.log(`      ❌ Invalid number value: ${value} (parsed as NaN)`);
     return false;
   }
+
+  console.log(`      📊 Parsed value: ${numValue}`);
 
   const operator = condition.operator;
 
   switch (operator) {
     case 'equals':
+      console.log(`      🎯 Check: ${numValue} === ${condition.value}`);
       return numValue === condition.value;
 
     case 'between':
       if (condition.rangeMin !== undefined && condition.rangeMax !== undefined) {
+        console.log(`      📏 Check: ${condition.rangeMin} <= ${numValue} <= ${condition.rangeMax}`);
         return numValue >= condition.rangeMin && numValue <= condition.rangeMax;
       }
+      console.log(`      ❌ Range not properly defined`);
       return false;
 
     case 'greaterThan':
+      console.log(`      ➕ Check: ${numValue} > ${condition.value}`);
       return condition.value !== undefined && numValue > condition.value;
 
     case 'lessThan':
+      console.log(`      ➖ Check: ${numValue} < ${condition.value}`);
       return condition.value !== undefined && numValue < condition.value;
 
     default:
+      console.log(`      ❌ Unknown operator: ${operator}`);
       return false;
   }
 }
@@ -120,29 +180,45 @@ function evaluateNumberCondition(condition: ConditionRule, value: any): boolean 
  * Evaluates dropdown/category/multiselect field conditions (option matching)
  */
 function evaluateDropdownCondition(condition: ConditionRule, value: any): boolean {
+  console.log(`      📋 Dropdown condition - Trigger options:`, condition.options);
+
   if (!condition.options || condition.options.length === 0) {
+    console.log(`      ❌ No trigger options defined`);
     return false;
   }
 
   // Handle multiselect (array of values)
   if (Array.isArray(value)) {
+    console.log(`      🔢 Multiselect - Selected values:`, value);
     // Check if any selected value matches any of the trigger options
-    return value.some(selectedValue => condition.options!.includes(selectedValue));
+    const result = value.some(selectedValue => condition.options!.includes(selectedValue));
+    console.log(`      ${result ? '✅' : '❌'} Any match found: ${result}`);
+    return result;
   }
 
   // Handle single value (dropdown, category)
-  return condition.options.includes(value);
+  console.log(`      🎯 Single value: ${value}`);
+  const result = condition.options.includes(value);
+  console.log(`      ${result ? '✅' : '❌'} Value in trigger options: ${result}`);
+  return result;
 }
 
 /**
  * Evaluates checkbox field conditions (checked/unchecked state)
  */
 function evaluateCheckboxCondition(condition: ConditionRule, value: any): boolean {
+  console.log(`      ☑️  Checkbox condition - Expected state: ${condition.value ? 'CHECKED' : 'UNCHECKED'}`);
+  console.log(`      📊 Raw value:`, value);
+
   // Coerce to boolean consistently handling various checkbox representations
   // Truthy values: true, 'true', 1, '1', 'on'
   // Falsy values: false, 'false', 0, '0', '', undefined, null
   const boolValue = !!(value && value !== 'false' && value !== '0' && value !== 0);
-  return boolValue === condition.value;
+  console.log(`      🔄 Coerced to boolean: ${boolValue}`);
+
+  const result = boolValue === condition.value;
+  console.log(`      ${result ? '✅' : '❌'} Match: ${boolValue} === ${condition.value}`);
+  return result;
 }
 
 /**

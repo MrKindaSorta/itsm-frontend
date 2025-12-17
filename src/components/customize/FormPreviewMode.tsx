@@ -16,23 +16,53 @@ export default function FormPreviewMode({ fields }: FormPreviewModeProps) {
 
   // Helper function to update a field value and clear hidden child fields
   const updateFieldValue = (fieldId: string, value: any) => {
+    const field = fields.find(f => f.id === fieldId);
+    console.log(`\n🔄 [VALUE CHANGE] Field: ${field?.label || fieldId}`);
+    console.log(`   Old value:`, formValues[fieldId]);
+    console.log(`   New value:`, value);
+
     const newFormValues = { ...formValues, [fieldId]: value };
 
     // Find fields that should be hidden due to this change
+    console.log(`   🔍 Checking for fields to hide...`);
     const fieldsToHide = getFieldsToHide(fields, newFormValues, fieldId);
 
-    // Remove values for hidden fields
-    fieldsToHide.forEach(hiddenFieldId => {
-      delete newFormValues[hiddenFieldId];
-    });
+    if (fieldsToHide.length > 0) {
+      console.log(`   🚫 Hiding ${fieldsToHide.length} field(s):`, fieldsToHide.map(id => {
+        const f = fields.find(field => field.id === id);
+        return `${f?.label} (${id})`;
+      }));
 
+      // Remove values for hidden fields
+      fieldsToHide.forEach(hiddenFieldId => {
+        delete newFormValues[hiddenFieldId];
+      });
+    } else {
+      console.log(`   ✅ No fields to hide`);
+    }
+
+    console.log(`   📊 Updated form values:`, newFormValues);
     setFormValues(newFormValues);
   };
 
   // Filter to visible fields only (not hidden and conditional logic satisfied)
-  const visibleFields = fields.filter(
-    (f) => !f.hidden && evaluateFieldVisibility(f, fields, formValues)
-  );
+  console.log('\n🎨 [RENDER] FormPreviewMode - Filtering visible fields');
+  console.log(`   Total fields: ${fields.length}`);
+  console.log(`   Current form values:`, formValues);
+
+  const visibleFields = fields.filter((f) => {
+    const isHidden = f.hidden;
+    const meetsConditions = evaluateFieldVisibility(f, fields, formValues);
+    const isVisible = !isHidden && meetsConditions;
+
+    if (!isVisible) {
+      console.log(`   👻 HIDDEN: ${f.label} (hidden=${isHidden}, meetsConditions=${meetsConditions})`);
+    }
+
+    return isVisible;
+  });
+
+  console.log(`   ✅ Visible fields: ${visibleFields.length}/${fields.length}`, visibleFields.map(f => f.label));
 
   // Empty state
   if (fields.length === 0) {
