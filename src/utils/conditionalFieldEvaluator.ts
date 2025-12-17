@@ -104,7 +104,11 @@ function evaluateCondition(
   condition: ConditionRule,
   value: any
 ): boolean {
-  console.log(`    🔬 Evaluating condition:`, { type: condition.type, value });
+  console.log(`    🔬 Evaluating condition:`, {
+    type: condition.type,
+    conditionConfig: condition,
+    parentValue: value
+  });
 
   let result: boolean;
 

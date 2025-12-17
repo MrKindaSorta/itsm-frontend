@@ -111,6 +111,7 @@ export default function ConditionalLogicEditor({
             <DropdownConditionEditor
               field={field}
               conditionalLogic={conditionalLogic}
+              allFields={allFields}
               onUpdate={onUpdate}
             />
           )}
@@ -313,13 +314,15 @@ function NumberConditionEditor({
 
 // Dropdown Field Condition Editor
 function DropdownConditionEditor({
-  field,
+  field: _field,
   conditionalLogic,
   onUpdate,
+  allFields,
 }: {
   field: FormField;
   conditionalLogic: ConditionalLogic;
   onUpdate: (logic: ConditionalLogic) => void;
+  allFields: FormField[];
 }) {
   const condition = conditionalLogic.conditions[0] || {
     type: 'optionMatch' as const,
@@ -330,13 +333,21 @@ function DropdownConditionEditor({
     (condition.options?.length || 0) > 1 ? 'multiple' : 'single'
   );
 
-  // Validate that selected options still exist in parent field
-  const validOptions = (condition.options || []).filter(opt => field.options?.includes(opt));
-  const invalidOptions = (condition.options || []).filter(opt => !field.options?.includes(opt));
-  const selectedOptions = validOptions;
+  // Get the PARENT field to validate options (this is a child field, not the parent!)
+  const parentField = allFields.find(f => f.id === conditionalLogic.parentFieldId);
 
-  // Auto-fix: Remove invalid options if any
-  if (invalidOptions.length > 0) {
+  // Validate that selected options still exist in PARENT field's options
+  const validOptions = parentField
+    ? (condition.options || []).filter(opt => parentField.options?.includes(opt))
+    : condition.options || [];
+  const invalidOptions = parentField
+    ? (condition.options || []).filter(opt => !parentField.options?.includes(opt))
+    : [];
+  const selectedOptions = condition.options || [];
+
+  // Auto-fix: Remove invalid options if any (only if parent field exists)
+  if (parentField && invalidOptions.length > 0) {
+    console.warn('⚠️ Removing invalid options from child field condition:', invalidOptions);
     onUpdate({
       ...conditionalLogic,
       conditions: [{
@@ -420,7 +431,12 @@ function DropdownConditionEditor({
 
       {/* Option Selection */}
       <div className="space-y-2">
-        {field.options?.map((option) => (
+        {!parentField && (
+          <div className="p-2 bg-red-50 dark:bg-red-950 border border-red-200 rounded text-xs text-red-800 dark:text-red-200">
+            Error: Parent field not found. Cannot configure conditional logic.
+          </div>
+        )}
+        {parentField?.options?.map((option) => (
           <div key={option} className="flex items-center gap-2 p-2 rounded border">
             <input
               type="checkbox"
@@ -437,6 +453,11 @@ function DropdownConditionEditor({
             </Label>
           </div>
         ))}
+        {parentField && (!parentField.options || parentField.options.length === 0) && (
+          <div className="p-2 bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 rounded text-xs text-yellow-800 dark:text-yellow-200">
+            Parent field has no options. Add options to the parent field first.
+          </div>
+        )}
       </div>
 
       <p className="text-xs text-muted-foreground">

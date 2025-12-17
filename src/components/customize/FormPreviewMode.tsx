@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -46,23 +46,27 @@ export default function FormPreviewMode({ fields }: FormPreviewModeProps) {
   };
 
   // Filter to visible fields only (not hidden and conditional logic satisfied)
-  console.log('\n🎨 [RENDER] FormPreviewMode - Filtering visible fields');
-  console.log(`   Total fields: ${fields.length}`);
-  console.log(`   Current form values:`, formValues);
+  // Memoized to prevent excessive re-evaluation on every render
+  const visibleFields = useMemo(() => {
+    console.log('\n🎨 [RENDER] FormPreviewMode - Filtering visible fields');
+    console.log(`   Total fields: ${fields.length}`);
+    console.log(`   Current form values:`, formValues);
 
-  const visibleFields = fields.filter((f) => {
-    const isHidden = f.hidden;
-    const meetsConditions = evaluateFieldVisibility(f, fields, formValues);
-    const isVisible = !isHidden && meetsConditions;
+    const visible = fields.filter((f) => {
+      const isHidden = f.hidden;
+      const meetsConditions = evaluateFieldVisibility(f, fields, formValues);
+      const isVisible = !isHidden && meetsConditions;
 
-    if (!isVisible) {
-      console.log(`   👻 HIDDEN: ${f.label} (hidden=${isHidden}, meetsConditions=${meetsConditions})`);
-    }
+      if (!isVisible) {
+        console.log(`   👻 HIDDEN: ${f.label} (hidden=${isHidden}, meetsConditions=${meetsConditions})`);
+      }
 
-    return isVisible;
-  });
+      return isVisible;
+    });
 
-  console.log(`   ✅ Visible fields: ${visibleFields.length}/${fields.length}`, visibleFields.map(f => f.label));
+    console.log(`   ✅ Visible fields: ${visible.length}/${fields.length}`, visible.map(f => f.label));
+    return visible;
+  }, [fields, formValues]);
 
   // Empty state
   if (fields.length === 0) {
