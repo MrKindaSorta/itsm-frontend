@@ -11,9 +11,11 @@ import { UserEditModal } from '@/components/users/UserEditModal';
 import { UserUnlockModal } from '@/components/users/UserUnlockModal';
 import { AgentUsageWidget } from '@/components/billing/AgentUsageWidget';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { sortUsers, type UserSortColumn, type SortDirection } from '@/lib/utils';
 import type { User } from '@/types';
 import { fetchWithAuth } from '@/lib/fetchWithAuth';
+import { ShieldCheck } from 'lucide-react';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
@@ -21,6 +23,7 @@ type ViewMode = 'users' | 'agents' | 'inactive' | 'locked' | 'deleted';
 
 export default function Users() {
   const { user: currentUser } = useAuth();
+  const { can } = usePermissions();
   const [viewMode, setViewMode] = useState<ViewMode>('users');
   const [searchQuery, setSearchQuery] = useState('');
   const [users, setUsers] = useState<User[]>([]);
@@ -438,6 +441,24 @@ export default function Users() {
     </>
   );
 
+  // Page-level permission check
+  if (!can('user:view')) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <ShieldCheck className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+          <h3 className="text-lg font-medium">Access Denied</h3>
+          <p className="text-sm text-muted-foreground mt-2">
+            You don't have permission to manage users.
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Required permission: <code>user:view</code>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <UserCreateModal
@@ -495,11 +516,13 @@ export default function Users() {
                   />
                 </div>
 
-                {/* Add User button */}
-                <Button size="sm" onClick={() => setIsCreateModalOpen(true)}>
-                  <UserPlus className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Add User</span>
-                </Button>
+                {/* Add User button - Only show if user has permission */}
+                {can('user:create') && (
+                  <Button size="sm" onClick={() => setIsCreateModalOpen(true)}>
+                    <UserPlus className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Add User</span>
+                  </Button>
+                )}
               </div>
 
               {/* Agent Usage Widget - Only show for staff users */}

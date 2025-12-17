@@ -8,6 +8,7 @@ import { TicketCreateModal } from '@/components/tickets/TicketCreateModal';
 import { ColumnCustomizer } from '@/components/tickets/ColumnCustomizer';
 import { StatusTabs } from '@/components/tickets/StatusTabs';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { useViewPreferences } from '@/contexts/ViewPreferencesContext';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { useTicketCache } from '@/contexts/TicketCacheContext';
@@ -17,6 +18,7 @@ import type { Ticket, TicketStatus } from '@/types';
 
 export default function Tickets() {
   const { user } = useAuth();
+  const { can } = usePermissions();
   const { isLoading: isPreferencesLoading } = useViewPreferences();
   const { subscribeToGlobal, unsubscribeFromGlobal, on } = useWebSocket();
   const ticketCache = useTicketCache();
@@ -259,10 +261,12 @@ export default function Tickets() {
                   Columns
                 </Button>
 
-              <Button size="sm" onClick={() => setIsCreateModalOpen(true)}>
-                <Plus className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Create</span>
-              </Button>
+              {can('ticket:create') && (
+                <Button size="sm" onClick={() => setIsCreateModalOpen(true)}>
+                  <Plus className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Create</span>
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>

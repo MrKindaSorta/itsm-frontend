@@ -16,15 +16,17 @@ import SLAList from '@/components/sla/SLAList';
 import SLAForm from '@/components/sla/SLAForm';
 import BrandingCustomizer from '@/components/branding/BrandingCustomizer';
 import BrandingPreview from '@/components/branding/BrandingPreview';
-import { Plus, Save, RotateCcw } from 'lucide-react';
+import { Plus, Save, RotateCcw, ShieldCheck } from 'lucide-react';
 import { mergeWithDefaults } from '@/utils/defaultFormConfig';
 import { fetchWithAuth } from '@/lib/fetchWithAuth';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const STORAGE_KEY = 'itsm-form-configuration';
 const BRANDING_STORAGE_KEY = 'itsm-branding-configuration';
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
 export default function Customize() {
+  const { can } = usePermissions();
   const [fields, setFields] = useState<FormField[]>([]);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -672,6 +674,24 @@ export default function Customize() {
       setTimeout(() => setBrandingSaveMessage(''), 3000);
     }
   };
+
+  // Page-level permission check
+  if (!can('customize:edit')) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <ShieldCheck className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+          <h3 className="text-lg font-medium">Access Denied</h3>
+          <p className="text-sm text-muted-foreground mt-2">
+            You don't have permission to customize system configuration.
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Required permission: <code>customize:edit</code>
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-6">

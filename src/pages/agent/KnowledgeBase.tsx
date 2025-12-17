@@ -12,6 +12,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { CategoryManager } from '@/components/knowledge/CategoryManager';
 import { ArticleEditor } from '@/components/knowledge/ArticleEditor';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
@@ -94,6 +95,7 @@ function SortableCategoryItem({ category, isSelected, onClick }: { category: Cat
 
 export default function KnowledgeBase() {
   const { user } = useAuth();
+  const { can } = usePermissions();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [articles, setArticles] = useState<Article[]>([]);
@@ -390,9 +392,11 @@ export default function KnowledgeBase() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base">Categories</CardTitle>
-                <Button size="sm" onClick={() => setIsCategoryManagerOpen(true)}>
-                  <Plus className="h-4 w-4" />
-                </Button>
+                {can('kb:create') && (
+                  <Button size="sm" onClick={() => setIsCategoryManagerOpen(true)}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             </CardHeader>
             <CardContent className="space-y-1">
@@ -475,7 +479,7 @@ export default function KnowledgeBase() {
                     : 'All Articles'}{' '}
                   ({filteredArticles.length})
                 </CardTitle>
-                {selectedCategory && (
+                {selectedCategory && can('kb:create') && (
                   <Button size="sm" onClick={() => openEditor()}>
                     <Plus className="h-4 w-4 mr-2" />
                     New Article
@@ -495,10 +499,12 @@ export default function KnowledgeBase() {
                     <p className="text-muted-foreground mb-4">
                       Create your first category to organize articles. Once created, you can add articles within that category.
                     </p>
-                    <Button onClick={() => setIsCategoryManagerOpen(true)}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create Category
-                    </Button>
+                    {can('kb:create') && (
+                      <Button onClick={() => setIsCategoryManagerOpen(true)}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create Category
+                      </Button>
+                    )}
                   </div>
                 </div>
               ) : filteredArticles.length === 0 ? (
@@ -506,7 +512,7 @@ export default function KnowledgeBase() {
                   <p className="text-muted-foreground">
                     No articles found matching your search.
                   </p>
-                  {selectedCategory && (
+                  {selectedCategory && can('kb:create') && (
                     <Button className="mt-4" onClick={() => openEditor()}>
                       <Plus className="h-4 w-4 mr-2" />
                       Create First Article

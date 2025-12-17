@@ -10,6 +10,8 @@ import AgentPerformanceReport from '@/components/reports/AgentPerformanceReport'
 import TicketTrendsReport from '@/components/reports/TicketTrendsReport';
 import TicketLifecycleReport from '@/components/reports/TicketLifecycleReport';
 import { fetchWithAuth } from '@/lib/fetchWithAuth';
+import { usePermissions } from '@/hooks/usePermissions';
+import { ShieldCheck } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://itsm-backend.joshua-r-klimek.workers.dev';
 
@@ -17,6 +19,7 @@ type DateRange = '7' | '30' | '60' | '90';
 type ReportType = 'sla' | 'agent' | 'trends' | 'lifecycle';
 
 export default function Reports() {
+  const { can } = usePermissions();
   const [activeReport, setActiveReport] = useState<ReportType>('sla');
   const [dateRange, setDateRange] = useState<DateRange>('30');
   const [loading, setLoading] = useState(false);
@@ -226,6 +229,24 @@ export default function Reports() {
       document.body.removeChild(link);
     }
   };
+
+  // Page-level permission check
+  if (!can('reports:view')) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <ShieldCheck className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+          <h3 className="text-lg font-medium">Access Denied</h3>
+          <p className="text-sm text-muted-foreground mt-2">
+            You don't have permission to view reports.
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Required permission: <code>reports:view</code>
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
