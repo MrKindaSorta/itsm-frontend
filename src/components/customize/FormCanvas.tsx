@@ -97,7 +97,7 @@ export default function FormCanvas({
         return {
           type: 'equals',
           operator: 'equals',
-          value: 0,
+          value: 1,
         };
       case 'dropdown':
       case 'category':

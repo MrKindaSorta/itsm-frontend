@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import type { FormField } from '@/types/formBuilder';
 import { cn } from '@/lib/utils';
-import { evaluateFieldVisibility } from '@/utils/conditionalFieldEvaluator';
+import { evaluateFieldVisibility, getFieldsToHide } from '@/utils/conditionalFieldEvaluator';
 
 interface FormPreviewModeProps {
   fields: FormField[];
@@ -13,6 +13,21 @@ interface FormPreviewModeProps {
 
 export default function FormPreviewMode({ fields }: FormPreviewModeProps) {
   const [formValues, setFormValues] = useState<Record<string, any>>({});
+
+  // Helper function to update a field value and clear hidden child fields
+  const updateFieldValue = (fieldId: string, value: any) => {
+    const newFormValues = { ...formValues, [fieldId]: value };
+
+    // Find fields that should be hidden due to this change
+    const fieldsToHide = getFieldsToHide(fields, newFormValues, fieldId);
+
+    // Remove values for hidden fields
+    fieldsToHide.forEach(hiddenFieldId => {
+      delete newFormValues[hiddenFieldId];
+    });
+
+    setFormValues(newFormValues);
+  };
 
   // Filter to visible fields only (not hidden and conditional logic satisfied)
   const visibleFields = fields.filter(
@@ -46,9 +61,7 @@ export default function FormPreviewMode({ fields }: FormPreviewModeProps) {
             defaultValue={field.defaultValue}
             required={field.required}
             maxLength={field.validation?.maxLength}
-            onChange={(e) =>
-              setFormValues((prev) => ({ ...prev, [field.id]: e.target.value }))
-            }
+            onChange={(e) => updateFieldValue(field.id, e.target.value)}
           />
         );
 
@@ -61,9 +74,7 @@ export default function FormPreviewMode({ fields }: FormPreviewModeProps) {
             required={field.required}
             maxLength={field.validation?.maxLength}
             className="min-h-[100px]"
-            onChange={(e) =>
-              setFormValues((prev) => ({ ...prev, [field.id]: e.target.value }))
-            }
+            onChange={(e) => updateFieldValue(field.id, e.target.value)}
           />
         );
 
@@ -78,8 +89,10 @@ export default function FormPreviewMode({ fields }: FormPreviewModeProps) {
             min={field.validation?.min}
             max={field.validation?.max}
             onChange={(e) => {
+              // Convert empty string to null to properly hide conditional children
+              // parseFloat(null) returns NaN, which evaluateNumberCondition handles correctly
               const value = e.target.value === '' ? null : parseFloat(e.target.value);
-              setFormValues((prev) => ({ ...prev, [field.id]: value }));
+              updateFieldValue(field.id, value);
             }}
           />
         );
@@ -91,9 +104,7 @@ export default function FormPreviewMode({ fields }: FormPreviewModeProps) {
             type="date"
             defaultValue={field.defaultValue}
             required={field.required}
-            onChange={(e) =>
-              setFormValues((prev) => ({ ...prev, [field.id]: e.target.value }))
-            }
+            onChange={(e) => updateFieldValue(field.id, e.target.value)}
           />
         );
 
@@ -105,12 +116,7 @@ export default function FormPreviewMode({ fields }: FormPreviewModeProps) {
             id={fieldId}
             defaultValue={field.defaultValue}
             required={field.required}
-            onChange={(e) =>
-              setFormValues((prev) => ({
-                ...prev,
-                [field.id]: e.target.value,
-              }))
-            }
+            onChange={(e) => updateFieldValue(field.id, e.target.value)}
           >
             <option value="">{field.placeholder || 'Select...'}</option>
             {field.options?.map((option) => (
@@ -130,7 +136,7 @@ export default function FormPreviewMode({ fields }: FormPreviewModeProps) {
             className="min-h-[100px]"
             onChange={(e) => {
               const selected = Array.from(e.target.selectedOptions).map((opt) => opt.value);
-              setFormValues((prev) => ({ ...prev, [field.id]: selected }));
+              updateFieldValue(field.id, selected);
             }}
           >
             {field.options?.map((option) => (
@@ -150,9 +156,7 @@ export default function FormPreviewMode({ fields }: FormPreviewModeProps) {
               defaultChecked={field.defaultValue}
               required={field.required}
               className="h-4 w-4 rounded border-input"
-              onChange={(e) =>
-                setFormValues((prev) => ({ ...prev, [field.id]: e.target.checked }))
-              }
+              onChange={(e) => updateFieldValue(field.id, e.target.checked)}
             />
             <Label htmlFor={fieldId} className="text-sm font-medium">
               {field.label}

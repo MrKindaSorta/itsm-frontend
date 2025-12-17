@@ -179,7 +179,7 @@ function NumberConditionEditor({
   const condition = conditionalLogic.conditions[0] || {
     type: 'equals' as const,
     operator: 'equals' as const,
-    value: undefined,
+    value: 1,
   };
 
   const [conditionType, setConditionType] = useState<'exact' | 'range'>(
@@ -192,6 +192,13 @@ function NumberConditionEditor({
       ...conditionalLogic,
       conditions: [newCondition],
     });
+  };
+
+  // Validate range: min must be <= max
+  const isRangeValid = () => {
+    if (conditionType !== 'range') return true;
+    if (condition.rangeMin === undefined || condition.rangeMax === undefined) return true;
+    return condition.rangeMin <= condition.rangeMax;
   };
 
   return (
@@ -262,8 +269,13 @@ function NumberConditionEditor({
               id="condition-min"
               type="number"
               placeholder="Min"
-              value={condition.rangeMin || ''}
-              onChange={(e) => updateCondition({ rangeMin: parseFloat(e.target.value) || undefined })}
+              defaultValue={condition.rangeMin || ''}
+              onBlur={(e) => {
+                const val = parseFloat(e.target.value);
+                if (!isNaN(val)) {
+                  updateCondition({ rangeMin: val });
+                }
+              }}
               className="mt-1"
             />
           </div>
@@ -275,11 +287,21 @@ function NumberConditionEditor({
               id="condition-max"
               type="number"
               placeholder="Max"
-              value={condition.rangeMax || ''}
-              onChange={(e) => updateCondition({ rangeMax: parseFloat(e.target.value) || undefined })}
+              defaultValue={condition.rangeMax || ''}
+              onBlur={(e) => {
+                const val = parseFloat(e.target.value);
+                if (!isNaN(val)) {
+                  updateCondition({ rangeMax: val });
+                }
+              }}
               className="mt-1"
             />
           </div>
+          {!isRangeValid() && (
+            <p className="text-xs text-destructive col-span-2">
+              Error: Min value must be less than or equal to Max value
+            </p>
+          )}
           <p className="text-xs text-muted-foreground col-span-2">
             Shows when number is between min and max
           </p>
@@ -308,12 +330,46 @@ function DropdownConditionEditor({
     (condition.options?.length || 0) > 1 ? 'multiple' : 'single'
   );
 
-  const selectedOptions = condition.options || [];
+  // Validate that selected options still exist in parent field
+  const validOptions = (condition.options || []).filter(opt => field.options?.includes(opt));
+  const invalidOptions = (condition.options || []).filter(opt => !field.options?.includes(opt));
+  const selectedOptions = validOptions;
+
+  // Auto-fix: Remove invalid options if any
+  if (invalidOptions.length > 0) {
+    onUpdate({
+      ...conditionalLogic,
+      conditions: [{
+        ...condition,
+        options: validOptions,
+      }],
+    });
+  }
+
+  const handleMatchTypeChange = (newMatchType: 'single' | 'multiple') => {
+    setMatchType(newMatchType);
+    // Clear options when switching modes to avoid confusion
+    onUpdate({
+      ...conditionalLogic,
+      conditions: [{
+        ...condition,
+        options: [],
+      }],
+    });
+  };
 
   const toggleOption = (option: string) => {
-    const newOptions = selectedOptions.includes(option)
-      ? selectedOptions.filter(o => o !== option)
-      : [...selectedOptions, option];
+    let newOptions: string[];
+
+    if (matchType === 'single') {
+      // In single mode, replace entire array with clicked option
+      newOptions = selectedOptions.includes(option) ? [] : [option];
+    } else {
+      // In multiple mode, toggle as before
+      newOptions = selectedOptions.includes(option)
+        ? selectedOptions.filter(o => o !== option)
+        : [...selectedOptions, option];
+    }
 
     onUpdate({
       ...conditionalLogic,
@@ -328,13 +384,25 @@ function DropdownConditionEditor({
     <div className="space-y-3 p-3 border border-border rounded-lg bg-muted/20">
       <Label className="text-sm">Show child fields when user selects:</Label>
 
+      {/* Warning for invalid options */}
+      {invalidOptions.length > 0 && (
+        <div className="p-2 bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 rounded text-xs">
+          <p className="text-orange-800 dark:text-orange-200 font-medium">
+            Warning: Some options were removed from parent field
+          </p>
+          <p className="text-orange-600 dark:text-orange-400 mt-1">
+            The following options no longer exist: {invalidOptions.join(', ')}
+          </p>
+        </div>
+      )}
+
       {/* Match Type Selection */}
       <div className="flex gap-2">
         <Button
           type="button"
           variant={matchType === 'single' ? 'default' : 'outline'}
           size="sm"
-          onClick={() => setMatchType('single')}
+          onClick={() => handleMatchTypeChange('single')}
           className="flex-1"
         >
           Single Option
@@ -343,7 +411,7 @@ function DropdownConditionEditor({
           type="button"
           variant={matchType === 'multiple' ? 'default' : 'outline'}
           size="sm"
-          onClick={() => setMatchType('multiple')}
+          onClick={() => handleMatchTypeChange('multiple')}
           className="flex-1"
         >
           Any Of Multiple
@@ -374,7 +442,7 @@ function DropdownConditionEditor({
       <p className="text-xs text-muted-foreground">
         {matchType === 'single'
           ? 'Select one option that triggers child fields'
-          : 'Select all options that trigger child fields'}
+          : 'Select options that can trigger child fields (any match)'}
       </p>
     </div>
   );

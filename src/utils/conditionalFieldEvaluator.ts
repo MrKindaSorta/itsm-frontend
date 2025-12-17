@@ -2,11 +2,13 @@ import type { FormField, ConditionRule } from '@/types/formBuilder';
 
 /**
  * Evaluates if a field should be visible based on its conditional logic
+ * @param visitedFields Set of field IDs already visited (for circular dependency detection)
  */
 export function evaluateFieldVisibility(
   field: FormField,
   allFields: FormField[],
-  fieldValues: Record<string, any>
+  fieldValues: Record<string, any>,
+  visitedFields: Set<string> = new Set()
 ): boolean {
   // If conditional logic is disabled, field is always visible
   if (!field.conditionalLogic?.enabled) {
@@ -20,14 +22,24 @@ export function evaluateFieldVisibility(
     return true;
   }
 
+  // Circular dependency protection
+  if (visitedFields.has(field.id)) {
+    console.error(`Circular dependency detected for field ${field.id}`);
+    return false; // Hide field to prevent infinite recursion
+  }
+
   // Find parent field
   const parentField = allFields.find(f => f.id === parentFieldId);
   if (!parentField) {
     return false; // Parent not found, hide field
   }
 
+  // Add current field to visited set
+  const newVisitedFields = new Set(visitedFields);
+  newVisitedFields.add(field.id);
+
   // First check if parent itself is visible
-  const isParentVisible = evaluateFieldVisibility(parentField, allFields, fieldValues);
+  const isParentVisible = evaluateFieldVisibility(parentField, allFields, fieldValues, newVisitedFields);
   if (!isParentVisible) {
     return false; // Parent is hidden, so child must be hidden too
   }
@@ -75,8 +87,10 @@ function evaluateCondition(
  */
 function evaluateNumberCondition(condition: ConditionRule, value: any): boolean {
   const numValue = parseFloat(value);
+  // If value is empty, null, undefined, or non-numeric, hide the child field
+  // This ensures conditional children only appear when a valid number is entered
   if (isNaN(numValue)) {
-    return false; // Invalid number
+    return false;
   }
 
   const operator = condition.operator;
@@ -124,8 +138,10 @@ function evaluateDropdownCondition(condition: ConditionRule, value: any): boolea
  * Evaluates checkbox field conditions (checked/unchecked state)
  */
 function evaluateCheckboxCondition(condition: ConditionRule, value: any): boolean {
-  // Coerce to boolean consistently (true, 'true', 1 = checked)
-  const boolValue = value === true || value === 'true' || value === 1;
+  // Coerce to boolean consistently handling various checkbox representations
+  // Truthy values: true, 'true', 1, '1', 'on'
+  // Falsy values: false, 'false', 0, '0', '', undefined, null
+  const boolValue = !!(value && value !== 'false' && value !== '0' && value !== 0);
   return boolValue === condition.value;
 }
 

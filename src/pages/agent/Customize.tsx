@@ -255,12 +255,11 @@ export default function Customize() {
   const getDefaultCondition = (parentType: FormFieldType, parentField: FormField) => {
     switch (parentType) {
       case 'number':
-        // Default: Show when value is between 1 and 999999 (effectively "any value entered")
+        // Default: Show when value equals 1 (user should customize)
         return {
-          type: 'range' as const,
-          operator: 'between' as const,
-          rangeMin: 1,
-          rangeMax: 999999,
+          type: 'equals' as const,
+          operator: 'equals' as const,
+          value: 1,
         };
       case 'dropdown':
       case 'category':
@@ -289,6 +288,12 @@ export default function Customize() {
 
     const parentLevel = parentField.conditionalLogic?.nestingLevel || 0;
 
+    // Find all existing children of this parent to insert after them
+    const existingChildren = fields.filter(f => f.conditionalLogic?.parentFieldId === parentFieldId);
+    const lastChildIndex = existingChildren.length > 0
+      ? Math.max(...existingChildren.map(child => fields.findIndex(f => f.id === child.id)))
+      : parentIndex;
+
     // Create child field with default condition based on parent type
     const fieldTemplate = FIELD_TYPES.find((ft) => ft.type === fieldType);
     const newField: FormField = {
@@ -299,7 +304,7 @@ export default function Customize() {
       required: false,
       options: fieldTemplate?.defaultConfig.options,
       defaultValue: fieldTemplate?.defaultConfig.defaultValue,
-      order: parentIndex + 1,
+      order: lastChildIndex + 1,
       conditionalLogic: {
         enabled: true,
         parentFieldId: parentFieldId,
@@ -321,12 +326,13 @@ export default function Customize() {
       },
     };
 
-    // Insert child immediately after parent
+    // Insert child after last existing child (or after parent if no children)
     const updatedFields = [
       ...fields.slice(0, parentIndex),
       updatedParent,
+      ...fields.slice(parentIndex + 1, lastChildIndex + 1),
       newField,
-      ...fields.slice(parentIndex + 1),
+      ...fields.slice(lastChildIndex + 1),
     ].map((field, idx) => ({ ...field, order: idx }));
 
     setFields(updatedFields);
@@ -352,6 +358,9 @@ export default function Customize() {
     if (!field) return;
 
     // Check if field is non-deletable system field
+    // System fields (priority, category) have deletable: false
+    // They CAN be hidden/shown and CAN have conditional logic
+    // but CANNOT be deleted to maintain core ticket functionality
     if (field.deletable === false) {
       alert('This system field cannot be deleted');
       return;
