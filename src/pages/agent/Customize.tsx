@@ -658,11 +658,17 @@ export default function Customize() {
   };
 
   const handleResetBranding = () => {
-    if (confirm('Are you sure you want to reset branding to defaults?')) {
-      setLocalBranding(DEFAULT_BRANDING);
-      updateContextBranding(DEFAULT_BRANDING);
-      localStorage.removeItem(BRANDING_STORAGE_KEY);
-      setBrandingSaveMessage('Branding reset to defaults!');
+    if (confirm('Reset colors and content to defaults? (Uploaded logos will be preserved)')) {
+      const resetBranding = {
+        ...DEFAULT_BRANDING,
+        logo: localBranding.logo,
+        logoSmall: localBranding.logoSmall,
+        favicon: localBranding.favicon,
+      };
+      setLocalBranding(resetBranding);
+      updateContextBranding(resetBranding);
+      localStorage.setItem(BRANDING_STORAGE_KEY, JSON.stringify(resetBranding));
+      setBrandingSaveMessage('Branding reset to defaults (logos preserved)!');
       setTimeout(() => setBrandingSaveMessage(''), 3000);
     }
   };

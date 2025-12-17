@@ -60,6 +60,14 @@ const DEFAULT_SETTINGS: SystemSettings = {
   }
 };
 
+// Validation helper to ensure all settings fields are present
+const validateSettings = (settings: any): SystemSettings => {
+  return {
+    ...DEFAULT_SETTINGS,  // Start with complete defaults
+    ...settings,          // Override with API data
+  };
+};
+
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<SystemSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -70,7 +78,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       const data = await response.json();
 
       if (data.success && data.settings) {
-        setSettings(data.settings);
+        setSettings(validateSettings(data.settings));
       } else {
         // Use defaults if API fails
         setSettings(DEFAULT_SETTINGS);
@@ -95,7 +103,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       const data = await response.json();
 
       if (data.success && data.settings) {
-        setSettings(data.settings);
+        setSettings(validateSettings(data.settings));
       } else {
         throw new Error(data.error || 'Failed to update settings');
       }

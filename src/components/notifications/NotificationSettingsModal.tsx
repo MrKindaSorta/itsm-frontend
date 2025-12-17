@@ -34,20 +34,29 @@ interface NotificationSettingsModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
+  ticketAssigned: true,
+  ticketUpdated: true,
+  ticketCommented: true,
+  ticketCcUpdated: true,
+  statusChanged: true,
+  priorityChanged: true,
+  slaWarning: true,
+  ticketResolved: true,
+  mention: true,
+  activityFlagged: true,
+};
+
+const migratePreferences = (saved: Partial<NotificationPreferences>): NotificationPreferences => {
+  return {
+    ...DEFAULT_NOTIFICATION_PREFERENCES,
+    ...saved,
+  };
+};
+
 export function NotificationSettingsModal({ open, onOpenChange }: NotificationSettingsModalProps) {
   const { user } = useAuth();
-  const [preferences, setPreferences] = useState<NotificationPreferences>({
-    ticketAssigned: true,
-    ticketUpdated: true,
-    ticketCommented: true,
-    ticketCcUpdated: true,
-    statusChanged: true,
-    priorityChanged: true,
-    slaWarning: true,
-    ticketResolved: true,
-    mention: true,
-    activityFlagged: true,
-  });
+  const [preferences, setPreferences] = useState<NotificationPreferences>(DEFAULT_NOTIFICATION_PREFERENCES);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -67,7 +76,7 @@ export function NotificationSettingsModal({ open, onOpenChange }: NotificationSe
       const data = await response.json();
 
       if (data.success) {
-        setPreferences(data.preferences);
+        setPreferences(migratePreferences(data.preferences || {}));
       }
     } catch (err) {
       console.error('Error fetching preferences:', err);

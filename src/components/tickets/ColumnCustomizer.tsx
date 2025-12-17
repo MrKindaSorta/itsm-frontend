@@ -28,7 +28,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, RotateCcw, Loader2 } from 'lucide-react';
 import { useViewPreferences } from '@/contexts/ViewPreferencesContext';
 import type { ColumnConfig } from '@/types';
-import { cn } from '@/lib/utils';
+import { cn, DEFAULT_TICKET_COLUMNS } from '@/lib/utils';
 
 interface ColumnCustomizerProps {
   open: boolean;
@@ -156,7 +156,7 @@ export function ColumnCustomizer({ open, onOpenChange }: ColumnCustomizerProps) 
     setIsResetting(true);
     try {
       await resetToDefault();
-      // Reset local state will happen when modal reopens with updated preferences
+      setLocalColumns(DEFAULT_TICKET_COLUMNS);  // Update local state immediately
       onOpenChange(false);
     } catch (error) {
       console.error('Failed to reset preferences:', error);
