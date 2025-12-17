@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import type { FormConfiguration, FormField } from '@/types/formBuilder';
 import type { User, TicketPriority } from '@/types';
 import { getPriorityColor } from '@/lib/utils';
-import { getVisibleFieldsInHierarchicalOrder, getFieldsToHide } from '@/utils/conditionalFieldEvaluator';
+import { getVisibleFieldsInHierarchicalOrder, getFieldsToHide, evaluateFieldVisibility } from '@/utils/conditionalFieldEvaluator';
 import { fetchWithAuth } from '@/lib/fetchWithAuth';
 import { mergeWithDefaults } from '@/utils/defaultFormConfig';
 
@@ -97,6 +97,17 @@ export default function CreateTicket() {
       // Initialize field values with default values
       const initialValues: Record<string, any> = {};
       sortedFields.forEach(field => {
+        // Skip initialization for conditional child fields
+        // They will be added to fieldValues when parent condition is met
+        const isConditionalChild = field.conditionalLogic?.enabled &&
+                                   field.conditionalLogic?.parentFieldId;
+
+        if (isConditionalChild) {
+          // Don't add to initialValues - will be added when parent condition is met
+          return;
+        }
+
+        // Initialize only root fields and non-conditional fields
         if (field.defaultValue !== undefined && field.defaultValue !== null && field.defaultValue !== '') {
           // For multiselect, ensure default value is an array
           if (field.type === 'multiselect') {
@@ -328,6 +339,27 @@ export default function CreateTicket() {
     fieldsToHide.forEach(hiddenFieldId => {
       delete newFieldValues[hiddenFieldId];
     });
+
+    // Initialize newly visible fields that aren't in fieldValues yet
+    const changedField = allFields.find(f => f.id === fieldId);
+    if (changedField?.conditionalLogic?.enabled && changedField.conditionalLogic.childFields) {
+      changedField.conditionalLogic.childFields.forEach(childId => {
+        const childField = allFields.find(f => f.id === childId);
+        if (childField && evaluateFieldVisibility(childField, allFields, newFieldValues)) {
+          // Child should be visible but doesn't exist in fieldValues yet
+          if (!(childId in newFieldValues)) {
+            // Initialize with appropriate empty value
+            if (childField.type === 'multiselect') {
+              newFieldValues[childId] = [];
+            } else if (childField.type === 'checkbox') {
+              newFieldValues[childId] = false;
+            } else {
+              newFieldValues[childId] = '';
+            }
+          }
+        }
+      });
+    }
 
     setFieldValues(newFieldValues);
   };

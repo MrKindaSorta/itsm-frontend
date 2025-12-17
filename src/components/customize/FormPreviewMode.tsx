@@ -41,6 +41,29 @@ export default function FormPreviewMode({ fields }: FormPreviewModeProps) {
       console.log(`   ✅ No fields to hide`);
     }
 
+    // Initialize newly visible fields that aren't in formValues yet
+    const changedField = fields.find(f => f.id === fieldId);
+    if (changedField?.conditionalLogic?.enabled && changedField.conditionalLogic.childFields) {
+      console.log(`   🔍 Checking for fields to show...`);
+      changedField.conditionalLogic.childFields.forEach(childId => {
+        const childField = fields.find(f => f.id === childId);
+        if (childField && evaluateFieldVisibility(childField, fields, newFormValues)) {
+          // Child should be visible but doesn't exist in formValues yet
+          if (!(childId in newFormValues)) {
+            console.log(`   ✅ Showing field: ${childField.label} (${childId})`);
+            // Initialize with appropriate empty value
+            if (childField.type === 'multiselect') {
+              newFormValues[childId] = [];
+            } else if (childField.type === 'checkbox') {
+              newFormValues[childId] = false;
+            } else {
+              newFormValues[childId] = '';
+            }
+          }
+        }
+      });
+    }
+
     console.log(`   📊 Updated form values:`, newFormValues);
     setFormValues(newFormValues);
   };
