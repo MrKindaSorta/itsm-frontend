@@ -236,6 +236,9 @@ export const BRANDING_PRESETS: BrandingPreset[] = [
 export const DEFAULT_BRANDING: BrandingConfiguration = {
   id: 'default',
   name: 'Default Branding',
+  logo: undefined,
+  logoSmall: undefined,
+  favicon: undefined,
   colors: BRANDING_PRESETS[0].colors, // Uses default blue with light/dark variants
   content: {
     companyName: 'ITSM',

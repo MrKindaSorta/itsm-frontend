@@ -34,8 +34,13 @@ function migrateLegacyBranding(data: any): BrandingConfiguration {
 
   // Check if colors structure exists at all
   if (!data.colors || !data.colors.light || !data.colors.dark) {
-    console.warn('Invalid branding structure, using defaults');
-    return DEFAULT_BRANDING;
+    console.warn('Invalid branding colors structure, using default colors but preserving logos');
+    return {
+      ...DEFAULT_BRANDING,
+      logo: data.logo || null,
+      logoSmall: data.logoSmall || null,
+      favicon: data.favicon || null,
+    };
   }
 
   // Already in new format
