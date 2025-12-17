@@ -252,15 +252,26 @@ export default function Customize() {
     setChildSelectionMode({ active: true, parentFieldId });
   };
 
-  const getDefaultCondition = (parentType: FormFieldType) => {
+  const getDefaultCondition = (parentType: FormFieldType, parentField: FormField) => {
     switch (parentType) {
       case 'number':
-        return { type: 'range' as const, operator: 'equals' as const, value: 0 };
+        // Default: Show when value is between 1 and 999999 (effectively "any value entered")
+        return {
+          type: 'range' as const,
+          operator: 'between' as const,
+          rangeMin: 1,
+          rangeMax: 999999,
+        };
       case 'dropdown':
       case 'category':
       case 'multiselect':
-        return { type: 'optionMatch' as const, options: [] };
+        // Default: Show when ANY of the parent's options is selected
+        return {
+          type: 'optionMatch' as const,
+          options: parentField.options || [],
+        };
       case 'checkbox':
+        // Default: Show when checked
         return { type: 'checkboxState' as const, value: true };
       default:
         return { type: 'equals' as const, value: '' };
@@ -291,7 +302,7 @@ export default function Customize() {
       conditionalLogic: {
         enabled: true,
         parentFieldId: parentFieldId,
-        conditions: [getDefaultCondition(parentField.type)],
+        conditions: [getDefaultCondition(parentField.type, parentField)],
         childFields: [],
         nestingLevel: parentLevel + 1,
       },
