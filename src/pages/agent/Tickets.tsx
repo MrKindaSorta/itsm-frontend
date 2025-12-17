@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus, Loader2, User, UserCheck, Settings } from 'lucide-react';
+import { Search, Plus, Loader2, User, UserCheck, Settings, RefreshCw } from 'lucide-react';
 import { TicketTable } from '@/components/tickets/TicketTable';
 import { TicketCreateModal } from '@/components/tickets/TicketCreateModal';
 import { ColumnCustomizer } from '@/components/tickets/ColumnCustomizer';
@@ -189,47 +189,47 @@ export default function Tickets() {
 
       <Card>
         <CardHeader>
-          <div className="flex flex-col gap-4">
-            {/* Title Section */}
-            <div>
-              <CardTitle className="text-xl">All Tickets ({sortedAndFilteredTickets.length})</CardTitle>
-              <p className="text-sm text-muted-foreground mt-1 hidden sm:block">
-                Manage and track all support tickets
-              </p>
+          <div className="flex flex-row items-center gap-2">
+            {/* Search - Smaller fixed width */}
+            <div className="relative max-w-md">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search tickets..."
+                className="pl-10 w-full"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
 
-            {/* Actions - Horizontal on all screen sizes */}
-            <div className="flex flex-row items-center gap-2">
-              {/* Search - Takes available space */}
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search tickets..."
-                  className="pl-10 w-full"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
+            {/* Filter buttons */}
+            <div className="flex items-center gap-2 ml-auto">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => refetchTickets()}
+                title="Refresh tickets"
+              >
+                <RefreshCw className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Refresh</span>
+              </Button>
 
-              {/* Filter buttons */}
-              <div className="flex items-center gap-2">
-                <Button
-                  variant={showMyTickets ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => {
-                    setShowMyTickets(!showMyTickets);
-                    if (!showMyTickets) setShowUnassigned(false);
-                  }}
-                  className="hidden md:flex"
-                >
-                  <UserCheck className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">My Tickets</span>
-                  {myTicketsCount > 0 && (
-                    <span className="ml-2 px-1.5 py-0.5 text-xs font-semibold rounded-full bg-background text-foreground">
-                      {myTicketsCount}
-                    </span>
-                  )}
-                </Button>
+              <Button
+                variant={showMyTickets ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => {
+                  setShowMyTickets(!showMyTickets);
+                  if (!showMyTickets) setShowUnassigned(false);
+                }}
+                className="hidden md:flex"
+              >
+                <UserCheck className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">My Tickets</span>
+                {myTicketsCount > 0 && (
+                  <span className="ml-2 px-1.5 py-0.5 text-xs font-semibold rounded-full bg-background text-foreground">
+                    {myTicketsCount}
+                  </span>
+                )}
+              </Button>
 
                 <Button
                   variant={showUnassigned ? 'default' : 'outline'}
@@ -259,11 +259,10 @@ export default function Tickets() {
                   Columns
                 </Button>
 
-                <Button size="sm" onClick={() => setIsCreateModalOpen(true)}>
-                  <Plus className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Create</span>
-                </Button>
-              </div>
+              <Button size="sm" onClick={() => setIsCreateModalOpen(true)}>
+                <Plus className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Create</span>
+              </Button>
             </div>
           </div>
         </CardHeader>
