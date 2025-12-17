@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import type { FormField } from '@/types/formBuilder';
 import { cn } from '@/lib/utils';
+import { evaluateFieldVisibility } from '@/utils/conditionalFieldEvaluator';
 
 interface FormPreviewModeProps {
   fields: FormField[];
@@ -13,49 +14,10 @@ interface FormPreviewModeProps {
 export default function FormPreviewMode({ fields }: FormPreviewModeProps) {
   const [formValues, setFormValues] = useState<Record<string, any>>({});
 
-  // Determine if conditional field should be visible based on parent value
-  const isFieldVisible = (field: FormField): boolean => {
-    // Non-conditional fields are always visible
-    if (!field.conditionalLogic?.enabled || !field.conditionalLogic.parentFieldId) {
-      return true;
-    }
-
-    const parentFieldId = field.conditionalLogic.parentFieldId;
-    const parentValue = formValues[parentFieldId];
-    const condition = field.conditionalLogic.conditions[0];
-
-    // No condition set yet
-    if (!condition) return true;
-
-    // Evaluate condition based on type
-    switch (condition.type) {
-      case 'equals':
-        return parentValue === condition.value;
-
-      case 'range':
-        if (condition.operator === 'between') {
-          const numValue = parseFloat(parentValue);
-          return (
-            !isNaN(numValue) &&
-            numValue >= (condition.rangeMin || -Infinity) &&
-            numValue <= (condition.rangeMax || Infinity)
-          );
-        }
-        return parentValue === condition.value;
-
-      case 'optionMatch':
-        return condition.options?.includes(parentValue) || false;
-
-      case 'checkboxState':
-        return parentValue === condition.value;
-
-      default:
-        return true;
-    }
-  };
-
   // Filter to visible fields only (not hidden and conditional logic satisfied)
-  const visibleFields = fields.filter((f) => !f.hidden && isFieldVisible(f));
+  const visibleFields = fields.filter(
+    (f) => !f.hidden && evaluateFieldVisibility(f, fields, formValues)
+  );
 
   // Empty state
   if (fields.length === 0) {
@@ -115,9 +77,10 @@ export default function FormPreviewMode({ fields }: FormPreviewModeProps) {
             required={field.required}
             min={field.validation?.min}
             max={field.validation?.max}
-            onChange={(e) =>
-              setFormValues((prev) => ({ ...prev, [field.id]: e.target.value }))
-            }
+            onChange={(e) => {
+              const value = e.target.value === '' ? null : parseFloat(e.target.value);
+              setFormValues((prev) => ({ ...prev, [field.id]: value }));
+            }}
           />
         );
 

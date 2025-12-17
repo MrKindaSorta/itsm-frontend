@@ -252,6 +252,21 @@ export default function Customize() {
     setChildSelectionMode({ active: true, parentFieldId });
   };
 
+  const getDefaultCondition = (parentType: FormFieldType) => {
+    switch (parentType) {
+      case 'number':
+        return { type: 'range' as const, operator: 'equals' as const, value: 0 };
+      case 'dropdown':
+      case 'category':
+      case 'multiselect':
+        return { type: 'optionMatch' as const, options: [] };
+      case 'checkbox':
+        return { type: 'checkboxState' as const, value: true };
+      default:
+        return { type: 'equals' as const, value: '' };
+    }
+  };
+
   const handleSelectChildFieldType = (fieldType: FormFieldType) => {
     if (!childSelectionMode.active || !childSelectionMode.parentFieldId) return;
 
@@ -262,7 +277,7 @@ export default function Customize() {
 
     const parentLevel = parentField.conditionalLogic?.nestingLevel || 0;
 
-    // Create child field
+    // Create child field with default condition based on parent type
     const fieldTemplate = FIELD_TYPES.find((ft) => ft.type === fieldType);
     const newField: FormField = {
       id: `field-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -276,7 +291,7 @@ export default function Customize() {
       conditionalLogic: {
         enabled: true,
         parentFieldId: parentFieldId,
-        conditions: [],
+        conditions: [getDefaultCondition(parentField.type)],
         childFields: [],
         nestingLevel: parentLevel + 1,
       },

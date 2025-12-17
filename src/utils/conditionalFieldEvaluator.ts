@@ -8,9 +8,9 @@ export function evaluateFieldVisibility(
   allFields: FormField[],
   fieldValues: Record<string, any>
 ): boolean {
-  // If no conditional logic or not enabled, field is visible if it's a root field
+  // If conditional logic is disabled, field is always visible
   if (!field.conditionalLogic?.enabled) {
-    return !field.conditionalLogic?.parentFieldId;
+    return true;
   }
 
   // If this is a child field, check if parent conditions are met
@@ -124,7 +124,8 @@ function evaluateDropdownCondition(condition: ConditionRule, value: any): boolea
  * Evaluates checkbox field conditions (checked/unchecked state)
  */
 function evaluateCheckboxCondition(condition: ConditionRule, value: any): boolean {
-  const boolValue = Boolean(value);
+  // Coerce to boolean consistently (true, 'true', 1 = checked)
+  const boolValue = value === true || value === 'true' || value === 1;
   return boolValue === condition.value;
 }
 
