@@ -236,8 +236,13 @@ function NumberConditionEditor({
             id="condition-value"
             type="number"
             placeholder="Enter number"
-            value={condition.value || ''}
-            onChange={(e) => updateCondition({ value: parseFloat(e.target.value) || undefined })}
+            defaultValue={condition.value || ''}
+            onBlur={(e) => {
+              const val = parseFloat(e.target.value);
+              if (!isNaN(val)) {
+                updateCondition({ value: val });
+              }
+            }}
             className="mt-1"
           />
           <p className="text-xs text-muted-foreground mt-1">

@@ -252,7 +252,7 @@ export default function Customize() {
     setChildSelectionMode({ active: true, parentFieldId });
   };
 
-  const getDefaultCondition = (parentType: FormFieldType) => {
+  const getDefaultCondition = (parentType: FormFieldType, parentField: FormField) => {
     switch (parentType) {
       case 'number':
         // Default: Show when value is between 1 and 999999 (effectively "any value entered")
@@ -265,10 +265,11 @@ export default function Customize() {
       case 'dropdown':
       case 'category':
       case 'multiselect':
-        // Default: Empty options - user will select which options trigger the child
+        // Default: First option triggers child (user can customize to add more or change)
+        const firstOption = parentField.options?.[0];
         return {
           type: 'optionMatch' as const,
-          options: [],
+          options: firstOption ? [firstOption] : [],
         };
       case 'checkbox':
         // Default: Show when checked
@@ -302,7 +303,7 @@ export default function Customize() {
       conditionalLogic: {
         enabled: true,
         parentFieldId: parentFieldId,
-        conditions: [getDefaultCondition(parentField.type)],
+        conditions: [getDefaultCondition(parentField.type, parentField)],
         childFields: [],
         nestingLevel: parentLevel + 1,
       },
