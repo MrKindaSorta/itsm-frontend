@@ -29,6 +29,7 @@ export default function Customize() {
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [showConditionalIndicators, setShowConditionalIndicators] = useState(true);
+  const [viewMode, setViewMode] = useState<'list' | 'preview'>('list');
   const [savedFieldsSnapshot, setSavedFieldsSnapshot] = useState<string>('');
   const [childSelectionMode, setChildSelectionMode] = useState<{
     active: boolean;
@@ -689,6 +690,8 @@ export default function Customize() {
               onToggleConditionalIndicators={() =>
                 setShowConditionalIndicators(!showConditionalIndicators)
               }
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
             />
 
             {/* Main Content Area */}
@@ -704,13 +707,7 @@ export default function Customize() {
 
               {/* Center: List or Preview */}
               <div className="flex-1 overflow-auto">
-                <Tabs defaultValue="list" className="h-full">
-                  <div className="border-b px-4 pt-4">
-                    <TabsList>
-                      <TabsTrigger value="list">List View</TabsTrigger>
-                      <TabsTrigger value="preview">Preview</TabsTrigger>
-                    </TabsList>
-                  </div>
+                <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'list' | 'preview')} className="h-full">
 
                   <TabsContent value="list" className="mt-0">
                     <FieldList

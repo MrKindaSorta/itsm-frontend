@@ -41,6 +41,8 @@ interface FormBuilderHeaderProps {
   saveStatus?: 'saved' | 'saving' | 'error' | 'unsaved';
   showConditionalIndicators?: boolean;
   onToggleConditionalIndicators?: () => void;
+  viewMode: 'list' | 'preview';
+  onViewModeChange: (mode: 'list' | 'preview') => void;
 }
 
 export default function FormBuilderHeader({
@@ -59,6 +61,8 @@ export default function FormBuilderHeader({
   saveStatus = 'saved',
   showConditionalIndicators = true,
   onToggleConditionalIndicators,
+  viewMode,
+  onViewModeChange,
 }: FormBuilderHeaderProps) {
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState(formName);
@@ -172,6 +176,32 @@ export default function FormBuilderHeader({
               Unsaved changes
             </span>
           )}
+        </div>
+
+        {/* List View / Preview Toggle */}
+        <div className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onViewModeChange('list')}
+            className={cn(
+              'h-7 px-3 text-sm font-medium transition-all',
+              viewMode === 'list' && 'bg-background text-foreground shadow-sm'
+            )}
+          >
+            List View
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onViewModeChange('preview')}
+            className={cn(
+              'h-7 px-3 text-sm font-medium transition-all',
+              viewMode === 'preview' && 'bg-background text-foreground shadow-sm'
+            )}
+          >
+            Preview
+          </Button>
         </div>
 
         {/* Conditional Logic Toggle */}
