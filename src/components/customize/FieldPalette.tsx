@@ -12,7 +12,9 @@ import {
   Flag,
   FolderOpen,
   Zap,
+  Plus,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 // Available field types in the palette
 const FIELD_TYPES: PaletteFieldType[] = [
@@ -183,14 +185,39 @@ const IconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 // Field types that support conditional logic
 const CONDITIONAL_CAPABLE_TYPES: FormFieldType[] = ['number', 'dropdown', 'checkbox', 'category', 'multiselect'];
 
-export default function FieldPalette() {
+interface FieldPaletteProps {
+  onAddField?: (fieldType: FormFieldType) => void;
+  isChildSelectionMode?: boolean;
+  onSelectChildType?: (fieldType: FormFieldType) => void;
+}
+
+export default function FieldPalette({
+  onAddField,
+  isChildSelectionMode = false,
+  onSelectChildType,
+}: FieldPaletteProps) {
+  const handleClick = (fieldType: FormFieldType) => {
+    if (isChildSelectionMode && onSelectChildType) {
+      onSelectChildType(fieldType);
+    } else if (onAddField) {
+      onAddField(fieldType);
+    }
+  };
+
   return (
-    <div className="h-full flex flex-col">
+    <div
+      className={cn(
+        'h-full flex flex-col transition-all',
+        isChildSelectionMode && 'ring-4 ring-primary ring-offset-2 animate-pulse bg-primary/5'
+      )}
+    >
       {/* Header */}
       <div className="px-4 py-4 border-b border-border">
-        <h3 className="font-semibold text-sm">Field Types Reference</h3>
+        <h3 className="font-semibold text-sm">
+          {isChildSelectionMode ? 'Select Child Field Type' : 'Field Types'}
+        </h3>
         <p className="text-xs text-muted-foreground mt-1">
-          Use "Add Field" button below the list
+          {isChildSelectionMode ? 'Click a field type to add as child' : 'Click + to add field'}
         </p>
       </div>
 
@@ -201,28 +228,41 @@ export default function FieldPalette() {
           const isConditionalCapable = CONDITIONAL_CAPABLE_TYPES.includes(fieldType.type);
 
           return (
-            <div
+            <button
               key={fieldType.type}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-md transition-colors"
+              onClick={() => handleClick(fieldType.type)}
+              className={cn(
+                'w-full flex items-center gap-2 px-3 py-2.5 rounded-md transition-all group',
+                isChildSelectionMode
+                  ? 'hover:bg-primary/20 hover:border-primary border-2 border-transparent cursor-pointer'
+                  : 'hover:bg-accent cursor-pointer'
+              )}
               title={fieldType.description}
             >
               {/* Icon */}
-              <div className="flex-shrink-0 text-muted-foreground">
+              <div className="flex-shrink-0 text-muted-foreground group-hover:text-foreground transition-colors">
                 <Icon className="h-4 w-4" />
               </div>
 
               {/* Label */}
-              <div className="flex-1 min-w-0 text-sm font-medium truncate">
+              <div className="flex-1 min-w-0 text-sm font-medium truncate text-left">
                 {fieldType.label}
               </div>
 
-              {/* Conditional Indicator (small icon) */}
+              {/* Plus Icon (when NOT in selection mode) */}
+              {!isChildSelectionMode && (
+                <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Plus className="h-4 w-4 text-primary" />
+                </div>
+              )}
+
+              {/* Conditional Indicator */}
               {isConditionalCapable && (
                 <div className="flex-shrink-0" title="Supports conditional logic">
                   <Zap className="h-3 w-3 text-orange-500" />
                 </div>
               )}
-            </div>
+            </button>
           );
         })}
       </div>

@@ -9,7 +9,6 @@ import { DEFAULT_BRANDING } from '@/types/branding';
 import { useBranding } from '@/contexts/BrandingContext';
 import FieldPalette, { FIELD_TYPES } from '@/components/customize/FieldPalette';
 import FieldList from '@/components/customize/FieldList';
-import AddFieldButton from '@/components/customize/AddFieldButton';
 import FormPreviewMode from '@/components/customize/FormPreviewMode';
 import FieldPropertiesDrawer from '@/components/customize/FieldPropertiesDrawer';
 import FormBuilderHeader from '@/components/customize/FormBuilderHeader';
@@ -31,6 +30,10 @@ export default function Customize() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [showConditionalIndicators, setShowConditionalIndicators] = useState(true);
   const [savedFieldsSnapshot, setSavedFieldsSnapshot] = useState<string>('');
+  const [childSelectionMode, setChildSelectionMode] = useState<{
+    active: boolean;
+    parentFieldId: string | null;
+  }>({ active: false, parentFieldId: null });
 
   // SLA state
   const [slaRules, setSlaRules] = useState<SLARule[]>([]);
@@ -245,52 +248,30 @@ export default function Customize() {
   };
 
   const handleAddChildField = (parentFieldId: string) => {
+    // Enter child selection mode
+    setChildSelectionMode({ active: true, parentFieldId });
+  };
+
+  const handleSelectChildFieldType = (fieldType: FormFieldType) => {
+    if (!childSelectionMode.active || !childSelectionMode.parentFieldId) return;
+
+    const parentFieldId = childSelectionMode.parentFieldId;
     const parentIndex = fields.findIndex((f) => f.id === parentFieldId);
     const parentField = fields[parentIndex];
     if (!parentField) return;
 
-    // Validate parent type
-    const conditionalCapableTypes: FormFieldType[] = [
-      'number',
-      'dropdown',
-      'checkbox',
-      'category',
-      'multiselect',
-    ];
-    if (!conditionalCapableTypes.includes(parentField.type)) {
-      alert('This field type does not support conditional logic');
-      return;
-    }
-
-    // Check nesting depth
     const parentLevel = parentField.conditionalLogic?.nestingLevel || 0;
-    if (parentLevel >= 2) {
-      alert('Maximum nesting depth (3 levels) reached. Cannot add more children.');
-      return;
-    }
-
-    // Prompt user to select child field type
-    const fieldTypeOptions = FIELD_TYPES.map((ft) => `${ft.label} (${ft.type})`).join('\n');
-    const selectedType = prompt(
-      `Select field type for child field:\n\n${fieldTypeOptions}\n\nEnter the field type (e.g., "text", "dropdown"):`,
-      'text'
-    );
-
-    if (!selectedType) return; // User cancelled
-
-    const fieldTemplate = FIELD_TYPES.find((ft) => ft.type === selectedType);
-    if (!fieldTemplate) {
-      alert('Invalid field type selected');
-      return;
-    }
 
     // Create child field
+    const fieldTemplate = FIELD_TYPES.find((ft) => ft.type === fieldType);
     const newField: FormField = {
       id: `field-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      type: selectedType as FormFieldType,
-      label: fieldTemplate.defaultConfig.label || 'New Field',
-      placeholder: fieldTemplate.defaultConfig.placeholder,
+      type: fieldType,
+      label: fieldTemplate?.defaultConfig.label || 'New Field',
+      placeholder: fieldTemplate?.defaultConfig.placeholder,
       required: false,
+      options: fieldTemplate?.defaultConfig.options,
+      defaultValue: fieldTemplate?.defaultConfig.defaultValue,
       order: parentIndex + 1,
       conditionalLogic: {
         enabled: true,
@@ -324,6 +305,13 @@ export default function Customize() {
     setFields(updatedFields);
     setSelectedFieldId(newField.id);
     setIsDrawerOpen(true);
+
+    // Exit selection mode
+    setChildSelectionMode({ active: false, parentFieldId: null });
+  };
+
+  const handleCancelChildSelection = () => {
+    setChildSelectionMode({ active: false, parentFieldId: null });
   };
 
   const handleDrawerClose = () => {
@@ -671,7 +659,11 @@ export default function Customize() {
             <div className="flex flex-1 overflow-hidden">
               {/* Left: Field Palette (Optional Reference) */}
               <div className="w-[200px] border-r border-border overflow-y-auto">
-                <FieldPalette />
+                <FieldPalette
+                  onAddField={handleAddField}
+                  isChildSelectionMode={childSelectionMode.active}
+                  onSelectChildType={handleSelectChildFieldType}
+                />
               </div>
 
               {/* Center: List or Preview */}
@@ -689,13 +681,14 @@ export default function Customize() {
                       fields={fields}
                       selectedFieldId={selectedFieldId}
                       showConditionalIndicators={showConditionalIndicators}
+                      isChildSelectionMode={childSelectionMode.active}
                       onFieldSelect={setSelectedFieldId}
                       onFieldMove={handleFieldMove}
                       onFieldDelete={handleFieldDelete}
                       onFieldEdit={handleFieldSettingsClick}
                       onAddChildField={handleAddChildField}
+                      onCancelChildSelection={handleCancelChildSelection}
                     />
-                    <AddFieldButton onAddField={handleAddField} fieldTypes={FIELD_TYPES} />
                   </TabsContent>
 
                   <TabsContent value="preview" className="mt-0">

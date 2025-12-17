@@ -1,27 +1,33 @@
 import { useState } from 'react';
 import FieldListItem from './FieldListItem';
 import type { FormField } from '@/types/formBuilder';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface FieldListProps {
   fields: FormField[];
   selectedFieldId: string | null;
   showConditionalIndicators: boolean;
+  isChildSelectionMode?: boolean;
   onFieldSelect: (fieldId: string) => void;
   onFieldMove: (fieldId: string, direction: 'up' | 'down') => void;
   onFieldDelete: (fieldId: string) => void;
   onFieldEdit: (fieldId: string) => void;
   onAddChildField: (parentFieldId: string) => void;
+  onCancelChildSelection?: () => void;
 }
 
 export default function FieldList({
   fields,
   selectedFieldId,
   showConditionalIndicators,
+  isChildSelectionMode = false,
   onFieldSelect,
   onFieldMove,
   onFieldDelete,
   onFieldEdit,
   onAddChildField,
+  onCancelChildSelection,
 }: FieldListProps) {
   const [hoveredFieldId, setHoveredFieldId] = useState<string | null>(null);
 
@@ -88,32 +94,52 @@ export default function FieldList({
   };
 
   return (
-    <div className="max-w-3xl mx-auto py-6 px-4 space-y-2" role="list" aria-label="Form fields">
-      {visibleFields.map((field, index) => (
-        <FieldListItem
-          key={field.id}
-          field={field}
-          isSelected={selectedFieldId === field.id}
-          isFirst={index === 0}
-          isLast={index === visibleFields.length - 1}
-          canMoveUp={canMoveUp(index, field)}
-          canMoveDown={canMoveDown(index, field)}
-          showConditionalIndicators={showConditionalIndicators}
-          onSelect={() => onFieldSelect(field.id)}
-          onMoveUp={() => onFieldMove(field.id, 'up')}
-          onMoveDown={() => onFieldMove(field.id, 'down')}
-          onEdit={() => onFieldEdit(field.id)}
-          onDelete={() => onFieldDelete(field.id)}
-          onAddChild={
-            supportsConditionalLogic(field.type) && canAddChild(field)
-              ? () => onAddChildField(field.id)
-              : undefined
-          }
-          isHovered={hoveredFieldId === field.id}
-          onMouseEnter={() => setHoveredFieldId(field.id)}
-          onMouseLeave={() => setHoveredFieldId(null)}
-        />
-      ))}
+    <div className="relative max-w-3xl mx-auto py-6 px-4 space-y-2" role="list" aria-label="Form fields">
+      {/* Overlay when in child selection mode */}
+      {isChildSelectionMode && (
+        <div
+          className="absolute inset-0 bg-background/60 backdrop-blur-sm z-10 flex items-start justify-center pt-12"
+          onClick={onCancelChildSelection}
+        >
+          <div className="bg-background border-2 border-primary rounded-lg p-4 shadow-lg" onClick={(e) => e.stopPropagation()}>
+            <p className="text-sm font-medium mb-3">
+              Select a field type from the left panel to add as child
+            </p>
+            <Button variant="outline" onClick={onCancelChildSelection} className="w-full">
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Field list (greyed out when in selection mode) */}
+      <div className={cn(isChildSelectionMode && 'opacity-30 pointer-events-none')}>
+        {visibleFields.map((field, index) => (
+          <FieldListItem
+            key={field.id}
+            field={field}
+            isSelected={selectedFieldId === field.id}
+            isFirst={index === 0}
+            isLast={index === visibleFields.length - 1}
+            canMoveUp={canMoveUp(index, field)}
+            canMoveDown={canMoveDown(index, field)}
+            showConditionalIndicators={showConditionalIndicators}
+            onSelect={() => onFieldSelect(field.id)}
+            onMoveUp={() => onFieldMove(field.id, 'up')}
+            onMoveDown={() => onFieldMove(field.id, 'down')}
+            onEdit={() => onFieldEdit(field.id)}
+            onDelete={() => onFieldDelete(field.id)}
+            onAddChild={
+              supportsConditionalLogic(field.type) && canAddChild(field)
+                ? () => onAddChildField(field.id)
+                : undefined
+            }
+            isHovered={hoveredFieldId === field.id}
+            onMouseEnter={() => setHoveredFieldId(field.id)}
+            onMouseLeave={() => setHoveredFieldId(null)}
+          />
+        ))}
+      </div>
     </div>
   );
 }

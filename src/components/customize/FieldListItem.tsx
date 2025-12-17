@@ -67,7 +67,6 @@ export default function FieldListItem({
   onEdit,
   onDelete,
   onAddChild,
-  isHovered,
   onMouseEnter,
   onMouseLeave,
 }: FieldListItemProps) {
@@ -209,8 +208,8 @@ export default function FieldListItem({
           <Trash2 className="h-4 w-4" />
         </Button>
 
-        {/* Add Child (conditional fields only, shows on hover) */}
-        {onAddChild && isHovered && (
+        {/* Add Child (always visible for conditional-capable fields) */}
+        {onAddChild && (
           <Button
             variant="outline"
             size="sm"
@@ -223,7 +222,7 @@ export default function FieldListItem({
             aria-label={`Add child field to ${field.label}`}
           >
             <Plus className="h-3 w-3" />
-            Add Child
+            Child
           </Button>
         )}
       </div>
