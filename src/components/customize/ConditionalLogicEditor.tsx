@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { FormField, ConditionRule, ConditionalLogic } from '@/types/formBuilder';
 import { Zap, ChevronRight, AlertTriangle } from 'lucide-react';
+import { formatConditionSummary } from '@/utils/conditionalLogicFormatters';
 
 interface ConditionalLogicEditorProps {
   field: FormField;
@@ -236,28 +237,6 @@ export default function ConditionalLogicEditor({
       )}
     </div>
   );
-}
-
-// Helper to format a condition for display
-function formatConditionSummary(condition: ConditionRule | undefined): string {
-  if (!condition) return 'No condition set';
-
-  switch (condition.type) {
-    case 'equals':
-      if (condition.operator === 'greaterThan') return `> ${condition.value}`;
-      if (condition.operator === 'lessThan') return `< ${condition.value}`;
-      return `= ${condition.value}`;
-    case 'range':
-      return `${condition.rangeMin} - ${condition.rangeMax}`;
-    case 'optionMatch':
-      if (!condition.options?.length) return 'No options selected';
-      if (condition.options.length === 1) return `"${condition.options[0]}"`;
-      return `${condition.options.length} options`;
-    case 'checkboxState':
-      return condition.value ? 'Checked' : 'Unchecked';
-    default:
-      return 'Unknown condition';
-  }
 }
 
 // ============================================

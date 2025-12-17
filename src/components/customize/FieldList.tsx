@@ -118,6 +118,7 @@ export default function FieldList({
           <FieldListItem
             key={field.id}
             field={field}
+            allFields={fields}
             isSelected={selectedFieldId === field.id}
             isFirst={index === 0}
             isLast={index === visibleFields.length - 1}

@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { FormField } from '@/types/formBuilder';
+import { formatConditionSummary } from '@/utils/conditionalLogicFormatters';
 import {
   ChevronUp,
   ChevronDown,
@@ -23,6 +24,7 @@ import { cn } from '@/lib/utils';
 
 interface FieldListItemProps {
   field: FormField;
+  allFields: FormField[];
   isSelected: boolean;
   isFirst: boolean;
   isLast: boolean;
@@ -57,6 +59,7 @@ const FIELD_ICONS: Record<string, React.ComponentType<{ className?: string }>> =
 
 export default function FieldListItem({
   field,
+  allFields,
   isSelected,
   canMoveUp,
   canMoveDown,
@@ -136,6 +139,29 @@ export default function FieldListItem({
         <p className="text-xs text-muted-foreground capitalize">
           {field.type.replace('_', ' ')}
         </p>
+
+        {/* Conditional field indicator - shows what triggers this field */}
+        {field.conditionalLogic?.enabled &&
+         (field.conditionalLogic?.nestingLevel || 0) > 0 && (
+          <div className="text-[11px] mt-1 flex items-center gap-1">
+            {field.conditionalLogic?.parentFieldId ? (
+              <>
+                <span className="text-orange-600 dark:text-orange-400 font-medium">Shows when</span>
+                <span className="font-semibold text-orange-600 dark:text-orange-400">
+                  {(() => {
+                    const parentField = allFields.find((f: FormField) => f.id === field.conditionalLogic?.parentFieldId);
+                    return parentField?.label || '⚠️ Parent not found';
+                  })()}
+                </span>
+                <span className="text-orange-600 dark:text-orange-400">
+                  {formatConditionSummary(field.conditionalLogic?.conditions[0])}
+                </span>
+              </>
+            ) : (
+              <span className="text-destructive">⚠️ No parent field assigned</span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Action Buttons */}
