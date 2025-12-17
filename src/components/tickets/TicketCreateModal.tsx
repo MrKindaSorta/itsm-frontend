@@ -1,23 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { SelectRoot as Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { UserMultiSelect } from '@/components/ui/user-multi-select';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Loader2 } from 'lucide-react';
 import { fetchWithAuth } from '@/lib/fetchWithAuth';
+import { DynamicTicketForm } from './DynamicTicketForm';
+import type { FormField } from '@/types/formBuilder';
+import type { User } from '@/types';
+import { mergeWithDefaults } from '@/utils/defaultFormConfig';
+import { getFieldsToHide, evaluateFieldVisibility } from '@/utils/conditionalFieldEvaluator';
+import { getApiBaseUrl } from '@/lib/api';
 
-const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
-
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-}
+const API_BASE = getApiBaseUrl();
+const FORM_CONFIG_STORAGE_KEY = 'itsm-form-configuration';
 
 interface TicketCreateModalProps {
   open: boolean;
@@ -27,39 +21,104 @@ interface TicketCreateModalProps {
 
 export function TicketCreateModal({ open, onOpenChange, onSuccess }: TicketCreateModalProps) {
   const { user } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
+
+  // Form configuration
+  const [allFields, setAllFields] = useState<FormField[]>([]);
+  const [fieldValues, setFieldValues] = useState<Record<string, any>>({});
+  const [isLoadingConfig, setIsLoadingConfig] = useState(true);
+
+  // Agent-specific state
   const [users, setUsers] = useState<User[]>([]);
+  const [ccUserIds, setCcUserIds] = useState<string[]>([]);
+  const [selectedRequesterId, setSelectedRequesterId] = useState('');
+  const [selectedAssigneeId, setSelectedAssigneeId] = useState('');
+
+  // Submission state
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    priority: 'medium',
-    category: 'General',
-    requester_id: user?.id || '',
-    assignee_id: '',
-    department: user?.department || '',
-    cc_user_ids: [] as string[],
-  });
-
-  const priorities = ['low', 'medium', 'high', 'urgent'];
-  const categories = [
-    'General',
-    'Hardware',
-    'Software',
-    'Network',
-    'Email',
-    'Access',
-    'Onboarding',
-    'Infrastructure',
-  ];
-
-  // Fetch users for requester/assignee dropdowns
+  // Load form configuration and users when modal opens
   useEffect(() => {
     if (open) {
+      loadFormConfiguration();
       fetchUsers();
+      // Reset agent-specific fields
+      setSelectedRequesterId(user?.id?.toString() || '');
+      setSelectedAssigneeId('');
+      setCcUserIds([]);
+    } else {
+      // Reset state when modal closes
+      setFieldValues({});
+      setError(null);
     }
-  }, [open]);
+  }, [open, user?.id]);
+
+  const loadFormConfiguration = async () => {
+    setIsLoadingConfig(true);
+    try {
+      // Try API first
+      const response = await fetchWithAuth(`${API_BASE}/api/config/form`);
+      const data = await response.json();
+
+      if (data.success && data.config?.fields && data.config.fields.length > 0) {
+        const fields = mergeWithDefaults(data.config.fields);
+        setAllFields(fields);
+        initializeFieldValues(fields);
+        // Cache in localStorage
+        localStorage.setItem(FORM_CONFIG_STORAGE_KEY, JSON.stringify(data.config));
+      } else {
+        throw new Error('No fields in API response');
+      }
+    } catch (error) {
+      console.error('Failed to load form config from API:', error);
+
+      // Fallback to localStorage
+      try {
+        const saved = localStorage.getItem(FORM_CONFIG_STORAGE_KEY);
+        if (saved) {
+          const config = JSON.parse(saved);
+          const fields = mergeWithDefaults(config.fields || []);
+          setAllFields(fields);
+          initializeFieldValues(fields);
+        } else {
+          throw new Error('No cached config');
+        }
+      } catch (fallbackError) {
+        console.error('Failed to load from localStorage:', fallbackError);
+        // Final fallback to defaults
+        const defaults = mergeWithDefaults([]);
+        setAllFields(defaults);
+        initializeFieldValues(defaults);
+      }
+    } finally {
+      setIsLoadingConfig(false);
+    }
+  };
+
+  const initializeFieldValues = (fields: FormField[]) => {
+    const initialValues: Record<string, any> = {};
+
+    fields.forEach((field) => {
+      // Skip conditional children (they're added when parent condition is met)
+      const isConditionalChild =
+        field.conditionalLogic?.enabled && field.conditionalLogic?.parentFieldId;
+
+      if (isConditionalChild) {
+        return; // Skip initialization
+      }
+
+      // Initialize root fields with appropriate empty values
+      if (field.type === 'multiselect') {
+        initialValues[field.id] = [];
+      } else if (field.type === 'checkbox') {
+        initialValues[field.id] = false;
+      } else {
+        initialValues[field.id] = field.defaultValue || '';
+      }
+    });
+
+    setFieldValues(initialValues);
+  };
 
   const fetchUsers = async () => {
     try {
@@ -67,21 +126,62 @@ export function TicketCreateModal({ open, onOpenChange, onSuccess }: TicketCreat
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          setUsers(data.users || []);
+          // Convert user IDs to strings for type compatibility
+          const usersWithStringIds = (data.users || []).map((u: any) => ({
+            ...u,
+            id: String(u.id),
+          }));
+          setUsers(usersWithStringIds);
         }
       }
     } catch (error) {
       console.error('Failed to fetch users:', error);
       // Fallback: use current user
       if (user) {
-        setUsers([{
-          id: Number(user.id),
-          name: user.name,
-          email: user.email,
-          role: user.role
-        }]);
+        setUsers([
+          {
+            id: String(user.id),
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            active: user.active || true,
+            notificationPreferences: user.notificationPreferences || {},
+          },
+        ]);
       }
     }
+  };
+
+  const handleFieldValueChange = (fieldId: string, value: any) => {
+    const newFieldValues = { ...fieldValues, [fieldId]: value };
+
+    // Clear hidden fields
+    const fieldsToHide = getFieldsToHide(allFields, newFieldValues, fieldId);
+    fieldsToHide.forEach((hiddenFieldId) => {
+      delete newFieldValues[hiddenFieldId];
+    });
+
+    // Initialize newly visible fields
+    const changedField = allFields.find((f) => f.id === fieldId);
+    if (changedField?.conditionalLogic?.enabled && changedField.conditionalLogic.childFields) {
+      changedField.conditionalLogic.childFields.forEach((childId) => {
+        const childField = allFields.find((f) => f.id === childId);
+        if (childField && evaluateFieldVisibility(childField, allFields, newFieldValues)) {
+          if (!(childId in newFieldValues)) {
+            // Initialize with appropriate empty value
+            if (childField.type === 'multiselect') {
+              newFieldValues[childId] = [];
+            } else if (childField.type === 'checkbox') {
+              newFieldValues[childId] = false;
+            } else {
+              newFieldValues[childId] = '';
+            }
+          }
+        }
+      });
+    }
+
+    setFieldValues(newFieldValues);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -91,16 +191,23 @@ export function TicketCreateModal({ open, onOpenChange, onSuccess }: TicketCreat
 
     try {
       const payload = {
-        title: formData.title,
-        description: formData.description,
-        priority: formData.priority,
-        category: formData.category,
-        requester_id: Number(formData.requester_id || user?.id),
-        assignee_id: formData.assignee_id ? Number(formData.assignee_id) : null,
-        department: formData.department || null,
-        cc_user_ids: formData.cc_user_ids.map(id => Number(id)),
+        // Extract system fields from fieldValues
+        title: fieldValues['system-title'] || '',
+        description: fieldValues['system-description'] || '',
+        priority: (fieldValues['system-priority'] || 'medium').toLowerCase(),
+        category: fieldValues['system-category'] || 'General',
+
+        // Agent-specific fields
+        requester_id: Number(selectedRequesterId || user?.id),
+        assignee_id: selectedAssigneeId ? Number(selectedAssigneeId) : null,
+        department: user?.department || null,
+        cc_user_ids: ccUserIds.map((id) => Number(id)),
+
+        // Standard fields
         tags: [],
-        customFields: {},
+
+        // ALL field values (including system and custom)
+        customFields: fieldValues,
       };
 
       const response = await fetchWithAuth(`${API_BASE}/api/tickets`, {
@@ -115,16 +222,12 @@ export function TicketCreateModal({ open, onOpenChange, onSuccess }: TicketCreat
 
       if (data.success) {
         // Reset form
-        setFormData({
-          title: '',
-          description: '',
-          priority: 'medium',
-          category: 'General',
-          requester_id: user?.id || '',
-          assignee_id: '',
-          department: user?.department || '',
-          cc_user_ids: [],
-        });
+        setFieldValues({});
+        setSelectedRequesterId('');
+        setSelectedAssigneeId('');
+        setCcUserIds([]);
+
+        // Close modal and notify parent
         onOpenChange(false);
         onSuccess();
       } else {
@@ -132,7 +235,7 @@ export function TicketCreateModal({ open, onOpenChange, onSuccess }: TicketCreat
       }
     } catch (err) {
       console.error('Create ticket error:', err);
-      setError('Failed to connect to server');
+      setError('Failed to create ticket. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -140,190 +243,36 @@ export function TicketCreateModal({ open, onOpenChange, onSuccess }: TicketCreat
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create New Ticket</DialogTitle>
-          <DialogDescription>
-            Fill out the form below to create a new support ticket
-          </DialogDescription>
+          <DialogDescription>Create a ticket on behalf of a user</DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="title">Title *</Label>
-            <Input
-              id="title"
-              placeholder="Brief description of the issue"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              required
-              disabled={isLoading}
-            />
+        {isLoadingConfig ? (
+          <div className="flex flex-col items-center justify-center py-8 space-y-2">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Loading form configuration...</span>
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Description *</Label>
-            <Textarea
-              id="description"
-              placeholder="Provide detailed information about the issue"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              required
-              disabled={isLoading}
-              rows={4}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="priority">Priority *</Label>
-              <Select
-                value={formData.priority}
-                onValueChange={(value) => setFormData({ ...formData, priority: value })}
-                disabled={isLoading}
-              >
-                <SelectTrigger id="priority">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {priorities.map((priority) => (
-                    <SelectItem key={priority} value={priority}>
-                      {priority.charAt(0).toUpperCase() + priority.slice(1)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="category">Category *</Label>
-              <Select
-                value={formData.category}
-                onValueChange={(value) => setFormData({ ...formData, category: value })}
-                disabled={isLoading}
-              >
-                <SelectTrigger id="category">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="requester">Requester *</Label>
-              <Select
-                value={formData.requester_id.toString()}
-                onValueChange={(value) => setFormData({ ...formData, requester_id: value })}
-                disabled={isLoading}
-              >
-                <SelectTrigger id="requester">
-                  <SelectValue placeholder="Select requester" />
-                </SelectTrigger>
-                <SelectContent>
-                  {users.length > 0 ? (
-                    users.map((u) => (
-                      <SelectItem key={u.id} value={u.id.toString()}>
-                        {u.name} ({u.email})
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value={user?.id?.toString() || '1'}>
-                      {user?.name || 'Current User'}
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="assignee">Assignee (Optional)</Label>
-              <Select
-                value={formData.assignee_id || undefined}
-                onValueChange={(value) => setFormData({ ...formData, assignee_id: value === 'unassigned' ? '' : value })}
-                disabled={isLoading}
-              >
-                <SelectTrigger id="assignee">
-                  <SelectValue placeholder="Unassigned" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="unassigned">Unassigned</SelectItem>
-                  {users.filter(u => u.role !== 'user').map((u) => (
-                    <SelectItem key={u.id} value={u.id.toString()}>
-                      {u.name} ({u.role})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="department">Department (Optional)</Label>
-            <Input
-              id="department"
-              placeholder="e.g., IT, Marketing, Sales"
-              value={formData.department}
-              onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-              disabled={isLoading}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="cc_users">CC Users (Optional)</Label>
-            <UserMultiSelect
-              users={users.map(u => ({
-                id: u.id.toString(),
-                name: u.name,
-                email: u.email,
-                role: u.role as import('@/types').UserRole,
-                active: true,
-                notificationPreferences: {},
-              }))}
-              selectedUserIds={formData.cc_user_ids}
-              onChange={(userIds) => setFormData({ ...formData, cc_user_ids: userIds })}
-              placeholder="Select users to CC on this ticket"
-              disabled={isLoading}
-            />
-            <p className="text-xs text-muted-foreground">
-              CC'd users can view and receive notifications about this ticket
-            </p>
-          </div>
-
-          {error && (
-            <div className="text-sm text-destructive bg-destructive/10 p-3 rounded">
-              {error}
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                'Create Ticket'
-              )}
-            </Button>
-          </DialogFooter>
-        </form>
+        ) : (
+          <DynamicTicketForm
+            allFields={allFields}
+            fieldValues={fieldValues}
+            onFieldValueChange={handleFieldValueChange}
+            showRequesterField={true}
+            showAssigneeField={true}
+            selectedRequesterId={selectedRequesterId}
+            onRequesterChange={setSelectedRequesterId}
+            selectedAssigneeId={selectedAssigneeId}
+            onAssigneeChange={setSelectedAssigneeId}
+            users={users}
+            ccUserIds={ccUserIds}
+            onCcUserIdsChange={setCcUserIds}
+            isLoading={isLoading}
+            onSubmit={handleSubmit}
+            errorMessage={error}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );
