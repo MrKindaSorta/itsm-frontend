@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { FormField, ConditionRule, ConditionalLogic } from '@/types/formBuilder';
-import { Zap, ChevronRight } from 'lucide-react';
+import { Zap, ChevronRight, AlertTriangle } from 'lucide-react';
 
 interface ConditionalLogicEditorProps {
   field: FormField;
@@ -26,17 +26,29 @@ export default function ConditionalLogicEditor({
 
   const [isEnabled, setIsEnabled] = useState(conditionalLogic.enabled);
 
-  // Check if this field supports conditional logic
-  const supportsConditionalLogic = ['number', 'dropdown', 'checkbox', 'category', 'multiselect'].includes(field.type);
+  // Determine field context
+  const isChildField = !!conditionalLogic.parentFieldId;
+  const parentField = isChildField
+    ? allFields.find(f => f.id === conditionalLogic.parentFieldId)
+    : null;
+  const parentFieldType = parentField?.type;
+
+  // Check if THIS field can have children (act as a parent)
+  const canBeParent = ['number', 'dropdown', 'checkbox', 'category', 'multiselect'].includes(field.type);
 
   // Calculate current nesting level
   const currentLevel = conditionalLogic.nestingLevel || 0;
-  const canAddChildren = currentLevel < 2; // Max 3 levels (0, 1, 2)
+  const canAddChildren = currentLevel < 2 && canBeParent;
 
-  // Get child fields
+  // Get child fields of THIS field
   const childFields = allFields.filter(f =>
     conditionalLogic.childFields?.includes(f.id)
   );
+
+  // Sync enabled state with prop
+  useEffect(() => {
+    setIsEnabled(conditionalLogic.enabled);
+  }, [conditionalLogic.enabled]);
 
   const toggleEnabled = () => {
     const newEnabled = !isEnabled;
@@ -47,11 +59,15 @@ export default function ConditionalLogicEditor({
     });
   };
 
-  if (!supportsConditionalLogic) {
+  // For ROOT fields that can't be parents, show nothing
+  if (!isChildField && !canBeParent) {
     return (
       <div className="p-4 border border-border rounded-lg bg-muted/30">
         <p className="text-xs text-muted-foreground text-center">
-          Conditional logic is only available for Number, Dropdown, Checkbox, Category, and Multiselect fields
+          Conditional logic is not available for {field.type} fields.
+        </p>
+        <p className="text-xs text-muted-foreground text-center mt-1">
+          Only Number, Dropdown, Checkbox, Category, and Multiselect fields can have conditional children.
         </p>
       </div>
     );
@@ -68,7 +84,9 @@ export default function ConditionalLogicEditor({
               Conditional Logic
             </Label>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Show child fields based on user input
+              {isChildField
+                ? 'Configure when this field appears'
+                : 'Allow child fields based on this field\'s value'}
             </p>
           </div>
         </div>
@@ -94,98 +112,213 @@ export default function ConditionalLogicEditor({
             <Badge variant="outline" className="text-xs">
               Level {currentLevel}
             </Badge>
-            {currentLevel === 0 && <span>Root field</span>}
+            {currentLevel === 0 && <span>Root field (always visible)</span>}
             {currentLevel === 1 && <span>Child field</span>}
             {currentLevel === 2 && <span>Grandchild field (max depth)</span>}
           </div>
 
-          {/* Condition Configuration based on field type */}
-          {field.type === 'number' && (
-            <NumberConditionEditor
-              conditionalLogic={conditionalLogic}
-              onUpdate={onUpdate}
-            />
+          {/* CHILD FIELD: Show condition configuration based on PARENT's type */}
+          {isChildField && parentField && (
+            <>
+              <div className="text-sm font-medium flex items-center gap-2">
+                <span>Show when</span>
+                <Badge variant="secondary">{parentField.label}</Badge>
+                <span>matches:</span>
+              </div>
+
+              {parentFieldType === 'number' && (
+                <NumberConditionEditor
+                  parentField={parentField}
+                  conditionalLogic={conditionalLogic}
+                  onUpdate={onUpdate}
+                />
+              )}
+
+              {(parentFieldType === 'dropdown' || parentFieldType === 'category' || parentFieldType === 'multiselect') && (
+                <DropdownConditionEditor
+                  parentField={parentField}
+                  conditionalLogic={conditionalLogic}
+                  onUpdate={onUpdate}
+                />
+              )}
+
+              {parentFieldType === 'checkbox' && (
+                <CheckboxConditionEditor
+                  conditionalLogic={conditionalLogic}
+                  onUpdate={onUpdate}
+                />
+              )}
+            </>
           )}
 
-          {(field.type === 'dropdown' || field.type === 'category' || field.type === 'multiselect') && (
-            <DropdownConditionEditor
-              field={field}
-              conditionalLogic={conditionalLogic}
-              allFields={allFields}
-              onUpdate={onUpdate}
-            />
+          {/* CHILD FIELD: Parent not found error */}
+          {isChildField && !parentField && (
+            <div className="p-3 border border-destructive/50 rounded-lg bg-destructive/10">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-destructive" />
+                <p className="text-sm text-destructive font-medium">Parent field not found</p>
+              </div>
+              <p className="text-xs text-destructive/80 mt-1">
+                The parent field has been deleted. This field will remain hidden.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-2"
+                onClick={() => {
+                  onUpdate({
+                    ...conditionalLogic,
+                    enabled: false,
+                    parentFieldId: undefined,
+                    conditions: [],
+                    nestingLevel: 0,
+                  });
+                }}
+              >
+                Convert to Root Field
+              </Button>
+            </div>
           )}
 
-          {field.type === 'checkbox' && (
-            <CheckboxConditionEditor
-              conditionalLogic={conditionalLogic}
-              onUpdate={onUpdate}
-            />
+          {/* ROOT FIELD: Explanation (no conditions to configure) */}
+          {!isChildField && (
+            <div className="p-3 border border-border rounded-lg bg-muted/20 text-sm">
+              <p className="font-medium">This is a root field</p>
+              <p className="text-muted-foreground mt-1">
+                Root fields are always visible. Add child fields to create conditional visibility.
+              </p>
+              <p className="text-muted-foreground mt-1">
+                When you add a child field, you'll configure what value of this field triggers showing the child.
+              </p>
+            </div>
           )}
 
-          {/* Child Fields List */}
-          <div className="pt-4 border-t border-border">
-            <div className="flex items-center justify-between mb-3">
-              <Label className="text-sm font-medium">Child Fields</Label>
-              {!canAddChildren && (
-                <Badge variant="outline" className="text-xs text-orange-600">
-                  Max depth reached
-                </Badge>
+          {/* Child Fields List (for fields that CAN be parents) */}
+          {canBeParent && (
+            <div className="pt-4 border-t border-border">
+              <div className="flex items-center justify-between mb-3">
+                <Label className="text-sm font-medium">Child Fields</Label>
+                {!canAddChildren && currentLevel >= 2 && (
+                  <Badge variant="outline" className="text-xs text-orange-600">
+                    Max depth reached
+                  </Badge>
+                )}
+              </div>
+
+              {childFields.length === 0 ? (
+                <div className="text-xs text-muted-foreground text-center py-4 border border-dashed rounded-md">
+                  <p className="mb-1">No child fields added yet</p>
+                  <p className="text-[10px]">
+                    Click "Add Child" on this field in the list view
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {childFields.map((child) => (
+                    <div
+                      key={child.id}
+                      className="flex items-center gap-2 p-2 rounded border bg-muted/30"
+                    >
+                      <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{child.label}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {child.type} · {formatConditionSummary(child.conditionalLogic?.conditions[0])}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
-
-            {childFields.length === 0 ? (
-              <div className="text-xs text-muted-foreground text-center py-4 border border-dashed rounded-md">
-                <p className="mb-1">No child fields added yet</p>
-                <p className="text-[10px]">
-                  Hover over this field in the list and click "Add Child" button
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {childFields.map((child) => (
-                  <div
-                    key={child.id}
-                    className="flex items-center gap-2 p-2 rounded border bg-muted/30"
-                  >
-                    <ChevronRight className="h-3 w-3 text-muted-foreground" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{child.label}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {child.type}
-                      </p>
-                    </div>
-                    <Badge variant="secondary" className="text-xs">
-                      Level {(child.conditionalLogic?.nestingLevel || 0) + 1}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          )}
         </>
       )}
     </div>
   );
 }
 
-// Number Field Condition Editor
-function NumberConditionEditor({
-  conditionalLogic,
-  onUpdate,
-}: {
+// Helper to format a condition for display
+function formatConditionSummary(condition: ConditionRule | undefined): string {
+  if (!condition) return 'No condition set';
+
+  switch (condition.type) {
+    case 'equals':
+      if (condition.operator === 'greaterThan') return `> ${condition.value}`;
+      if (condition.operator === 'lessThan') return `< ${condition.value}`;
+      return `= ${condition.value}`;
+    case 'range':
+      return `${condition.rangeMin} - ${condition.rangeMax}`;
+    case 'optionMatch':
+      if (!condition.options?.length) return 'No options selected';
+      if (condition.options.length === 1) return `"${condition.options[0]}"`;
+      return `${condition.options.length} options`;
+    case 'checkboxState':
+      return condition.value ? 'Checked' : 'Unchecked';
+    default:
+      return 'Unknown condition';
+  }
+}
+
+// ============================================
+// Number Condition Editor
+// ============================================
+interface NumberConditionEditorProps {
+  parentField: FormField;
   conditionalLogic: ConditionalLogic;
   onUpdate: (logic: ConditionalLogic) => void;
-}) {
+}
+
+function NumberConditionEditor({
+  parentField,
+  conditionalLogic,
+  onUpdate,
+}: NumberConditionEditorProps) {
   const condition = conditionalLogic.conditions[0] || {
     type: 'equals' as const,
     operator: 'equals' as const,
-    value: 1,
+    value: undefined,
   };
 
-  const [conditionType, setConditionType] = useState<'exact' | 'range'>(
-    condition.operator === 'between' ? 'range' : 'exact'
+  // Determine initial condition type from operator
+  const getInitialType = () => {
+    if (condition.operator === 'between') return 'range';
+    if (condition.operator === 'greaterThan') return 'greaterThan';
+    if (condition.operator === 'lessThan') return 'lessThan';
+    return 'exact';
+  };
+
+  const [conditionType, setConditionType] = useState<'exact' | 'range' | 'greaterThan' | 'lessThan'>(getInitialType);
+
+  // Local state for controlled inputs
+  const [localValue, setLocalValue] = useState<string>(
+    condition.value !== undefined ? String(condition.value) : ''
   );
+  const [localMin, setLocalMin] = useState<string>(
+    condition.rangeMin !== undefined ? String(condition.rangeMin) : ''
+  );
+  const [localMax, setLocalMax] = useState<string>(
+    condition.rangeMax !== undefined ? String(condition.rangeMax) : ''
+  );
+
+  // Sync local state with external changes
+  useEffect(() => {
+    if (condition.value !== undefined) {
+      setLocalValue(String(condition.value));
+    }
+  }, [condition.value]);
+
+  useEffect(() => {
+    if (condition.rangeMin !== undefined) {
+      setLocalMin(String(condition.rangeMin));
+    }
+  }, [condition.rangeMin]);
+
+  useEffect(() => {
+    if (condition.rangeMax !== undefined) {
+      setLocalMax(String(condition.rangeMax));
+    }
+  }, [condition.rangeMax]);
 
   const updateCondition = (updates: Partial<ConditionRule>) => {
     const newCondition = { ...condition, ...updates };
@@ -195,42 +328,73 @@ function NumberConditionEditor({
     });
   };
 
-  // Validate range: min must be <= max
+  const handleTypeChange = (newType: 'exact' | 'range' | 'greaterThan' | 'lessThan') => {
+    setConditionType(newType);
+    setLocalValue('');
+    setLocalMin('');
+    setLocalMax('');
+
+    switch (newType) {
+      case 'exact':
+        updateCondition({ type: 'equals', operator: 'equals', value: undefined, rangeMin: undefined, rangeMax: undefined });
+        break;
+      case 'range':
+        updateCondition({ type: 'range', operator: 'between', value: undefined, rangeMin: undefined, rangeMax: undefined });
+        break;
+      case 'greaterThan':
+        updateCondition({ type: 'equals', operator: 'greaterThan', value: undefined, rangeMin: undefined, rangeMax: undefined });
+        break;
+      case 'lessThan':
+        updateCondition({ type: 'equals', operator: 'lessThan', value: undefined, rangeMin: undefined, rangeMax: undefined });
+        break;
+    }
+  };
+
   const isRangeValid = () => {
     if (conditionType !== 'range') return true;
-    if (condition.rangeMin === undefined || condition.rangeMax === undefined) return true;
-    return condition.rangeMin <= condition.rangeMax;
+    if (localMin === '' || localMax === '') return true;
+    return parseFloat(localMin) <= parseFloat(localMax);
   };
 
   return (
     <div className="space-y-3 p-3 border border-border rounded-lg bg-muted/20">
-      <Label className="text-sm">Show child fields when:</Label>
+      <Label className="text-sm">
+        Show when <strong>{parentField.label}</strong> is:
+      </Label>
 
       {/* Condition Type Selection */}
-      <div className="flex gap-2">
+      <div className="grid grid-cols-2 gap-2">
         <Button
           type="button"
           variant={conditionType === 'exact' ? 'default' : 'outline'}
           size="sm"
-          onClick={() => {
-            setConditionType('exact');
-            updateCondition({ type: 'equals', operator: 'equals', value: undefined, rangeMin: undefined, rangeMax: undefined });
-          }}
-          className="flex-1"
+          onClick={() => handleTypeChange('exact')}
         >
-          Exact Value
+          Equals
         </Button>
         <Button
           type="button"
           variant={conditionType === 'range' ? 'default' : 'outline'}
           size="sm"
-          onClick={() => {
-            setConditionType('range');
-            updateCondition({ type: 'range', operator: 'between', value: undefined });
-          }}
-          className="flex-1"
+          onClick={() => handleTypeChange('range')}
         >
-          Range
+          Between
+        </Button>
+        <Button
+          type="button"
+          variant={conditionType === 'greaterThan' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => handleTypeChange('greaterThan')}
+        >
+          Greater Than
+        </Button>
+        <Button
+          type="button"
+          variant={conditionType === 'lessThan' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => handleTypeChange('lessThan')}
+        >
+          Less Than
         </Button>
       </div>
 
@@ -243,8 +407,9 @@ function NumberConditionEditor({
           <Input
             id="condition-value"
             type="number"
-            placeholder="Enter number"
-            defaultValue={condition.value || ''}
+            placeholder="Enter exact number"
+            value={localValue}
+            onChange={(e) => setLocalValue(e.target.value)}
             onBlur={(e) => {
               const val = parseFloat(e.target.value);
               if (!isNaN(val)) {
@@ -254,7 +419,59 @@ function NumberConditionEditor({
             className="mt-1"
           />
           <p className="text-xs text-muted-foreground mt-1">
-            Shows when user enters this exact number
+            Shows when user enters exactly this number
+          </p>
+        </div>
+      )}
+
+      {/* Greater Than */}
+      {conditionType === 'greaterThan' && (
+        <div>
+          <Label htmlFor="condition-gt-value" className="text-xs">
+            Value
+          </Label>
+          <Input
+            id="condition-gt-value"
+            type="number"
+            placeholder="Greater than..."
+            value={localValue}
+            onChange={(e) => setLocalValue(e.target.value)}
+            onBlur={(e) => {
+              const val = parseFloat(e.target.value);
+              if (!isNaN(val)) {
+                updateCondition({ value: val });
+              }
+            }}
+            className="mt-1"
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            Shows when value is greater than {localValue || '?'}
+          </p>
+        </div>
+      )}
+
+      {/* Less Than */}
+      {conditionType === 'lessThan' && (
+        <div>
+          <Label htmlFor="condition-lt-value" className="text-xs">
+            Value
+          </Label>
+          <Input
+            id="condition-lt-value"
+            type="number"
+            placeholder="Less than..."
+            value={localValue}
+            onChange={(e) => setLocalValue(e.target.value)}
+            onBlur={(e) => {
+              const val = parseFloat(e.target.value);
+              if (!isNaN(val)) {
+                updateCondition({ value: val });
+              }
+            }}
+            className="mt-1"
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            Shows when value is less than {localValue || '?'}
           </p>
         </div>
       )}
@@ -270,7 +487,8 @@ function NumberConditionEditor({
               id="condition-min"
               type="number"
               placeholder="Min"
-              defaultValue={condition.rangeMin || ''}
+              value={localMin}
+              onChange={(e) => setLocalMin(e.target.value)}
               onBlur={(e) => {
                 const val = parseFloat(e.target.value);
                 if (!isNaN(val)) {
@@ -288,7 +506,8 @@ function NumberConditionEditor({
               id="condition-max"
               type="number"
               placeholder="Max"
-              defaultValue={condition.rangeMax || ''}
+              value={localMax}
+              onChange={(e) => setLocalMax(e.target.value)}
               onBlur={(e) => {
                 const val = parseFloat(e.target.value);
                 if (!isNaN(val)) {
@@ -304,7 +523,7 @@ function NumberConditionEditor({
             </p>
           )}
           <p className="text-xs text-muted-foreground col-span-2">
-            Shows when number is between min and max
+            Shows when number is between {localMin || '?'} and {localMax || '?'} (inclusive)
           </p>
         </div>
       )}
@@ -312,18 +531,20 @@ function NumberConditionEditor({
   );
 }
 
-// Dropdown Field Condition Editor
-function DropdownConditionEditor({
-  field: _field,
-  conditionalLogic,
-  onUpdate,
-  allFields,
-}: {
-  field: FormField;
+// ============================================
+// Dropdown Condition Editor
+// ============================================
+interface DropdownConditionEditorProps {
+  parentField: FormField;
   conditionalLogic: ConditionalLogic;
   onUpdate: (logic: ConditionalLogic) => void;
-  allFields: FormField[];
-}) {
+}
+
+function DropdownConditionEditor({
+  parentField,
+  conditionalLogic,
+  onUpdate,
+}: DropdownConditionEditorProps) {
   const condition = conditionalLogic.conditions[0] || {
     type: 'optionMatch' as const,
     options: [],
@@ -333,33 +554,29 @@ function DropdownConditionEditor({
     (condition.options?.length || 0) > 1 ? 'multiple' : 'single'
   );
 
-  // Get the PARENT field to validate options (this is a child field, not the parent!)
-  const parentField = allFields.find(f => f.id === conditionalLogic.parentFieldId);
-
-  // Validate that selected options still exist in PARENT field's options
-  const validOptions = parentField
-    ? (condition.options || []).filter(opt => parentField.options?.includes(opt))
-    : condition.options || [];
-  const invalidOptions = parentField
-    ? (condition.options || []).filter(opt => !parentField.options?.includes(opt))
-    : [];
   const selectedOptions = condition.options || [];
+  const parentOptions = parentField.options || [];
 
-  // Auto-fix: Remove invalid options if any (only if parent field exists)
-  if (parentField && invalidOptions.length > 0) {
-    console.warn('⚠️ Removing invalid options from child field condition:', invalidOptions);
-    onUpdate({
-      ...conditionalLogic,
-      conditions: [{
-        ...condition,
-        options: validOptions,
-      }],
-    });
-  }
+  // Validate selected options against current parent options
+  const validOptions = selectedOptions.filter(opt => parentOptions.includes(opt));
+  const invalidOptions = selectedOptions.filter(opt => !parentOptions.includes(opt));
+
+  // Auto-fix invalid options (in useEffect to avoid render-time state updates)
+  useEffect(() => {
+    if (invalidOptions.length > 0 && parentOptions.length > 0) {
+      console.warn('⚠️ Removing invalid options from condition:', invalidOptions);
+      onUpdate({
+        ...conditionalLogic,
+        conditions: [{
+          ...condition,
+          options: validOptions,
+        }],
+      });
+    }
+  }, [parentOptions.join(',')]); // Only run when parent options change
 
   const handleMatchTypeChange = (newMatchType: 'single' | 'multiple') => {
     setMatchType(newMatchType);
-    // Clear options when switching modes to avoid confusion
     onUpdate({
       ...conditionalLogic,
       conditions: [{
@@ -373,10 +590,8 @@ function DropdownConditionEditor({
     let newOptions: string[];
 
     if (matchType === 'single') {
-      // In single mode, replace entire array with clicked option
       newOptions = selectedOptions.includes(option) ? [] : [option];
     } else {
-      // In multiple mode, toggle as before
       newOptions = selectedOptions.includes(option)
         ? selectedOptions.filter(o => o !== option)
         : [...selectedOptions, option];
@@ -393,16 +608,18 @@ function DropdownConditionEditor({
 
   return (
     <div className="space-y-3 p-3 border border-border rounded-lg bg-muted/20">
-      <Label className="text-sm">Show child fields when user selects:</Label>
+      <Label className="text-sm">
+        Show when <strong>{parentField.label}</strong> is:
+      </Label>
 
       {/* Warning for invalid options */}
       {invalidOptions.length > 0 && (
         <div className="p-2 bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 rounded text-xs">
           <p className="text-orange-800 dark:text-orange-200 font-medium">
-            Warning: Some options were removed from parent field
+            Some options were removed from parent
           </p>
           <p className="text-orange-600 dark:text-orange-400 mt-1">
-            The following options no longer exist: {invalidOptions.join(', ')}
+            Removed: {invalidOptions.join(', ')}
           </p>
         </div>
       )}
@@ -431,52 +648,53 @@ function DropdownConditionEditor({
 
       {/* Option Selection */}
       <div className="space-y-2">
-        {!parentField && (
-          <div className="p-2 bg-red-50 dark:bg-red-950 border border-red-200 rounded text-xs text-red-800 dark:text-red-200">
-            Error: Parent field not found. Cannot configure conditional logic.
-          </div>
-        )}
-        {parentField?.options?.map((option) => (
-          <div key={option} className="flex items-center gap-2 p-2 rounded border">
-            <input
-              type="checkbox"
-              id={`option-${option}`}
-              checked={selectedOptions.includes(option)}
-              onChange={() => toggleOption(option)}
-              className="h-4 w-4"
-            />
-            <Label
-              htmlFor={`option-${option}`}
-              className="flex-1 text-sm cursor-pointer"
-            >
-              {option}
-            </Label>
-          </div>
-        ))}
-        {parentField && (!parentField.options || parentField.options.length === 0) && (
+        {parentOptions.length === 0 ? (
           <div className="p-2 bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 rounded text-xs text-yellow-800 dark:text-yellow-200">
-            Parent field has no options. Add options to the parent field first.
+            Parent field has no options. Add options to "{parentField.label}" first.
           </div>
+        ) : (
+          parentOptions.map((option) => (
+            <div key={option} className="flex items-center gap-2 p-2 rounded border hover:bg-muted/50">
+              <input
+                type={matchType === 'single' ? 'radio' : 'checkbox'}
+                id={`option-${option}`}
+                name="condition-option"
+                checked={selectedOptions.includes(option)}
+                onChange={() => toggleOption(option)}
+                className="h-4 w-4"
+              />
+              <Label
+                htmlFor={`option-${option}`}
+                className="flex-1 text-sm cursor-pointer"
+              >
+                {option}
+              </Label>
+            </div>
+          ))
         )}
       </div>
 
       <p className="text-xs text-muted-foreground">
         {matchType === 'single'
-          ? 'Select one option that triggers child fields'
-          : 'Select options that can trigger child fields (any match)'}
+          ? 'Field appears when user selects this exact option'
+          : 'Field appears when user selects ANY of the checked options'}
       </p>
     </div>
   );
 }
 
-// Checkbox Field Condition Editor
+// ============================================
+// Checkbox Condition Editor
+// ============================================
+interface CheckboxConditionEditorProps {
+  conditionalLogic: ConditionalLogic;
+  onUpdate: (logic: ConditionalLogic) => void;
+}
+
 function CheckboxConditionEditor({
   conditionalLogic,
   onUpdate,
-}: {
-  conditionalLogic: ConditionalLogic;
-  onUpdate: (logic: ConditionalLogic) => void;
-}) {
+}: CheckboxConditionEditorProps) {
   const condition = conditionalLogic.conditions[0] || {
     type: 'checkboxState' as const,
     value: true,
@@ -486,7 +704,7 @@ function CheckboxConditionEditor({
     onUpdate({
       ...conditionalLogic,
       conditions: [{
-        ...condition,
+        type: 'checkboxState',
         value,
       }],
     });
@@ -494,7 +712,7 @@ function CheckboxConditionEditor({
 
   return (
     <div className="space-y-3 p-3 border border-border rounded-lg bg-muted/20">
-      <Label className="text-sm">Show child fields when checkbox is:</Label>
+      <Label className="text-sm">Show when checkbox is:</Label>
 
       <div className="flex gap-2">
         <Button
@@ -504,7 +722,7 @@ function CheckboxConditionEditor({
           onClick={() => updateCondition(true)}
           className="flex-1"
         >
-          Checked
+          ✓ Checked
         </Button>
         <Button
           type="button"
@@ -513,12 +731,12 @@ function CheckboxConditionEditor({
           onClick={() => updateCondition(false)}
           className="flex-1"
         >
-          Unchecked
+          ☐ Unchecked
         </Button>
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Child fields will appear when checkbox is {condition.value ? 'checked' : 'unchecked'}
+        Field appears when checkbox is {condition.value ? 'checked' : 'unchecked'}
       </p>
     </div>
   );
