@@ -1053,10 +1053,22 @@ export default function TicketDetail() {
                     )}
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="unassigned">Unassigned</SelectItem>
+                    <SelectItem value="unassigned">
+                      <div className="flex items-center gap-2">
+                        <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
+                          ?
+                        </div>
+                        <span>Unassigned</span>
+                      </div>
+                    </SelectItem>
                     {users.filter(u => u.role !== 'user').map((u) => (
                       <SelectItem key={u.id} value={u.id.toString()}>
-                        {u.name}
+                        <div className="flex items-center gap-2">
+                          <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-medium">
+                            {getInitials(u.name)}
+                          </div>
+                          <span>{u.name}</span>
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
