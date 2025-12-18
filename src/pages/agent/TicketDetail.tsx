@@ -16,6 +16,7 @@ import { StatusBadge } from '@/components/tickets/StatusBadge';
 import { PriorityBadge } from '@/components/tickets/PriorityBadge';
 import { SLAIndicator } from '@/components/tickets/SLAIndicator';
 import { ActivityFeed } from '@/components/tickets/ActivityFeed';
+import { CustomFieldsDisplay } from '@/components/tickets/CustomFieldsDisplay';
 import { UserMultiSelect } from '@/components/ui/user-multi-select';
 import { formatDate, getInitials } from '@/lib/utils';
 import type { Ticket, Activity, User } from '@/types';
@@ -1086,6 +1087,10 @@ export default function TicketDetail() {
                     ))}
                   </div>
                 </div>
+
+                {/* Custom Fields - seamlessly integrated */}
+                <CustomFieldsDisplay ticket={ticket} variant="agent" />
+
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Due Date</span>
                   <span className="font-medium">{ticket.dueDate ? formatDate(ticket.dueDate) : 'Not set'}</span>

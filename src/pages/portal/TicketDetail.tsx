@@ -18,6 +18,7 @@ import { StatusBadge } from '@/components/tickets/StatusBadge';
 import { PriorityBadge } from '@/components/tickets/PriorityBadge';
 import { SLAIndicator } from '@/components/tickets/SLAIndicator';
 import { ActivityFeed } from '@/components/tickets/ActivityFeed';
+import { CustomFieldsDisplay } from '@/components/tickets/CustomFieldsDisplay';
 import { formatDate, getInitials } from '@/lib/utils';
 import type { Ticket, Activity } from '@/types';
 import { ArrowLeft, Send, Loader2, Paperclip } from 'lucide-react';
@@ -468,6 +469,9 @@ export default function TicketDetail() {
                 <p className="text-muted-foreground mb-1">Department</p>
                 <p className="font-medium">{ticket.department}</p>
               </div>
+
+              {/* Custom Fields - seamlessly integrated */}
+              <CustomFieldsDisplay ticket={ticket} variant="portal" />
 
               {ticket.assignee && (
                 <div>
