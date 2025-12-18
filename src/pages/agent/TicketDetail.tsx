@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWebSocket } from '@/hooks/useWebSocket';
@@ -30,6 +30,8 @@ import {
   Users as UsersIcon,
   ChevronDown,
   AlertTriangle,
+  Search,
+  Check,
 } from 'lucide-react';
 
 const API_BASE = 'https://itsm-backend.joshua-r-klimek.workers.dev';
@@ -64,6 +66,11 @@ export default function TicketDetail() {
   const [tempCCUserIds, setTempCCUserIds] = useState<string[]>([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Assignee dropdown state
+  const [assigneeDropdownOpen, setAssigneeDropdownOpen] = useState(false);
+  const [assigneeSearchQuery, setAssigneeSearchQuery] = useState('');
+  const assigneeDropdownRef = useRef<HTMLDivElement>(null);
 
   // WebSocket for real-time updates
   const { connected, subscribeToTicket, unsubscribeFromTicket, on } = useWebSocket();
@@ -187,6 +194,24 @@ export default function TicketDetail() {
 
     loadData();
   }, [id]);
+
+  // Click outside to close assignee dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (assigneeDropdownRef.current && !assigneeDropdownRef.current.contains(event.target as Node)) {
+        setAssigneeDropdownOpen(false);
+        setAssigneeSearchQuery('');
+      }
+    };
+
+    if (assigneeDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [assigneeDropdownOpen]);
 
   const fetchTicketData = async () => {
     setIsLoading(true);
@@ -349,6 +374,25 @@ export default function TicketDetail() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  // Filter users for assignee dropdown
+  const filteredAssignableUsers = users
+    .filter(u => u.role !== 'user')
+    .filter(u => {
+      if (!assigneeSearchQuery) return true;
+      const query = assigneeSearchQuery.toLowerCase();
+      return (
+        u.name.toLowerCase().includes(query) ||
+        u.email.toLowerCase().includes(query)
+      );
+    });
+
+  // Handle assignee selection
+  const handleAssigneeSelect = async (userId: string | null) => {
+    await handleQuickActionChange('assignee', userId === null ? 'unassigned' : userId);
+    setAssigneeDropdownOpen(false);
+    setAssigneeSearchQuery('');
   };
 
   // Handler for flagging/unflagging an activity
@@ -1032,47 +1076,109 @@ export default function TicketDetail() {
               {/* Assigned To */}
               <div className="pb-3 border-b">
                 <h3 className="text-xs font-semibold mb-2 uppercase tracking-wide text-muted-foreground">Assigned To</h3>
-                <Select
-                  value={ticket.assignee?.id?.toString() || 'unassigned'}
-                  onValueChange={(value) => handleQuickActionChange('assignee', value)}
-                  disabled={isSaving}
-                >
-                  <SelectTrigger className="h-auto w-auto border-0 p-0 hover:opacity-80">
+
+                <div ref={assigneeDropdownRef} className="relative">
+                  {/* Trigger Button */}
+                  <div
+                    className="h-auto w-auto border-0 p-0 hover:opacity-80 cursor-pointer inline-flex items-center"
+                    onClick={() => !isSaving && setAssigneeDropdownOpen(!assigneeDropdownOpen)}
+                  >
                     {ticket.assignee ? (
                       <div className="flex items-center gap-1.5">
                         <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-medium">
                           {getInitials(ticket.assignee.name)}
                         </div>
                         <span className="text-sm font-medium">{ticket.assignee.name}</span>
+                        <ChevronDown className={`h-4 w-4 ml-1 transition-transform ${assigneeDropdownOpen ? 'rotate-180' : ''}`} />
                       </div>
                     ) : (
                       <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
                         <span className="text-xs font-medium">?</span>
                         <span className="text-xs font-medium">Unassigned</span>
+                        <ChevronDown className={`h-4 w-4 ml-1 transition-transform ${assigneeDropdownOpen ? 'rotate-180' : ''}`} />
                       </div>
                     )}
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="unassigned">
-                      <div className="flex items-center gap-2">
-                        <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
-                          ?
+                  </div>
+
+                  {/* Dropdown */}
+                  {assigneeDropdownOpen && (
+                    <div className="absolute top-full left-0 mt-2 z-50 bg-popover border rounded-md shadow-lg w-[300px] max-h-[400px] overflow-hidden flex flex-col">
+                      {/* Search Input */}
+                      <div className="p-2 border-b">
+                        <div className="relative">
+                          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <input
+                            type="text"
+                            placeholder="Search users..."
+                            value={assigneeSearchQuery}
+                            onChange={(e) => setAssigneeSearchQuery(e.target.value)}
+                            className="w-full h-8 pl-8 pr-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                            autoFocus
+                          />
                         </div>
-                        <span>Unassigned</span>
                       </div>
-                    </SelectItem>
-                    {users.filter(u => u.role !== 'user').map((u) => (
-                      <SelectItem key={u.id} value={u.id.toString()}>
-                        <div className="flex items-center gap-2">
-                          <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-medium">
-                            {getInitials(u.name)}
+
+                      {/* User List */}
+                      <div className="overflow-y-auto flex-1">
+                        {/* Unassigned Option */}
+                        <div
+                          className={`flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-accent ${!ticket.assignee ? 'bg-accent/50' : ''}`}
+                          onClick={() => handleAssigneeSelect(null)}
+                        >
+                          <div className="h-4 w-4 flex items-center justify-center flex-shrink-0">
+                            {!ticket.assignee && <Check className="h-4 w-4 text-primary" />}
                           </div>
-                          <span>{u.name}</span>
+                          <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium flex-shrink-0">
+                            ?
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium">Unassigned</p>
+                            <p className="text-xs text-muted-foreground">No assignee</p>
+                          </div>
                         </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+
+                        {/* User Options */}
+                        {filteredAssignableUsers.length === 0 ? (
+                          <div className="p-4 text-center text-sm text-muted-foreground">
+                            No users found
+                          </div>
+                        ) : (
+                          filteredAssignableUsers.map(user => {
+                            const isSelected = ticket.assignee?.id === user.id;
+                            return (
+                              <div
+                                key={user.id}
+                                className={`flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-accent ${isSelected ? 'bg-accent/50' : ''}`}
+                                onClick={() => handleAssigneeSelect(user.id.toString())}
+                              >
+                                {/* Checkmark */}
+                                <div className="h-4 w-4 flex items-center justify-center flex-shrink-0">
+                                  {isSelected && <Check className="h-4 w-4 text-primary" />}
+                                </div>
+
+                                {/* Avatar */}
+                                <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-medium flex-shrink-0">
+                                  {getInitials(user.name)}
+                                </div>
+
+                                {/* User Info */}
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium truncate">{user.name}</p>
+                                  <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                                </div>
+
+                                {/* Role Badge */}
+                                <Badge variant="outline" className="text-xs flex-shrink-0">
+                                  {user.role}
+                                </Badge>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Details */}
