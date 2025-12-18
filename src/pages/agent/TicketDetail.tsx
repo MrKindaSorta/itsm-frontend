@@ -1037,25 +1037,18 @@ export default function TicketDetail() {
                   onValueChange={(value) => handleQuickActionChange('assignee', value)}
                   disabled={isSaving}
                 >
-                  <SelectTrigger className="w-full h-auto border rounded-md p-2 hover:bg-accent">
+                  <SelectTrigger className="h-auto w-auto border-0 p-0 hover:opacity-80">
                     {ticket.assignee ? (
-                      <div className="flex items-center gap-2.5 text-left">
-                        <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-medium">
+                      <div className="flex items-center gap-1.5">
+                        <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-medium">
                           {getInitials(ticket.assignee.name)}
                         </div>
-                        <div>
-                          <p className="text-xs font-medium">{ticket.assignee.name}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {'team' in ticket.assignee ? ticket.assignee.team : ticket.assignee.department}
-                          </p>
-                        </div>
+                        <span className="text-sm font-medium">{ticket.assignee.name}</span>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2.5 text-left text-muted-foreground">
-                        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs">
-                          ?
-                        </div>
-                        <p className="text-xs">Unassigned</p>
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                        <span className="text-xs font-medium">?</span>
+                        <span className="text-xs font-medium">Unassigned</span>
                       </div>
                     )}
                   </SelectTrigger>
